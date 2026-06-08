@@ -207,6 +207,13 @@
 
     </div>
 
-    <script type="module" src="src/print/main.js"></script>
+    <!-- Inline seed (window.SFQ_SEED) — works on file:// without HTTP server. -->
+    <script src="data.js"></script>
+
+    <!-- Print modules — plain scripts (NOT ES modules). Each attaches to
+         window.SFQ_PRINT.<name>. Load order matters: utils → render → main. -->
+    <script src="src/print/utils.js"></script>
+    <script src="src/print/render.js"></script>
+    <script src="src/print/main.js"></script>
 </body>
 </html>

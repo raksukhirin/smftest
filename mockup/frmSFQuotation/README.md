@@ -1,6 +1,6 @@
 # Sea Freight Quotation — `frmSFQuotation`
 
-Modern web UI mockup for the legacy VB6 form `frmSFQuotation.frm`. Vanilla ES modules, no build step, no backend — open `index.html` through any HTTP server and start clicking.
+Modern web UI mockup for the legacy VB6 form `frmSFQuotation.frm`. Vanilla JavaScript modular pattern (IIFE + `window.SFQ` namespace, no ES modules, no build step, no backend). **Works on both `file://` and HTTP server — just double-click `index.html`**.
 
 > **Status**: Reference implementation. Hand-off target for the React/Inertia port in `laravel-smp/`.
 
@@ -8,7 +8,9 @@ Modern web UI mockup for the legacy VB6 form `frmSFQuotation.frm`. Vanilla ES mo
 
 ## 🚀 Run locally
 
-ต้องการ HTTP server (ES modules ไม่ทำงานผ่าน `file://`):
+**Easiest** — double-click `index.html`. The app boots from inlined seed + masters JS files (~9.4MB total, slight first-load delay while large customer/port lists parse).
+
+**Or run an HTTP server** (recommended for active development — `fetch('data.json')` becomes the canonical source and large customers.json no longer has to live in JS):
 
 ```bash
 # Python (built-in)
@@ -19,7 +21,9 @@ python -m http.server 8765
 npx http-server . -p 8765
 ```
 
-เปิด http://localhost:8765/frmSFQuotation/
+แล้วเปิด http://localhost:8765/frmSFQuotation/
+
+> **Note**: The IIFE conversion (2026-06-08) replaced ES modules. If you prefer the old `import/export` style, check the git history at `bb60684`.
 
 ---
 
@@ -27,22 +31,24 @@ npx http-server . -p 8765
 
 ```
 frmSFQuotation/
-├── index.html              ← UI shell (loads src/app.js as module)
+├── index.html              ← UI shell (loads ~22 plain scripts in dep order)
 ├── style.css               ← Tailwind CDN + suggest dropdown + status pills
-├── data.json               ← seed quotations + minimal inline masters (agents)
+├── data.json               ← canonical seed (edit this for "real" data changes)
+├── data.js                 ← window.SEED wrap of data.json (file:// loader)
 ├── mapping.md              ← UI field ↔ AFQHEAD/SFQRATE/AFQDETAIL columns
 ├── validation-spec.md      ← port of `Sub ChkValidate` from frm
 │
-├── print.html              ← print preview shell (loads src/print/main.js)
+├── print.html              ← print preview shell (loads src/print/*.js)
 ├── print.css               ← A4 layout + Crystal-report-style tables
 │
-├── masters/                ← external master extracts (loaded at runtime)
-│   ├── customers.json      ← 15,503 rows from SMBUSINESS (6.3 MB)
-│   ├── employees.json      ← 116 rows from SMEMPL (23 KB)
-│   ├── items.json          ← 201 rows from OPItem (36 KB, split by JobClass)
-│   └── ports.json          ← 34,237 rows from OPPort (2.9 MB)
+├── masters/                ← external master extracts (paired JSON + JS wrap)
+│   ├── customers.json      ← 15,503 rows from SMBUSINESS (6.3 MB canonical)
+│   ├── customers.js        ← window.SFQ_MASTERS_RAW.customers wrap (file:// loader)
+│   ├── employees.json/.js  ← 116 rows from SMEMPL (23 KB)
+│   ├── items.json/.js      ← 201 rows from OPItem (36 KB, split by JobClass)
+│   └── ports.json/.js      ← 34,237 rows from OPPort (2.9 MB)
 │
-└── src/                    ← ES modules — entry: app.js
+└── src/                    ← IIFE modules (window.SFQ.* namespace) — entry: app.js
     ├── app.js              ← boot: load → bind → paint
     ├── events.js           ← DOM event wiring (one-time, on boot)
     ├── actions.js          ← Save / Delete / Approve / New / Reset / Print / Navigate
@@ -76,6 +82,76 @@ frmSFQuotation/
         ├── main.js         ← print entry: load + paint
         ├── render.js       ← paint() — Crystal-report-style page renderer
         └── utils.js        ← escapeHtml / fmtDate / fmtMoney
+```
+
+---
+
+## 🧩 How modules talk (IIFE + SFQ namespace)
+
+Each file under `src/` is a plain `<script>` (NOT an ES module) wrapped in an
+IIFE and attached to a single global namespace `window.SFQ.<name>`. Print
+modules use a separate `window.SFQ_PRINT.<name>` to keep print.html lean:
+
+```js
+// src/grids/fcl.js
+window.SFQ = window.SFQ || {};
+window.SFQ.gridFcl = (function () {
+    const { $, escapeHtml } = SFQ.utils;     // pull deps
+    const { current }       = SFQ.state;
+    function paintFcl() { /* ... */ }
+    return { paintFcl };                     // expose public API
+}());
+```
+
+**Why not ES modules?** They don't load on `file://` due to browser CORS,
+which breaks zero-config double-click preview (a hard requirement here).
+IIFE keeps the separation-of-concerns + private scope without that
+restriction — at the cost of caring about `<script>` load order.
+
+### Script load order (index.html)
+
+```html
+<!-- 1. Seed + masters (5 files, ~9.4MB total) -->
+<script src="data.js"></script>
+<script src="masters/customers.js"></script>
+<script src="masters/employees.js"></script>
+<script src="masters/items.js"></script>
+<script src="masters/ports.js"></script>
+
+<!-- 2. Foundation: no deps -->
+<script src="src/core/utils.js"></script>
+<script src="src/core/messages.js"></script>
+
+<!-- 3. State + factories (need utils) -->
+<script src="src/core/state.js"></script>
+<script src="src/core/factories.js"></script>
+
+<!-- 4. UI primitives (need state) -->
+<script src="src/ui/toast.js"></script>
+<script src="src/ui/errors.js"></script>
+
+<!-- 5. Grids (need state + factories) -->
+<script src="src/grids/fcl.js"></script>
+<script src="src/grids/detail.js"></script>
+
+<!-- 6. Paint (needs grids — paintAll calls paintFcl/paintDetail) -->
+<script src="src/ui/paint.js"></script>
+
+<!-- 7. Masters loader (needs paint for paintHeaderForm side-effect) -->
+<script src="src/data/masters.js"></script>
+
+<!-- 8. Validation (needs masters for lookup*) -->
+<script src="src/validation.js"></script>
+
+<!-- 9. Suggest (need toast, grids, masters) -->
+<script src="src/suggest/field.js"></script>
+<script src="src/suggest/item-cell.js"></script>
+<script src="src/suggest/port-cell.js"></script>
+
+<!-- 10. Orchestration -->
+<script src="src/actions.js"></script>
+<script src="src/events.js"></script>
+<script src="src/app.js"></script>   <!-- DOMContentLoaded → boot() -->
 ```
 
 ---
@@ -136,12 +212,18 @@ Live edits are also captured by the global `input` listener in `events.js` → `
 ### Add a new master (e.g. ports → routes)
 
 1. Create `masters/<name>.json` (server-side script that dumps your DB query).
-2. Wire it in `src/data/masters.js` → `loadExternalMasters()`:
-   ```js
-   const r = await fetch('masters/<name>.json', { cache: 'no-store' });
-   if (r.ok) state.masters.<key> = (await r.json()).<name>;
+2. Generate the JS wrapper for `file://` loading:
+   ```bash
+   { echo "window.SFQ_MASTERS_RAW = window.SFQ_MASTERS_RAW || {};"; \
+     echo "window.SFQ_MASTERS_RAW.<name> ="; \
+     cat masters/<name>.json; echo ";"; } > masters/<name>.js
    ```
-3. (Optional) Add a `lookup<X>(code)` and `select<X>(record)` in the same file.
+3. Add `<script src="masters/<name>.js">` to `index.html`.
+4. Wire it in `src/data/masters.js` → `loadExternalMasters()`:
+   ```js
+   if (raw.<name>) state.masters.<key> = raw.<name>.<arrayKey> || [];
+   ```
+5. (Optional) Add `lookup<X>(code)` and `select<X>(record)` in the same module.
 
 ### Add a new validation rule
 

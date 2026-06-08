@@ -574,6 +574,34 @@
         </div>
     </div>
 
-    <script type="module" src="src/app.js"></script>
+    <!-- Inline seed + masters (window.SFQ_SEED + window.SFQ_MASTERS_RAW).
+         Lets the app boot on file:// without an HTTP server.
+         Total ~9.4MB — large customers/ports files take a moment to parse. -->
+    <script src="data.js"></script>
+    <script src="masters/customers.js"></script>
+    <script src="masters/employees.js"></script>
+    <script src="masters/items.js"></script>
+    <script src="masters/ports.js"></script>
+
+    <!-- Modular code under src/ — plain scripts (NOT ES modules) loaded in
+         dependency order. Each file attaches to window.SFQ.<name>.
+         See README.md → "How modules talk" for the namespace map. -->
+    <script src="src/core/utils.js"></script>
+    <script src="src/core/messages.js"></script>
+    <script src="src/core/state.js"></script>
+    <script src="src/core/factories.js"></script>
+    <script src="src/ui/toast.js"></script>
+    <script src="src/ui/errors.js"></script>
+    <script src="src/grids/fcl.js"></script>
+    <script src="src/grids/detail.js"></script>
+    <script src="src/ui/paint.js"></script>
+    <script src="src/data/masters.js"></script>
+    <script src="src/validation.js"></script>
+    <script src="src/suggest/field.js"></script>
+    <script src="src/suggest/item-cell.js"></script>
+    <script src="src/suggest/port-cell.js"></script>
+    <script src="src/actions.js"></script>
+    <script src="src/events.js"></script>
+    <script src="src/app.js"></script>
 </body>
 </html>

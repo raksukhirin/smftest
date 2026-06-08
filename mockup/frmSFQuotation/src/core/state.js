@@ -1,47 +1,63 @@
-/* Mutable application state + localStorage persistence.
+/* core/state.js — Mutable application state + localStorage persistence.
  *
- * State shape mirrors what an AFQHEAD/SFQRATE/AFQDETAIL controller would emit.
- * - state.quotations  : array of quotation objects
- * - state.currentIndex: index into quotations
- * - state.company     : letterhead info (from data.json)
- * - state.masters     : lookup datasets (customers, salesPeople, approvers, agents,
- *                       items, itemsByClass{IM,EX}, ports). NOT persisted —
- *                       too large for localStorage; reloaded on every boot.
- *
- * Other modules import `state`, `dirty`, etc. as live bindings.  Only this
- * module reassigns the variables (via `setState`, `setDirty`, …).
+ * NOTE on IIFE pattern: previous version exported `let state` (reassignable
+ * live binding). In IIFE world we can't reassign and have other modules see
+ * it, so `setState(next)` MUTATES the existing object in-place. UI flags
+ * (`dirty`, `suppressDirty`, `activeTab`) are now properties of `state`
+ * (excluded from persist).
  */
+window.SFQ = window.SFQ || {};
+window.SFQ.state = (function () {
+    'use strict';
 
-export const STORAGE_KEY = 'sf_quotation_v1';
+    const STORAGE_KEY = 'sf_quotation_v1';
 
-export let state = {
-    quotations: [],
-    currentIndex: 0,
-    company: null,
-    masters: null,
-};
+    // Single state object — mutated in place; other modules read by reference.
+    const state = {
+        quotations: [],
+        currentIndex: 0,
+        company: null,
+        masters: null,
+        // UI flags (transient, not persisted)
+        dirty: false,
+        suppressDirty: false,
+        activeTab: 'general',
+    };
 
-export let dirty = false;
-export let suppressDirty = false;
-export let activeTab = 'general';
+    /** Replace persistent shape (4 keys). UI flags are preserved. */
+    function setState(next) {
+        state.quotations   = next.quotations   ?? [];
+        state.currentIndex = next.currentIndex ?? 0;
+        state.company      = next.company      ?? null;
+        state.masters      = next.masters      ?? null;
+    }
 
-export function setState(next) { state = next; }
+    function setDirty(v) {
+        state.dirty = !!v;
+        const flag = document.getElementById('dirtyFlag');
+        if (flag) flag.classList.toggle('hidden', !state.dirty);
+    }
 
-export function setDirty(v) {
-    dirty = !!v;
-    const flag = document.getElementById('dirtyFlag');
-    if (flag) flag.classList.toggle('hidden', !dirty);
-}
+    function setSuppressDirty(v) { state.suppressDirty = !!v; }
+    function setActiveTab(name)  { state.activeTab = name; }
 
-export function setSuppressDirty(v) { suppressDirty = !!v; }
-export function setActiveTab(name) { activeTab = name; }
+    /** Persist quotations + currentIndex + company. Excludes masters + UI flags. */
+    function persist() {
+        const lean = {
+            quotations: state.quotations,
+            currentIndex: state.currentIndex,
+            company: state.company,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(lean));
+    }
 
-/** Persist quotations + currentIndex + company. Excludes `masters` (too large). */
-export function persist() {
-    const { masters: _omit, ...lean } = state;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(lean));
-}
+    function current() {
+        return state.quotations[state.currentIndex] ?? null;
+    }
 
-export function current() {
-    return state.quotations[state.currentIndex] ?? null;
-}
+    return {
+        STORAGE_KEY, state,
+        setState, setDirty, setSuppressDirty, setActiveTab,
+        persist, current,
+    };
+}());
