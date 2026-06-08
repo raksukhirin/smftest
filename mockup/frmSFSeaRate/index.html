@@ -386,11 +386,22 @@
         </div>
     </div>
 
-    <!-- Optional: inline seed for file:// preview without HTTP server.
-         If not present, state.js will fetch data.json instead. -->
+    <!-- Inline seed (window.SEED_DATA) — lets the app work on file:// without
+         needing an HTTP server. Falls back to fetch('data.json') in state.js. -->
     <script src="data.js"></script>
 
-    <!-- Modular code lives in src/ — see README.md for the dev guide. -->
-    <script type="module" src="src/app.js"></script>
+    <!-- Modular code under src/ — plain scripts (NOT ES modules) loaded in
+         dependency order. Each file attaches to window.RC.<name>.
+         See README.md → "How modules talk" for the namespace map. -->
+    <script src="src/utils.js"></script>
+    <script src="src/state.js"></script>
+    <script src="src/ui.js"></script>
+    <script src="src/sub-rate.js"></script>
+    <script src="src/master-grid.js"></script>
+    <script src="src/detail.js"></script>
+    <script src="src/lookup.js"></script>
+    <script src="src/search.js"></script>
+    <script src="src/crud.js"></script>
+    <script src="src/app.js"></script>
 </body>
 </html>

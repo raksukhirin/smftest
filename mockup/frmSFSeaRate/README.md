@@ -1,6 +1,6 @@
 # Sea Freight Rate Control — `frmSFSeaRate`
 
-Modern web UI mockup for the legacy VB6 form `frmSFSeaRate.frm`. Vanilla ES modules, no build step, no backend — open `index.html` through any HTTP server and start clicking.
+Modern web UI mockup for the legacy VB6 form `frmSFSeaRate.frm`. Vanilla JavaScript modular pattern (no ES modules, no build step, no backend). **Works on both `file://` and HTTP server — just double-click `index.html`**.
 
 > **Status**: Reference implementation for the React/Inertia port. UI mirrors the original form's two states (master-only / master + detail edit).
 
@@ -8,7 +8,9 @@ Modern web UI mockup for the legacy VB6 form `frmSFSeaRate.frm`. Vanilla ES modu
 
 ## 🚀 Run locally
 
-Required: any HTTP server (ES modules ไม่ทำงานผ่าน `file://`).
+**Easiest** — double-click `index.html`. That's it. (Works via `file://` because the seed is inlined in `data.js`.)
+
+**Or run an HTTP server** (recommended for development — enables `fetch` on the canonical `data.json` and reload-on-save):
 
 ```bash
 # Python (built-in)
@@ -19,9 +21,7 @@ python -m http.server 8765
 npx http-server . -p 8765
 ```
 
-เปิด http://localhost:8765/frmSFSeaRate/
-
-> หากต้องเปิดผ่าน `file://` ให้ลบ `<script type="module">` ใน `index.html` แล้วใช้ `data.js` + รวม src ไฟล์เป็น script เดียวเอง — แนะนำให้รัน server แทน ใช้งานสะดวกกว่ามาก
+แล้วเปิด http://localhost:8765/frmSFSeaRate/
 
 ---
 
@@ -29,10 +29,10 @@ npx http-server . -p 8765
 
 ```
 frmSFSeaRate/
-├── index.html              ← UI shell (loads src/app.js as ES module)
+├── index.html              ← UI shell (loads data.js + 10 src/*.js scripts in order)
 ├── style.css               ← Tailwind CDN + custom utility classes
-├── data.json               ← seed rates + masters (canonical source)
-├── data.js                 ← window.SEED_DATA wrap of data.json (file:// fallback, optional)
+├── data.json               ← canonical seed (edit this for "real" data changes)
+├── data.js                 ← window.SEED_DATA wrap of data.json (loaded synchronously for file://)
 ├── mapping.md              ← UI field ↔ SFRATE/SFRATED columns
 ├── README.md               ← this file
 └── src/
@@ -50,7 +50,37 @@ frmSFSeaRate/
 
 ---
 
-## 🧩 Module dependency graph
+## 🧩 How modules talk (IIFE + RC namespace)
+
+Each file under `src/` is a plain `<script>` (NOT an ES module) wrapped in an
+IIFE and attached to a single global namespace `window.RC.<name>`:
+
+```js
+// src/utils.js
+window.RC = window.RC || {};
+window.RC.utils = (function () {
+    function $(sel) { return document.querySelector(sel); }
+    // ...
+    return { $, $$, escapeHtml, fmtDate, num, newRateId, nextPmKey };
+}());
+```
+
+Other modules consume it by destructuring:
+
+```js
+// src/state.js
+window.RC.state = (function () {
+    const { $ } = RC.utils;           // ← pull from namespace
+    // ...
+}());
+```
+
+**Why not ES modules?** They don't load on `file://` due to CORS, which
+breaks zero-config preview (a hard requirement here). The IIFE pattern
+gives the same separation-of-concerns + private scope without that
+restriction, at the cost of caring about `<script>` order.
+
+### Dependency graph
 
 ```
                             ┌──────────┐
@@ -65,13 +95,31 @@ frmSFSeaRate/
                 state.js  ui.js                utils.js (foundational)
 ```
 
-- **utils.js** has no deps (pure helpers).
-- **state.js / ui.js** depend only on `utils`.
-- **master-grid.js → sub-rate.js** (re-render cost grid on row select).
-- **detail.js → master-grid.js** (call `selectRate` when opening pane).
-  - Avoided the reverse via `setHandlers({ onDblClick, onSelect })` injected from `app.js`.
-- **crud.js** depends on most things (it orchestrates Save/Copy/Delete flows).
-- **app.js** at the top — registers all cross-module callbacks before any UI event fires.
+Load order in `index.html` (mirrors the graph bottom-up):
+
+```html
+<script src="data.js"></script>           <!-- window.SEED_DATA -->
+<script src="src/utils.js"></script>      <!-- no deps -->
+<script src="src/state.js"></script>      <!-- needs utils -->
+<script src="src/ui.js"></script>         <!-- needs utils -->
+<script src="src/sub-rate.js"></script>   <!-- needs utils, state, ui -->
+<script src="src/master-grid.js"></script><!-- needs utils, state, sub-rate -->
+<script src="src/detail.js"></script>     <!-- needs utils, state, master-grid, sub-rate -->
+<script src="src/lookup.js"></script>     <!-- needs utils, state, detail -->
+<script src="src/search.js"></script>     <!-- needs utils, state, master-grid, detail, sub-rate -->
+<script src="src/crud.js"></script>       <!-- needs ui, state, search, master-grid, detail, sub-rate -->
+<script src="src/app.js"></script>        <!-- boots everything -->
+```
+
+- **utils** has no deps (pure helpers).
+- **state / ui** depend only on `utils`.
+- **master-grid → sub-rate** (re-render cost grid on row select).
+- **detail → master-grid** (call `selectRate` when opening pane).
+  - The reverse direction (master-grid → detail) is avoided via
+    `setHandlers({ onDblClick, onSelect })` injected from `app.js`.
+- **crud** depends on most things (it orchestrates Save/Copy/Delete flows).
+- **app.js** at the top — registers all cross-module callbacks before any
+  UI event fires.
 
 ---
 
@@ -125,9 +173,38 @@ In `search.js`:
 
 In `lookup.js → open(kind, target)`, add a new `else if` branch with `rows` + `cols`. Then put a button in `index.html` with `data-lookup="MYKIND"`.
 
+### Add a new module
+
+1. Create `src/myFeature.js` using the IIFE pattern:
+   ```js
+   window.RC = window.RC || {};
+   window.RC.myFeature = (function () {
+       'use strict';
+       const { $ } = RC.utils;             // pull deps
+       const { state } = RC.state;
+       function doSomething() { /* … */ }
+       return { doSomething };             // public API
+   }());
+   ```
+2. Add `<script src="src/myFeature.js">` to `index.html` **after** every dep it imports from `RC.*`.
+3. Call `RC.myFeature.doSomething()` from `app.js` (or wherever).
+
 ### Hook to a real backend
 
 Replace `state.persist()` (localStorage write) and the `state.data.rates` mutations in `crud.js` with `fetch('/api/rates', { method: 'POST', ... })` calls. The rest of the UI doesn't care where the data lives.
+
+### Sync `data.json` ↔ `data.js`
+
+`data.json` is the canonical seed (Git diffs nicely). `data.js` is just `window.SEED_DATA = <data.json>;` so the file:// path works without `fetch`. After editing `data.json`, regenerate:
+
+```bash
+{ echo "window.SEED_DATA ="; cat data.json; echo ";"; } > data.js
+```
+
+Or in PowerShell:
+```powershell
+"window.SEED_DATA =`n$(Get-Content data.json -Raw)`n;" | Set-Content data.js -Encoding utf8
+```
 
 ---
 
