@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sea Freight Rate Control — Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- ===== Top bar ===== -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="px-5 py-2.5 flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-sky-700 text-white flex items-center justify-center font-bold">⚓</div>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-500">Sea Freight</div>
+                    <div class="font-semibold text-sm leading-none">Rate Control Center <span class="text-slate-400">[DEMO]</span></div>
+                </div>
+            </div>
+
+            <div class="ml-6 flex items-center gap-3 text-xs text-slate-500">
+                <span>Records: <span id="recCount" class="font-semibold text-slate-700 tabular-nums">0</span></span>
+                <span>•</span>
+                <span>Active: <span id="recActive" class="font-mono text-slate-700">—</span></span>
+                <span id="dirtyFlag" class="hidden text-amber-600 font-semibold">● Unsaved</span>
+            </div>
+
+            <div class="ml-auto flex items-center gap-2">
+                <button class="btn-ghost text-xs" id="exportBtn" title="Download data.json">⬇ Export JSON</button>
+                <button class="btn-ghost text-xs" id="resetBtn" title="Reload seed data">↺ Reset Seed</button>
+                <button class="btn-secondary text-xs" id="newBtn">+ New Rate</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== Search bar (matches screenshot 1 top) ===== -->
+    <section class="bg-sky-50/40 border-b border-slate-200">
+        <div class="px-5 py-2.5">
+            <div class="flex flex-wrap items-start gap-4">
+                <!-- Validity range -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <label class="label-blue w-24">VALIDITY FROM</label>
+                        <label class="inline-flex items-center gap-1">
+                            <input type="checkbox" id="validFromChk" class="chk">
+                            <input type="date" id="validFrom" class="input-sm w-36" disabled>
+                        </label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="label-blue w-24">TO</label>
+                        <label class="inline-flex items-center gap-1">
+                            <input type="checkbox" id="validToChk" class="chk">
+                            <input type="date" id="validTo" class="input-sm w-36" disabled>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Tab strip + filter -->
+                <div class="space-y-1.5 flex-1 min-w-[280px] max-w-[480px]">
+                    <div class="flex border-b border-slate-300">
+                        <button class="tab is-active" data-tab="Carrier">Carrier</button>
+                        <button class="tab" data-tab="Agent">Agent</button>
+                        <button class="tab" data-tab="Destination">Destination</button>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="label-blue w-20" id="tabLabel">CARRIER</label>
+                        <button id="reloadFilter" class="icon-btn" title="Reload list">↻</button>
+                        <input type="text" id="filterValue" class="input-sm flex-1" list="filterList" placeholder="ALL">
+                        <datalist id="filterList"></datalist>
+                    </div>
+                    <!-- Second filter row (Destination tab only) — PORT -->
+                    <div id="filterRow2" class="hidden items-center gap-2">
+                        <label class="label-blue w-20">PORT</label>
+                        <button id="reloadPort" class="icon-btn" title="Reload ports">↻</button>
+                        <input type="text" id="filterPort" class="input-sm flex-1" list="portList" placeholder="Code | Name">
+                        <datalist id="portList"></datalist>
+                    </div>
+                </div>
+
+                <!-- Right cluster: RATEID + JOBCLASS + Buttons -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="rateIdSearch" class="input-sm font-mono w-56" placeholder="RATEID">
+                        <select id="jobclassFilter" class="input-sm w-28">
+                            <option value="EX">EXPORT</option>
+                            <option value="IM">IMPORT</option>
+                        </select>
+                        <button class="btn-secondary text-xs" id="clearBtn">CLEAR SCR</button>
+                    </div>
+                    <div class="flex items-center gap-2 justify-end">
+                        <button class="btn-primary text-xs" id="searchBtn">🔍 SEARCH</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Main split ===== -->
+    <main id="mainSplit" class="px-5 py-4 flex gap-4">
+
+        <!-- ===== Left: Master grid + Sub-rate ===== -->
+        <div id="leftPane" class="flex-1 min-w-0 space-y-4">
+
+            <!-- Master grid -->
+            <section class="card p-0 overflow-hidden">
+                <div class="grid-toolbar">
+                    <span class="card-title text-sm">📋 Rate List</span>
+                    <span class="ml-3 text-xs text-slate-500">Double-click a row to edit</span>
+                    <button id="addRateBtn" class="btn-secondary text-xs ml-3">+ Add Line</button>
+                    <span class="ml-auto text-xs text-slate-500" id="gridStatus">—</span>
+                </div>
+                <div class="grid-scroll" style="max-height: 360px;">
+                    <table class="data-table" id="masterTable">
+                        <thead>
+                            <tr>
+                                <th>Agent Name</th>
+                                <th>Contact</th>
+                                <th>Carrier</th>
+                                <th class="hide-when-detail">Term</th>
+                                <th>Load Port</th>
+                                <th>Disc Port</th>
+                                <th>Tranship</th>
+                                <th>Final Port</th>
+                                <th class="hide-when-detail">Final Port Name</th>
+                                <th class="hide-when-detail">Validity</th>
+                                <th class="hide-when-detail">Departure</th>
+                                <th class="hide-when-detail">Arrival</th>
+                                <th class="hide-when-detail text-right">Transit</th>
+                                <th class="hide-when-detail text-right">20'</th>
+                                <th class="hide-when-detail text-right">40'</th>
+                                <th class="hide-when-detail text-right">40'HC</th>
+                                <th class="hide-when-detail text-right">45'</th>
+                                <th class="hide-when-detail text-right">LCL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="masterTbody"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sub-rate -->
+            <section class="card p-0 overflow-hidden">
+                <div class="grid-toolbar">
+                    <span class="card-title text-sm italic font-bold text-indigo-700">SUB-RATE</span>
+                    <button id="loadCodeBtn" class="btn-secondary text-xs ml-3" disabled>Load Code</button>
+                    <button id="addCostBtn" class="btn-secondary text-xs" disabled>+ Add Line</button>
+                    <button id="applyTotalBtn" class="btn-secondary text-xs ml-auto" disabled>Apply to total &gt;&gt;&gt;</button>
+                </div>
+                <div class="grid-scroll" style="max-height: 220px;">
+                    <table class="data-table" id="costTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 28px;"></th>
+                                <th>Code</th>
+                                <th>Description</th>
+                                <th>Currency</th>
+                                <th>Unit</th>
+                                <th>Container</th>
+                                <th class="text-right">20'</th>
+                                <th class="text-right">40'</th>
+                                <th class="text-right">40'HC</th>
+                                <th class="text-right">45'</th>
+                                <th class="text-right">LCL</th>
+                                <th class="text-right">VAT</th>
+                                <th class="text-right">I/O</th>
+                                <th class="text-right">W/T</th>
+                            </tr>
+                        </thead>
+                        <tbody id="costTbody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===== Right: Detail edit panel (hidden by default) ===== -->
+        <aside id="detailPane" class="card p-0 overflow-hidden hidden flex-col" style="width: 480px; flex-shrink: 0;">
+            <div class="card-head px-4 py-2.5 mb-0">
+                <h2 class="card-title text-sm">📝 Rate Detail</h2>
+                <span id="detailMode" class="status-pill status-open ml-2">VIEW</span>
+                <button id="closeDetailBtn" class="ml-auto btn-ghost text-xs" title="Hide panel">✕</button>
+            </div>
+
+            <div class="detail-body overflow-y-auto px-4 py-3 space-y-3 flex-1">
+
+                <!-- CONTACT + JOBCLASS row -->
+                <div class="grid grid-cols-12 gap-2 items-end">
+                    <div class="col-span-8 field">
+                        <label class="lbl">CONTACT TO</label>
+                        <input class="input-sm" data-field="CTCNAME">
+                    </div>
+                    <div class="col-span-4 field">
+                        <label class="lbl">Class</label>
+                        <select class="input-sm" data-field="JOBCLASS">
+                            <option value="EX">EXPORT</option>
+                            <option value="IM">IMPORT</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- AGENT -->
+                <div class="field">
+                    <label class="lbl required">AGENT</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="AGENTNO" placeholder="Code">
+                        <button class="lookup-btn" data-lookup="AGENT" title="Lookup Agent">🔍</button>
+                        <input class="input-sm lookup-name" data-field="AGENTNAME" placeholder="Agent name">
+                    </div>
+                </div>
+
+                <!-- CARRIER -->
+                <div class="field">
+                    <label class="lbl">CARRIER</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="LINERNO" placeholder="Code">
+                        <button class="lookup-btn" data-lookup="LINER" title="Lookup Carrier">🔍</button>
+                        <input class="input-sm lookup-name" data-field="LINERNAME" placeholder="Carrier name">
+                    </div>
+                </div>
+
+                <!-- DEP / ARRV -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="field">
+                        <label class="lbl">DEP.</label>
+                        <input class="input-sm" data-field="DEPT" placeholder="SAT,MON">
+                    </div>
+                    <div class="field">
+                        <label class="lbl">ARRV.</label>
+                        <input class="input-sm" data-field="ARRV" placeholder="ENS $30/ BL">
+                    </div>
+                </div>
+
+                <!-- VALID UNTIL / TRANSIT -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="field">
+                        <label class="lbl">VALID UNTIL</label>
+                        <input type="date" class="input-sm" data-field="VALIDITY">
+                    </div>
+                    <div class="field">
+                        <label class="lbl">TRANSIT TIME (DAYS)</label>
+                        <input type="number" class="input-sm text-right" data-field="TRANSIT" min="0">
+                    </div>
+                </div>
+
+                <!-- Ports -->
+                <div class="field">
+                    <label class="lbl">LOAD PORT</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="LOADPORT" placeholder="Code">
+                        <button class="lookup-btn" data-lookup="PORT" data-target="LOAD" title="Lookup Port">🔍</button>
+                        <input class="input-sm lookup-name" data-field="LOADPORTNAME" placeholder="Port name">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="lbl">DISC PORT</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="DISPORT">
+                        <button class="lookup-btn" data-lookup="PORT" data-target="DIS" title="Lookup Port">🔍</button>
+                        <input class="input-sm lookup-name" data-field="DISPORTNAME">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="lbl required">FINAL PORT</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="FINALPORT">
+                        <button class="lookup-btn" data-lookup="PORT" data-target="FINAL" title="Lookup Port">🔍</button>
+                        <input class="input-sm lookup-name" data-field="FINALPORTNAME">
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="lbl">TRANSHIP</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="TRANPORT">
+                        <button class="lookup-btn" data-lookup="PORT" data-target="TRAN" title="Lookup Port">🔍</button>
+                        <input class="input-sm lookup-name" data-field="TRANPORTNAME">
+                    </div>
+                </div>
+
+                <!-- CNTR TYPE -->
+                <div class="field">
+                    <label class="lbl">CNTR. TYPE</label>
+                    <select class="input-sm" data-field="XCTNTYPE" id="xCtnType"></select>
+                </div>
+
+                <!-- Totals -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="field">
+                        <label class="lbl">TOTAL 20'</label>
+                        <input class="input-sm text-right" data-field="XCTN20">
+                    </div>
+                    <div class="field">
+                        <label class="lbl">TOTAL 40'</label>
+                        <input class="input-sm text-right" data-field="XCTN40">
+                    </div>
+                    <div class="field">
+                        <label class="lbl">TOTAL 40'HQ</label>
+                        <input class="input-sm text-right" data-field="XCTN40HC">
+                    </div>
+                    <div class="field">
+                        <label class="lbl">TOTAL 45'</label>
+                        <input class="input-sm text-right" data-field="XCTN45">
+                    </div>
+                    <div class="field col-span-2">
+                        <label class="lbl">TOTAL LCL</label>
+                        <input class="input-sm text-right" data-field="XLCL">
+                    </div>
+                </div>
+
+                <!-- BY / LAST UPD -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="field">
+                        <label class="lbl">BY</label>
+                        <input class="input-sm" data-field="USERID" readonly>
+                    </div>
+                    <div class="field">
+                        <label class="lbl">LAST UPD</label>
+                        <input type="date" class="input-sm" data-field="LASTUPD">
+                    </div>
+                </div>
+
+                <!-- Remarks -->
+                <div class="field">
+                    <label class="lbl">FCL REMARK</label>
+                    <textarea rows="3" class="input-sm" data-field="REMFCL"></textarea>
+                </div>
+                <div class="field">
+                    <label class="lbl">LCL REMARK</label>
+                    <textarea rows="3" class="input-sm" data-field="REMLCL"></textarea>
+                </div>
+
+                <!-- RATEID -->
+                <div class="field">
+                    <label class="lbl">RATEID</label>
+                    <input class="input-sm font-mono bg-slate-100" data-field="RATEID" readonly>
+                </div>
+            </div>
+
+            <!-- Detail action bar -->
+            <div class="detail-actions">
+                <button class="btn-ghost text-xs" id="hideBtn" title="ซ่อน detail panel">::: Hide :::</button>
+                <button class="btn-danger text-xs" id="deleteBtn">🗑 Delete</button>
+                <button class="btn-secondary text-xs" id="copyBtn">📋 Copy</button>
+                <button class="btn-primary text-xs" id="saveBtn" disabled>💾 Save</button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- ===== Toast ===== -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2">
+            <span id="toastIcon">✓</span>
+            <span id="toastMsg">Saved</span>
+        </div>
+    </div>
+
+    <!-- ===== Confirm dialog ===== -->
+    <div id="dialog" class="fixed inset-0 z-50 bg-slate-900/50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-5" onclick="event.stopPropagation()">
+            <h3 id="dlgTitle" class="font-semibold text-lg mb-2"></h3>
+            <p id="dlgMsg" class="text-sm text-slate-600 mb-5"></p>
+            <div class="flex justify-end gap-2">
+                <button id="dlgCancel" class="btn-secondary text-xs">Cancel</button>
+                <button id="dlgConfirm" class="btn-primary text-xs">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Lookup modal ===== -->
+    <div id="lookupModal" class="fixed inset-0 z-50 bg-slate-900/50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+            <div class="px-4 py-3 border-b flex items-center gap-2">
+                <h3 id="lookupTitle" class="font-semibold text-sm">Lookup</h3>
+                <input id="lookupSearch" class="input-sm ml-2 flex-1" placeholder="Search...">
+                <button id="lookupClose" class="btn-ghost text-xs">✕</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-2">
+                <table class="data-table" id="lookupTable">
+                    <thead id="lookupThead"></thead>
+                    <tbody id="lookupTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optional: inline seed for file:// preview without HTTP server.
+         If not present, state.js will fetch data.json instead. -->
+    <script src="data.js"></script>
+
+    <!-- Modular code lives in src/ — see README.md for the dev guide. -->
+    <script type="module" src="src/app.js"></script>
+</body>
+</html>
