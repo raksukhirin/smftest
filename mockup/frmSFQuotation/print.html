@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Sea Freight Quotation — Print Preview</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="print.css">
+</head>
+<body>
+
+    <!-- Floating action bar (hidden when printing) -->
+    <div class="actionbar no-print">
+        <button onclick="window.print()" class="btn-primary">🖨 Print / Save as PDF</button>
+        <button onclick="window.close()" class="btn-secondary">Close</button>
+        <span class="ml-auto text-xs text-slate-500" id="docTitle">—</span>
+    </div>
+
+    <!-- A4 paper -->
+    <div class="paper" id="paper">
+
+        <!-- Letterhead -->
+        <header class="letterhead">
+            <div class="letterhead-logo">
+                <div class="logo-mark">HIT</div>
+                <div class="logo-globe">🌐</div>
+                <div class="logo-name">INTERCON CO., LTD.</div>
+            </div>
+            <div class="letterhead-info">
+                <div class="company-name" id="coName">—</div>
+                <div class="company-address" id="coAddress">—</div>
+                <div class="company-address" id="coAddress2"></div>
+                <div class="company-tel">TEL: <span id="coTel"></span> &nbsp;&nbsp;&nbsp; FAX: <span id="coFax"></span></div>
+            </div>
+            <div class="letterhead-cert">
+                <div class="cert-stamp">ISO 9001<br><small>BUREAU VERITAS</small></div>
+                <div class="cert-stamp">UKAS<br><small>QUALITY MANAGEMENT</small></div>
+            </div>
+        </header>
+
+        <!-- Title -->
+        <h1 class="doc-title" id="docTitleH1">SEA FREIGHT IMPORT QUOTATION</h1>
+
+        <!-- Customer / Doc info two-column block -->
+        <table class="info-block">
+            <tr>
+                <td class="label-cell">TO</td>
+                <td class="value-cell" id="infoTo">—</td>
+                <td class="label-cell">REF. NO.</td>
+                <td class="value-cell" id="infoRefNo">—</td>
+            </tr>
+            <tr>
+                <td class="label-cell">ATTN</td>
+                <td class="value-cell" id="infoAttn">—</td>
+                <td class="label-cell">Date</td>
+                <td class="value-cell" id="infoDate">—</td>
+            </tr>
+            <tr>
+                <td class="label-cell">TEL</td>
+                <td class="value-cell" id="infoTel">—</td>
+                <td class="label-cell">EFFECTIVE DATE</td>
+                <td class="value-cell" id="infoEff">—</td>
+            </tr>
+            <tr>
+                <td class="label-cell">FAX</td>
+                <td class="value-cell" id="infoFax"></td>
+                <td class="label-cell">EXPIRY DATE</td>
+                <td class="value-cell" id="infoExp">—</td>
+            </tr>
+            <tr>
+                <td class="label-cell">E-Mail</td>
+                <td class="value-cell" id="infoEmail">—</td>
+                <td class="label-cell">CREDIT TERM</td>
+                <td class="value-cell" id="infoCredit">—</td>
+            </tr>
+            <tr>
+                <td class="label-cell">Incoterm</td>
+                <td class="value-cell" id="infoIncoterm">—</td>
+                <td class="label-cell"></td>
+                <td class="value-cell"></td>
+            </tr>
+            <tr>
+                <td class="label-cell">Re</td>
+                <td class="value-cell" colspan="3" id="infoSubject">—</td>
+            </tr>
+        </table>
+
+        <p class="opening" id="opening">
+            We would like to offer you our following attractive freight and handling charge your import shipment from port of origin as below detail :-
+        </p>
+
+        <!-- Ocean Freight Charge — route rows from SFQRATE (LoadPort filled) -->
+        <h2 class="section-title">OCEAN FREIGHT CHARGE</h2>
+        <table class="rate-table">
+            <thead>
+                <tr>
+                    <th rowspan="2">Loading</th>
+                    <th rowspan="2">Destination</th>
+                    <th colspan="7">Freight Charge</th>
+                    <th rowspan="2" class="ttdays-cell">T/T<br>Days</th>
+                    <th rowspan="2">CARRIER</th>
+                    <th rowspan="2">Remark</th>
+                </tr>
+                <tr>
+                    <th>Curr</th>
+                    <th>Type</th>
+                    <th>20'</th>
+                    <th>40'</th>
+                    <th>40'HC</th>
+                    <th>45'</th>
+                    <th>LCL</th>
+                </tr>
+            </thead>
+            <tbody id="fclRouteBody"></tbody>
+        </table>
+
+        <!-- Local Charges (FCL) — surcharge rows from SFQRATE (LoadPort empty);
+             rows where ExpCode='-' render as bold-italic dividers. -->
+        <table class="charge-table" id="fclChargeBlock">
+            <thead>
+                <tr>
+                    <th class="text-left">LOCAL CHARGES (FCL)</th>
+                    <th>Curr</th>
+                    <th>Unit</th>
+                    <th>20'</th>
+                    <th>40'</th>
+                    <th>40'HC</th>
+                    <th>45'</th>
+                    <th class="text-left">Remark</th>
+                </tr>
+            </thead>
+            <tbody id="fclChargeBody"></tbody>
+        </table>
+
+        <!-- Local Charges (LCL) — AFQDETAIL EXPTYPE=2 -->
+        <table class="charge-table">
+            <thead>
+                <tr>
+                    <th class="text-left">LOCAL CHARGES (LCL)</th>
+                    <th>Curr</th>
+                    <th>Unit</th>
+                    <th class="text-right">Price</th>
+                    <th class="text-left">Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="lclBody"></tbody>
+        </table>
+
+        <!-- Customs Clearance Charges — AFQDETAIL EXPTYPE=3 -->
+        <table class="charge-table" id="shippingTableBlock">
+            <thead>
+                <tr>
+                    <th class="text-left">CUSTOMS CLEARANCE CHARGES</th>
+                    <th>Curr</th>
+                    <th>Unit</th>
+                    <th class="text-right">Price</th>
+                    <th class="text-left">Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="shippingBody"></tbody>
+        </table>
+
+        <!-- Transportation Charges — AFQDETAIL EXPTYPE=4 -->
+        <table class="charge-table" id="transportTableBlock">
+            <thead>
+                <tr>
+                    <th class="text-left">TRANSPORTATION CHARGES</th>
+                    <th>Curr</th>
+                    <th>Unit</th>
+                    <th class="text-right">Price</th>
+                    <th class="text-left">Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="transportBody"></tbody>
+        </table>
+
+        <!-- Remarks -->
+        <div class="remarks">
+            <p class="remark-label">REMARK :</p>
+            <pre id="remark1"></pre>
+            <pre id="remark2"></pre>
+            <pre id="remark3"></pre>
+            <pre id="remark4"></pre>
+        </div>
+
+        <!-- Footer signature -->
+        <div class="signature">
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Quoted by</div>
+                <div class="sig-name" id="sigSale">—</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Approved by</div>
+                <div class="sig-name" id="sigApp">—</div>
+            </div>
+            <div class="sig-block">
+                <div class="sig-line"></div>
+                <div class="sig-label">Customer Acceptance</div>
+                <div class="sig-name">&nbsp;</div>
+            </div>
+        </div>
+
+        <!-- Page footer (status watermark) -->
+        <div class="status-watermark" id="statusWatermark"></div>
+
+    </div>
+
+    <script type="module" src="src/print/main.js"></script>
+</body>
+</html>

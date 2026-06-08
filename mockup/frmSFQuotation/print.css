@@ -1,0 +1,288 @@
+/* ===== Sea Freight Quotation — Print layout (matches image #4) ===== */
+
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    background: #e2e8f0;
+    font-family: 'Roboto', 'Inter', system-ui, sans-serif;
+    font-size: 11pt;
+    color: #1e293b;
+}
+
+/* Floating action bar */
+.actionbar {
+    position: sticky;
+    top: 0;
+    background: rgba(15, 23, 42, .95);
+    color: #fff;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+.actionbar .btn-primary,
+.actionbar .btn-secondary {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: opacity .15s;
+}
+.actionbar .btn-primary { background: #7c3aed; color: #fff; }
+.actionbar .btn-primary:hover { background: #6d28d9; }
+.actionbar .btn-secondary { background: #475569; color: #fff; }
+.actionbar .btn-secondary:hover { background: #334155; }
+.actionbar .ml-auto { margin-left: auto; }
+.actionbar .text-xs { font-size: 11px; }
+.actionbar .text-slate-500 { color: #cbd5e1; }
+
+/* A4 sheet */
+.paper {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 16px auto;
+    padding: 18mm 16mm 22mm;
+    background: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+    position: relative;
+}
+
+/* Letterhead */
+.letterhead {
+    display: grid;
+    grid-template-columns: 130px 1fr 100px;
+    gap: 12px;
+    align-items: start;
+    border-bottom: 1.5px solid #1e293b;
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+}
+.letterhead-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.logo-mark {
+    background: #1e40af;
+    color: #fff;
+    font-weight: 800;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 16pt;
+    letter-spacing: .05em;
+    line-height: 1;
+    font-family: 'Roboto', sans-serif;
+}
+.logo-globe { font-size: 22pt; line-height: 1; color: #2563eb; }
+.logo-name {
+    font-size: 7pt;
+    font-weight: 700;
+    color: #1e40af;
+    letter-spacing: .03em;
+    width: 100%;
+    margin-top: -2px;
+}
+.letterhead-info { font-size: 9pt; line-height: 1.3; }
+.company-name {
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 2px;
+    letter-spacing: .01em;
+}
+.company-address { font-size: 9pt; color: #1e293b; line-height: 1.35; }
+.company-tel { font-size: 9pt; margin-top: 2px; }
+.letterhead-cert {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+}
+.cert-stamp {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    padding: 3px 6px;
+    font-size: 6.5pt;
+    font-weight: 700;
+    text-align: center;
+    color: #475569;
+    border-radius: 2px;
+    line-height: 1.1;
+}
+.cert-stamp small { display: block; font-size: 5.5pt; font-weight: 500; margin-top: 1px; }
+
+/* Document title */
+.doc-title {
+    text-align: center;
+    font-size: 16pt;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: .04em;
+    margin: 14px 0 14px;
+    text-transform: uppercase;
+}
+
+/* Info block (TO/ATTN/REF.NO etc.) */
+.info-block {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+    font-size: 10pt;
+}
+.info-block .label-cell {
+    width: 14%;
+    font-weight: 700;
+    padding: 2px 8px 2px 0;
+    vertical-align: top;
+    color: #1e293b;
+}
+.info-block .label-cell::after { content: ':'; margin-left: 2px; }
+.info-block .value-cell {
+    width: 36%;
+    padding: 2px 12px 2px 0;
+    vertical-align: top;
+}
+
+/* Opening sentence */
+.opening {
+    margin: 8px 0 12px;
+    font-size: 10pt;
+    line-height: 1.5;
+}
+
+/* Section title */
+.section-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 12px 0 4px;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+
+/* Rate table (Ocean Freight Charge) */
+.rate-table, .charge-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+    font-size: 9.5pt;
+}
+.rate-table th, .rate-table td,
+.charge-table th, .charge-table td {
+    border: 1px solid #1e293b;
+    padding: 4px 6px;
+    vertical-align: middle;
+}
+.rate-table thead th {
+    background: #f1f5f9;
+    font-weight: 700;
+    text-align: center;
+    color: #1e293b;
+    font-size: 9pt;
+}
+.rate-table tbody td { text-align: center; }
+.rate-table tbody td.text-left { text-align: left; }
+.rate-table tbody tr:nth-child(even) { background: #fafafa; }
+
+/* Charge table (Local Charges) */
+.charge-table thead th {
+    background: #f1f5f9;
+    font-weight: 700;
+    text-align: center;
+    color: #1e293b;
+    font-size: 9pt;
+}
+.charge-table th.text-left, .charge-table td.text-left { text-align: left; }
+.charge-table th.text-right, .charge-table td.text-right { text-align: right; }
+.charge-table tbody td { text-align: center; }
+.charge-table tbody td.charge-desc { text-align: left; }
+.charge-table tbody td.charge-remark { text-align: left; }
+
+/* FCL divider — sub-header inside LOCAL CHARGES (FCL) that repeats the column
+   labels, per legacy Crystal report layout (e.g. "ThailAND...." in the example). */
+.charge-table tbody tr.fcl-divider td {
+    background: #f8fafc;
+    font-weight: 700;
+}
+.charge-table tbody tr.fcl-divider td.divider-label {
+    font-style: italic;
+    color: #1e40af;
+}
+
+/* Ocean Freight Charge — narrow inner columns since we now show 12 cols */
+.rate-table th, .rate-table td { font-size: 8.5pt; padding: 3px 4px; }
+.rate-table .ttdays-cell { white-space: nowrap; }
+
+/* Remarks */
+.remarks {
+    margin-top: 14px;
+    font-size: 9.5pt;
+    line-height: 1.4;
+}
+.remark-label { font-weight: 700; margin: 0 0 4px; }
+.remarks pre {
+    margin: 0 0 8px;
+    font-family: inherit;
+    font-size: inherit;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+/* Signature blocks */
+.signature {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-top: 36px;
+    padding-top: 16px;
+}
+.sig-block { text-align: center; font-size: 9pt; }
+.sig-line {
+    border-top: 1px dashed #475569;
+    margin-bottom: 4px;
+    height: 36px;
+}
+.sig-label { color: #64748b; font-size: 8.5pt; }
+.sig-name { font-weight: 600; margin-top: 2px; }
+
+/* Status watermark */
+.status-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    font-size: 80pt;
+    font-weight: 800;
+    letter-spacing: .1em;
+    color: rgba(220, 38, 38, .08);
+    pointer-events: none;
+    user-select: none;
+    text-transform: uppercase;
+    z-index: 0;
+    white-space: nowrap;
+}
+.status-watermark.is-approved { color: rgba(30, 64, 175, .08); }
+.status-watermark.is-deleted  { color: rgba(220, 38, 38, .12); }
+.status-watermark.is-open     { display: none; }
+
+/* Print rules */
+@media print {
+    body { background: #fff; }
+    .no-print { display: none !important; }
+    .paper {
+        width: auto;
+        min-height: auto;
+        margin: 0;
+        padding: 12mm 14mm 14mm;
+        box-shadow: none;
+    }
+    @page {
+        size: A4;
+        margin: 0;
+    }
+}

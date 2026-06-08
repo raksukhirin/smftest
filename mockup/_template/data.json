@@ -1,0 +1,55 @@
+{
+    "_note": "TODO: อธิบาย shape สั้น ๆ + reference ไป frm + DB tables",
+
+    "masters": {
+        "_comment": "TODO: เพิ่ม master data lookups (salesPeople / customers / agents / ...)",
+        "salesPeople": [
+            { "SaleNo": "S01", "SaleName": "Sample Sale 1" },
+            { "SaleNo": "S02", "SaleName": "Sample Sale 2" }
+        ],
+        "customers": [
+            {
+                "CustNo": "100001",
+                "CustName": "Sample Customer Co., Ltd.",
+                "Address": "123 Sample Rd., Bangkok 10110",
+                "Contact": "K.Sample",
+                "Tel": "02-000-0000",
+                "Fax": "",
+                "Email": "sample@example.com",
+                "CrTerm": 30
+            }
+        ]
+    },
+
+    "docs": [
+        {
+            "DocNo": "DOC0001",
+            "DocDate": "2026-01-15",
+            "DocStat": "Open",
+            "lock": 1736899200000,
+
+            "_comment": "TODO: เพิ่ม field ตาม schema ของ form",
+
+            "details": [
+                {
+                    "DETID": "row-sample-001",
+                    "Description": "Sample item 1",
+                    "Qty": 2,
+                    "Price": 100
+                }
+            ],
+
+            "EditBy": "ADMIN",
+            "EditDate": "2026-01-15 10:00:00"
+        },
+        {
+            "DocNo": "DOC0002",
+            "DocDate": "2026-01-16",
+            "DocStat": "Approved",
+            "lock": 1736985600000,
+            "details": [],
+            "EditBy": "ADMIN",
+            "EditDate": "2026-01-16 11:30:00"
+        }
+    ]
+}
