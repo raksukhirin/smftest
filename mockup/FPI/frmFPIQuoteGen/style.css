@@ -1,0 +1,172 @@
+/* FPI Quotation Generator — theme accent: Teal
+   (frmSFQuotation=Violet, frmSFSeaRate=Sky, frmARInvoice=Rose, frmSFJob_IM=Emerald) */
+
+* { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+body { font-size: 13px; }
+
+/* ---------- shells ---------- */
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    overflow: hidden;
+}
+.card-hd {
+    padding: .5rem .75rem;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #334155;
+}
+
+/* ---------- form controls ---------- */
+.lbl {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: .2rem;
+}
+.hint { font-size: 10px; color: #94a3b8; margin-top: .15rem; }
+
+.inp {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: .375rem;
+    padding: .3rem .5rem;
+    font-size: 12px;
+    background: #fff;
+    color: #1e293b;
+}
+.inp:focus {
+    outline: none;
+    border-color: #0f766e;
+    box-shadow: 0 0 0 2px rgb(15 118 110 / .15);
+}
+.inp:disabled { background: #f1f5f9; color: #94a3b8; }
+
+/* inline editable cell inside the charge grid */
+.cell-inp {
+    width: 100%;
+    text-align: right;
+    border: 1px solid transparent;
+    border-radius: .25rem;
+    padding: .1rem .3rem;
+    font-size: 12px;
+    background: transparent;
+    font-variant-numeric: tabular-nums;
+}
+.cell-inp:hover { border-color: #cbd5e1; background: #fff; }
+.cell-inp:focus { outline: none; border-color: #0f766e; background: #fff; box-shadow: 0 0 0 2px rgb(15 118 110 / .15); }
+
+/* ---------- buttons ---------- */
+.btn-primary {
+    background: #0f766e; color: #fff; font-weight: 600;
+    padding: .4rem .75rem; border-radius: .375rem; font-size: 12px;
+}
+.btn-primary:hover { background: #115e59; }
+.btn-secondary {
+    background: #fff; color: #0f766e; border: 1px solid #0f766e; font-weight: 600;
+    padding: .35rem .7rem; border-radius: .375rem; font-size: 12px;
+}
+.btn-secondary:hover { background: #f0fdfa; }
+.btn-ghost {
+    background: #fff; color: #475569; border: 1px solid #cbd5e1;
+    padding: .3rem .6rem; border-radius: .375rem;
+}
+.btn-ghost:hover { background: #f8fafc; }
+
+/* ---------- pills ---------- */
+.pill {
+    display: inline-flex; align-items: center; gap: .2rem;
+    padding: .05rem .4rem; border-radius: 9999px;
+    font-size: 10px; font-weight: 600; line-height: 1.4;
+    white-space: nowrap;
+}
+.pill-markup   { background: #ecfdf5; color: #047857; }   /* MARKUP  */
+.pill-std      { background: #eff6ff; color: #1d4ed8; }   /* STD_SELL */
+.pill-pass     { background: #f1f5f9; color: #475569; }   /* PASS    */
+.pill-rebate   { background: #fffbeb; color: #b45309; }
+.pill-override { background: #fdf2f8; color: #be185d; }
+.pill-warn     { background: #fef3c7; color: #92400e; }
+.pill-danger   { background: #fee2e2; color: #b91c1c; }
+.pill-ok       { background: #d1fae5; color: #065f46; }
+.pill-info     { background: #e0f2fe; color: #075985; }
+.pill-teal     { background: #ccfbf1; color: #115e59; }
+.pill-muted    { background: #f1f5f9; color: #64748b; }
+
+/* GBB badges */
+.gbb-best   { background: #065f46; color: #fff; }
+.gbb-better { background: #0369a1; color: #fff; }
+.gbb-good   { background: #7c2d12; color: #fff; }
+
+/* ---------- lane option cards ---------- */
+.opt {
+    border: 1px solid #e2e8f0;
+    border-radius: .5rem;
+    padding: .625rem .75rem;
+    cursor: pointer;
+    background: #fff;
+    transition: border-color .12s, box-shadow .12s;
+}
+.opt:hover { border-color: #99f6e4; }
+.opt.sel {
+    border-color: #0f766e;
+    box-shadow: 0 0 0 2px rgb(15 118 110 / .18);
+    background: #f0fdfa;
+}
+.opt.inactive { background: #f8fafc; opacity: .78; }
+.opt.inactive:hover { opacity: 1; }
+
+/* rank stripe */
+.rank1 { border-left: 3px solid #0f766e; }
+.rank2 { border-left: 3px solid #0284c7; }
+.rank3 { border-left: 3px solid #94a3b8; }
+.rank4 { border-left: 3px solid #d97706; }
+.rank5 { border-left: 3px dashed #d97706; }
+
+/* ---------- charge grid ---------- */
+#chargeTable tbody tr { border-bottom: 1px solid #f1f5f9; }
+#chargeTable tbody tr:hover { background: #f8fafc; }
+#chargeTable td { padding: .3rem .5rem .3rem 0; vertical-align: middle; }
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+
+.src-link {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 10px;
+    color: #0f766e;
+    text-decoration: underline dotted;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.src-link:hover { color: #115e59; text-decoration: underline; }
+
+/* take-lower working row */
+.work-row td { background: #f8fafc; font-size: 10px; color: #64748b; padding: .25rem .5rem .4rem 1.5rem; }
+.work-row .win { color: #047857; font-weight: 600; }
+.work-row .lose { color: #94a3b8; text-decoration: line-through; }
+
+/* ---------- alerts ---------- */
+.alert {
+    border-radius: .375rem;
+    padding: .5rem .625rem;
+    font-size: 11px;
+    line-height: 1.5;
+    border: 1px solid;
+    display: flex;
+    gap: .4rem;
+}
+.alert-danger { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.alert-warn   { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.alert-info   { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
+
+/* ---------- misc ---------- */
+kbd {
+    font-family: ui-monospace, monospace; font-size: 10px;
+    background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 3px;
+    padding: 0 .2rem;
+}
+.tabular { font-variant-numeric: tabular-nums; }

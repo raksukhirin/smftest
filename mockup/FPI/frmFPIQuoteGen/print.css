@@ -1,0 +1,46 @@
+/* print.css — customer-facing quotation. Sell prices only. */
+@page { size: A4; margin: 16mm 14mm; }
+
+* { box-sizing: border-box; }
+body {
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-size: 11px; color: #1e293b; margin: 0;
+}
+
+header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    border-bottom: 2px solid #0f766e; padding-bottom: 6px; margin-bottom: 10px;
+}
+.brand { font-size: 15px; font-weight: 700; color: #0f766e; }
+.doc { font-size: 15px; font-weight: 700; letter-spacing: .08em; }
+.draft {
+    font-size: 9px; letter-spacing: .1em; background: #fee2e2; color: #b91c1c;
+    padding: 1px 5px; border-radius: 3px; vertical-align: middle;
+}
+
+table.hdr { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+table.hdr td { padding: 2px 8px 2px 0; width: 33.3%; vertical-align: top; }
+table.hdr span {
+    display: block; font-size: 8px; text-transform: uppercase;
+    letter-spacing: .06em; color: #94a3b8;
+}
+
+.opt { margin-bottom: 16px; page-break-inside: avoid; }
+.opt h3 { font-size: 12px; margin: 0 0 2px; color: #0f766e; }
+.opt .meta { font-size: 9.5px; color: #64748b; margin-bottom: 5px; }
+
+.opt table { width: 100%; border-collapse: collapse; }
+.opt th {
+    text-align: left; font-size: 8.5px; text-transform: uppercase; letter-spacing: .05em;
+    color: #64748b; border-bottom: 1px solid #cbd5e1; padding: 3px 4px;
+}
+.opt td { padding: 3px 4px; border-bottom: 1px solid #f1f5f9; }
+.opt tfoot td { border-top: 1px solid #cbd5e1; border-bottom: none; padding-top: 5px; }
+.r { text-align: right; font-variant-numeric: tabular-nums; }
+.sm { font-size: 9px; color: #64748b; }
+
+footer { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 6px; }
+footer p { font-size: 9px; color: #64748b; margin: 2px 0; }
+footer .tiny { font-size: 8px; color: #cbd5e1; margin-top: 6px; }
+
+@media print { .draft { display: none; } }

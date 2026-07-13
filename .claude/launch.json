@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sf-sched-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8753", "--directory", "mockup/frmSFSched"],
+      "port": 8753
+    },
+    {
+      "name": "vsl-sched-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8754", "--directory", "mockup/frmSFVSLSched"],
+      "port": 8754
+    },
+    {
+      "name": "ar-invoice-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8755", "--directory", "mockup/frmARInvoice"],
+      "port": 8755
+    },
+    {
+      "name": "sfjob-ex-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8756", "--directory", "mockup/frmSFJob_EX"],
+      "port": 8756
+    },
+    {
+      "name": "sfquotation-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8757", "--directory", "mockup/frmSFQuotation"],
+      "port": 8757
+    },
+    {
+      "name": "fpi-quotegen-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8758", "--directory", "mockup/FPI"],
+      "port": 8758
+    }
+  ]
+}

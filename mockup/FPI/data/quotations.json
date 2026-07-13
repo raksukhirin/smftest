@@ -1,0 +1,127 @@
+[
+  {
+    "docNo": "QSE26080001",
+    "revNo": 0,
+    "docDate": "2026-07-05",
+    "customerNo": "C-BRAVO",
+    "custName": "Bravo Foods Trading",
+    "incoterm": "FOB",
+    "validFrom": "2026-07-05",
+    "validTo": "2026-09-30",
+    "docStat": "Approved",
+    "saleName": "SALES02",
+    "options": [
+      {
+        "optionNo": 1,
+        "rateId": "R-0001",
+        "pol": "THLCH",
+        "pod": "DEHAM",
+        "carrierName": "Hapag-Lloyd",
+        "transitDays": "28-32",
+        "lines": [
+          {
+            "seqNo": 1,
+            "expCode": "FRT40H",
+            "desc": "Ocean Freight 40HQ",
+            "currency": "USD",
+            "sellUnitPrice": 1792.0,
+            "rateRef": {
+              "rateChargeId": "RC-R-0001-03",
+              "costRefAmount": 1600,
+              "costRefCurrency": "USD",
+              "costRefFxToTHB": 36.5
+            }
+          },
+          {
+            "seqNo": 2,
+            "expCode": "FUEL",
+            "desc": "LSS",
+            "currency": "USD",
+            "sellUnitPrice": 100.8,
+            "rateRef": {
+              "rateChargeId": "RC-R-0001-04",
+              "costRefAmount": 90,
+              "costRefCurrency": "USD",
+              "costRefFxToTHB": 36.5
+            }
+          },
+          {
+            "seqNo": 3,
+            "expCode": "THC4",
+            "desc": "THC Origin 40'",
+            "currency": "THB",
+            "sellUnitPrice": 4700,
+            "rateRef": {
+              "rateChargeId": "RC-R-0001-07",
+              "costRefAmount": 4700,
+              "costRefCurrency": "THB",
+              "costRefFxToTHB": 1
+            }
+          },
+          {
+            "seqNo": 4,
+            "expCode": "BLFEE",
+            "desc": "B/L Fee",
+            "currency": "THB",
+            "sellUnitPrice": 1500,
+            "rateRef": {
+              "tariffId": "LT-0002",
+              "costRefAmount": 1200,
+              "costRefCurrency": "THB",
+              "costRefFxToTHB": 1
+            }
+          },
+          {
+            "seqNo": 5,
+            "expCode": "SEAL",
+            "desc": "Seal Fee",
+            "currency": "THB",
+            "sellUnitPrice": 300,
+            "rateRef": {
+              "rateChargeId": "RC-R-0001-09",
+              "costRefAmount": 300,
+              "costRefCurrency": "THB",
+              "costRefFxToTHB": 1
+            }
+          }
+        ]
+      },
+      {
+        "optionNo": 2,
+        "rateId": "R-0002",
+        "pol": "THLCH",
+        "pod": "NLRTM",
+        "carrierName": "ONE",
+        "transitDays": "26-30",
+        "lines": [
+          {
+            "seqNo": 1,
+            "expCode": "FRT40H",
+            "desc": "Ocean Freight 40HQ",
+            "currency": "USD",
+            "sellUnitPrice": 1725.0,
+            "rateRef": {
+              "rateChargeId": "RC-R-0002-01",
+              "costRefAmount": 1540,
+              "costRefCurrency": "USD",
+              "costRefFxToTHB": 36.5
+            }
+          },
+          {
+            "seqNo": 2,
+            "expCode": "THC4",
+            "desc": "THC Origin 40'",
+            "currency": "THB",
+            "sellUnitPrice": 4700,
+            "rateRef": {
+              "rateChargeId": "RC-R-0002-02",
+              "costRefAmount": 4700,
+              "costRefCurrency": "THB",
+              "costRefFxToTHB": 1
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

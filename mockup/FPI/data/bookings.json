@@ -1,0 +1,352 @@
+[
+  {
+    "docNo": "BSE26070010",
+    "docDate": "2026-07-10",
+    "refQtNo": "QSE26080001",
+    "quoteRevNo": 0,
+    "docCurr": "USD",
+    "docRate": 36.5,
+    "jobClass": "EX",
+    "loadPort": "THLCH",
+    "finalPort": "DEHAM",
+    "shipper": "C-BRAVO",
+    "expectedScenario": "PASS",
+    "note": "จองครั้งที่ 1 — Rate R-0001 ยัง Active, Margin ~9.95-10.4% (แล้วแต่ส่วนลด) ผ่านเกณฑ์ Tier B 8%",
+    "lines": [
+      {
+        "seqNo": 1,
+        "transType": "Bill",
+        "expCode": "FRT40H",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 1792.0
+      },
+      {
+        "seqNo": 2,
+        "transType": "Bill",
+        "expCode": "FUEL",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 100.8
+      },
+      {
+        "seqNo": 3,
+        "transType": "Bill",
+        "expCode": "THC4",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 4700
+      },
+      {
+        "seqNo": 4,
+        "transType": "Bill",
+        "expCode": "BLFEE",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 1,
+        "unitPrice": 1500
+      },
+      {
+        "seqNo": 5,
+        "transType": "Bill",
+        "expCode": "SEAL",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 300
+      },
+      {
+        "seqNo": 6,
+        "transType": "Cost",
+        "expCode": "FRT40H",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 1600.0,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0001-03",
+          "snapAmount": 1600,
+          "snapCurrency": "USD",
+          "snapFxToTHB": 36.5,
+          "quoteDeltaTHB": 0
+        }
+      },
+      {
+        "seqNo": 7,
+        "transType": "Cost",
+        "expCode": "FUEL",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 90.0,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0001-04",
+          "snapAmount": 90,
+          "snapCurrency": "USD",
+          "snapFxToTHB": 36.5,
+          "quoteDeltaTHB": 0
+        }
+      },
+      {
+        "seqNo": 8,
+        "transType": "Cost",
+        "expCode": "THC4",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 4700,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0001-07",
+          "snapAmount": 4700,
+          "snapCurrency": "THB",
+          "snapFxToTHB": 1,
+          "quoteDeltaTHB": 0
+        }
+      },
+      {
+        "seqNo": 9,
+        "transType": "Cost",
+        "expCode": "BLFEE",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 1,
+        "unitPrice": 1200,
+        "bookingRateRef": {
+          "tariffId": "LT-0002",
+          "snapAmount": 1200,
+          "snapCurrency": "THB",
+          "snapFxToTHB": 1,
+          "quoteDeltaTHB": 0
+        }
+      },
+      {
+        "seqNo": 10,
+        "transType": "Cost",
+        "expCode": "SEAL",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 300,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0001-09",
+          "snapAmount": 300,
+          "snapCurrency": "THB",
+          "snapFxToTHB": 1,
+          "quoteDeltaTHB": 0
+        }
+      }
+    ]
+  },
+  {
+    "docNo": "BSE26090004",
+    "docDate": "2026-09-12",
+    "refQtNo": "QSE26080001",
+    "quoteRevNo": 0,
+    "docCurr": "USD",
+    "docRate": 36.5,
+    "jobClass": "EX",
+    "loadPort": "THLCH",
+    "finalPort": "DEHAM",
+    "shipper": "C-BRAVO",
+    "expectedScenario": "NEED_APPROVE",
+    "note": "จองครั้งที่ 4 — R-0001 ถูก Supersede → เดิน Chain ไป R-0003 (OF +120, LSS +5) ราคาขาย Lock ตาม Quote → Margin ตกต่ำกว่าเกณฑ์ + เตือน Cost Delta",
+    "lines": [
+      {
+        "seqNo": 1,
+        "transType": "Bill",
+        "expCode": "FRT40H",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 1792.0
+      },
+      {
+        "seqNo": 2,
+        "transType": "Bill",
+        "expCode": "FUEL",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 100.8
+      },
+      {
+        "seqNo": 3,
+        "transType": "Bill",
+        "expCode": "THC4",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 4700
+      },
+      {
+        "seqNo": 4,
+        "transType": "Bill",
+        "expCode": "BLFEE",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 1,
+        "unitPrice": 1500
+      },
+      {
+        "seqNo": 5,
+        "transType": "Bill",
+        "expCode": "SEAL",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 300
+      },
+      {
+        "seqNo": 6,
+        "transType": "Cost",
+        "expCode": "FRT40H",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 1720.0,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0003-01",
+          "snapAmount": 1720,
+          "snapCurrency": "USD",
+          "snapFxToTHB": 36.5,
+          "quoteDeltaTHB": 8760.0,
+          "supersededChain": [
+            "R-0001",
+            "R-0003"
+          ]
+        }
+      },
+      {
+        "seqNo": 7,
+        "transType": "Cost",
+        "expCode": "FUEL",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 2,
+        "unitPrice": 95.0,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0003-02",
+          "snapAmount": 95,
+          "snapCurrency": "USD",
+          "snapFxToTHB": 36.5,
+          "quoteDeltaTHB": 365.0,
+          "supersededChain": [
+            "R-0001",
+            "R-0003"
+          ]
+        }
+      },
+      {
+        "seqNo": 8,
+        "transType": "Cost",
+        "expCode": "THC4",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 4700,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0003-03",
+          "snapAmount": 4700,
+          "snapCurrency": "THB",
+          "snapFxToTHB": 1,
+          "quoteDeltaTHB": 0
+        }
+      },
+      {
+        "seqNo": 9,
+        "transType": "Cost",
+        "expCode": "BLFEE",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 1,
+        "unitPrice": 1200,
+        "bookingRateRef": {
+          "tariffId": "LT-0002",
+          "snapAmount": 1200,
+          "snapCurrency": "THB",
+          "snapFxToTHB": 1,
+          "quoteDeltaTHB": 0
+        }
+      },
+      {
+        "seqNo": 10,
+        "transType": "Cost",
+        "expCode": "SEAL",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 2,
+        "unitPrice": 300,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0001-09",
+          "snapAmount": 300,
+          "snapCurrency": "THB",
+          "snapFxToTHB": 1,
+          "quoteDeltaTHB": 0
+        }
+      }
+    ]
+  },
+  {
+    "docNo": "BSE26070015",
+    "docDate": "2026-07-18",
+    "refQtNo": null,
+    "quoteRevNo": null,
+    "docCurr": "USD",
+    "docRate": 36.5,
+    "jobClass": "EX",
+    "loadPort": "THLCH",
+    "finalPort": "NLRTM",
+    "shipper": "C-NOVA",
+    "expectedScenario": "BLOCKED",
+    "note": "มีบรรทัดต่างสกุลที่ ItemRate = 0 (BadFx) — ระบบเดิมเงินหายเงียบ / FPI = BLOCKED จนกว่าจะแก้",
+    "lines": [
+      {
+        "seqNo": 1,
+        "transType": "Bill",
+        "expCode": "FRT40H",
+        "itemCurr": "USD",
+        "itemRate": 36.5,
+        "qty": 1,
+        "unitPrice": 1725.0
+      },
+      {
+        "seqNo": 2,
+        "transType": "Bill",
+        "expCode": "THC4",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 1,
+        "unitPrice": 4700
+      },
+      {
+        "seqNo": 3,
+        "transType": "Cost",
+        "expCode": "FRT40H",
+        "itemCurr": "USD",
+        "itemRate": 0,
+        "qty": 1,
+        "unitPrice": 1540.0,
+        "manualReason": "ทดสอบเคส BadFx — ItemRate = 0"
+      },
+      {
+        "seqNo": 4,
+        "transType": "Cost",
+        "expCode": "THC4",
+        "itemCurr": "THB",
+        "itemRate": 1,
+        "qty": 1,
+        "unitPrice": 4700,
+        "bookingRateRef": {
+          "rateChargeId": "RC-R-0002-02",
+          "snapAmount": 4700,
+          "snapCurrency": "THB",
+          "snapFxToTHB": 1,
+          "quoteDeltaTHB": 0
+        }
+      }
+    ]
+  }
+]
