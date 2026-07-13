@@ -327,6 +327,29 @@ window.QG.engine = (function () {
         };
     }
 
+    /** Build one optional local-charge add-on line, reusing makeLine so the line
+        contract (badFx rule, isRebate/costOnly, THB totals) lives in exactly one place. */
+    function buildAddonLine(t, rate, shipment, rule) {
+        const pol = QG.state.policy(t.subSysName, t.jobClass, t.expCode);
+        const qty = qtyFor(t.basis, t.containerType, shipment);
+        const fxRate = t.currencyCode === 'THB' ? 1 : (shipment.fx[t.currencyCode] || 0);
+        const sell = sellUnitFor(pol, t.amount, t, rule);
+        const rc = {
+            rateChargeId: t.tariffId, seqNo: 99,
+            subSysName: t.subSysName, jobClass: t.jobClass, expCode: t.expCode,
+            chargeName: t.chargeName,
+            category: t.side || 'OTHER',        // tariff has no category column; side is the honest label
+            basis: t.basis, containerType: t.containerType
+        };
+        const line = makeLine(rc, pol, {
+            qty, costUnit: t.amount, currency: t.currencyCode, fxRate, sell,
+            source: { kind: 'TARIFF', tariffId: t.tariffId, ref: t.sourceRef, remark: t.remark,
+                      validFrom: t.validFrom, validTo: t.validTo }
+        });
+        line.isAddon = true;
+        return line;
+    }
+
     /** Re-derive THB totals after an inline sell-price override. */
     function applyOverride(line, sellUnit, reason) {
         line.sellUnit = sellUnit;
@@ -531,6 +554,6 @@ window.QG.engine = (function () {
         rankOf, inactiveReason, resolveChain,
         qtyFor, chargeableWeight, totalContainers,
         findTariff, resolveCost, sellUnitFor, takeLower,
-        priceOption, applyOverride, margin, tagGBB, buildLane, buildHistoryOption
+        priceOption, applyOverride, margin, tagGBB, buildLane, buildHistoryOption, buildAddonLine
     };
 })();

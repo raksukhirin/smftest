@@ -39,6 +39,12 @@ table.hdr span {
 .r { text-align: right; font-variant-numeric: tabular-nums; }
 .sm { font-size: 9px; color: #64748b; }
 
+.invalid {
+    background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c;
+    font-size: 9.5px; padding: 4px 8px; border-radius: 4px; margin-bottom: 5px;
+}
+.bad { color: #b91c1c; font-weight: 700; }
+
 footer { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 6px; }
 footer p { font-size: 9px; color: #64748b; margin: 2px 0; }
 footer .tiny { font-size: 8px; color: #cbd5e1; margin-top: 6px; }

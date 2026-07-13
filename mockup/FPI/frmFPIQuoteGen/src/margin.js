@@ -113,14 +113,30 @@ window.QG.margin = (function () {
         return lines;
     }
 
+    /** Which selected options across all lanes are Tier-2 history, and do any of their
+        lines lack a cost pair (which inflates the aggregate margin toward 100%)? */
+    function historyState() {
+        let any = false, missingCost = 0;
+        state.lanes.forEach(lane => {
+            const opt = lane.candidates.find(o => o.rateId === lane.selectedRateId);
+            if (opt && opt.historyOption) {
+                any = true;
+                missingCost += opt.lines.filter(l => l.historyBased && !l.costTHB).length;
+            }
+        });
+        return { any, missingCost };
+    }
+
     function render(rule) {
         const lines = quoteTotals();
         const m = QG.engine.margin(lines, rule);
+        const hist = historyState();
 
         // Under BadFx the foreign-currency lines contribute 0 THB — the totals are not just
         // "low", they are wrong. Show them struck through rather than letting a plausible
-        // number stand in for money the old system silently dropped.
-        const unreliable = m.badFxLines > 0;
+        // number stand in for money the old system silently dropped. A history-based quote is
+        // likewise not a confirmed figure (and inflates when a line has no cost pair).
+        const unreliable = m.badFxLines > 0 || hist.any;
         [['#mSold', m.sold], ['#mCost', m.cost], ['#mKb', m.kb], ['#mMargin', m.margin]].forEach(([sel, v]) => {
             const n = $(sel);
             n.textContent = money(v, 2);
@@ -128,10 +144,12 @@ window.QG.margin = (function () {
         });
 
         const pctEl = $('#mPct');
-        // never print a Margin% next to BLOCKED — it reads as a real figure
+        // never print a Margin% next to BLOCKED, and never show a green PASS for an indicative
+        // history quote — both read as real, confirmed figures
         pctEl.textContent = (m.verdict === 'BLOCKED' || m.pct == null) ? '—' : money(m.pct, 2) + '%';
         pctEl.className = 'px-2 py-0.5 rounded-full font-semibold tabular-nums ' +
-            (m.verdict === 'PASS' ? 'bg-emerald-100 text-emerald-800'
+            (hist.any ? 'bg-amber-100 text-amber-800'
+             : m.verdict === 'PASS' ? 'bg-emerald-100 text-emerald-800'
              : m.verdict === 'BELOW' ? 'bg-amber-100 text-amber-800'
              : 'bg-rose-100 text-rose-800');
 
@@ -140,9 +158,15 @@ window.QG.margin = (function () {
             (rule._overriddenBy ? ' <span class="pill pill-override">override</span>' : '') +
             (rule._outOfValidity ? ' <span class="pill pill-danger">นอก Validity</span>' : '');
 
-        const v = VERDICT[m.verdict];
-        $('#mVerdict').innerHTML = '<span class="pill ' + v.cls + '">' + v.text + '</span>' +
-            ' <span class="text-slate-400 text-[11px] ml-1">' + esc(m.why) + '</span>';
+        if (hist.any) {
+            $('#mVerdict').innerHTML = '<span class="pill pill-warn">◆ อิงประวัติ (Indicative) — ไม่ใช่ PASS ที่ยืนยัน</span>' +
+                ' <span class="text-slate-400 text-[11px] ml-1">Tier 2 · เคาะจริงตอน Confirm Booking (D1)' +
+                (hist.missingCost ? ' · ' + hist.missingCost + ' บรรทัดไม่มีคู่ต้นทุน → Margin สูงเกินจริง' : '') + '</span>';
+        } else {
+            const v = VERDICT[m.verdict];
+            $('#mVerdict').innerHTML = '<span class="pill ' + v.cls + '">' + v.text + '</span>' +
+                ' <span class="text-slate-400 text-[11px] ml-1">' + esc(m.why) + '</span>';
+        }
 
         return m;
     }

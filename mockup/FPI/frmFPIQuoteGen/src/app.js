@@ -82,15 +82,19 @@ window.QG.app = (function () {
         lane.candidates.forEach(opt => {
             opt._rule = _rule;
 
-            // 1. optional local-charge add-ons (tariff lines the rate sheet does not carry)
-            Object.keys(state.addons).forEach(key => {
-                if (!state.addons[key]) return;
-                const parts = key.split('|');
-                if (parts[0] !== lane.pod) return;
-                const t = QG.state.db.localChargeTariff.find(x => x.tariffId === parts[1]);
-                if (!t || opt.lines.some(l => l.expCode === t.expCode)) return;
-                opt.lines.push(addonLine(t, opt.rate));
-            });
+            // 1. optional local-charge add-ons (tariff lines the rate sheet does not carry).
+            //    Never inject a confirmed-cost tariff line into a Tier-2 history option — that
+            //    would violate D11 (the indicative quote must stay history-only).
+            if (!opt.historyOption) {
+                Object.keys(state.addons).forEach(key => {
+                    if (!state.addons[key]) return;
+                    const parts = key.split('|');
+                    if (parts[0] !== lane.pod) return;
+                    const t = QG.state.db.localChargeTariff.find(x => x.tariffId === parts[1]);
+                    if (!t || opt.lines.some(l => l.expCode === t.expCode)) return;
+                    opt.lines.push(QG.engine.buildAddonLine(t, opt.rate, state.shipment, _rule));
+                });
+            }
 
             // 2. inline sell overrides
             opt.lines.forEach(l => {
@@ -102,30 +106,6 @@ window.QG.app = (function () {
             opt.margin = QG.engine.margin(opt.lines, _rule);
         });
         QG.engine.tagGBB(lane.candidates);
-    }
-
-    function addonLine(t, rate) {
-        const ship = state.shipment;
-        const pol = QG.state.policy(t.subSysName, t.jobClass, t.expCode);
-        const sell = QG.engine.sellUnitFor(pol, t.amount, t, _rule);
-        const q = QG.engine.qtyFor(t.basis, t.containerType, ship);
-        const fx = t.currencyCode === 'THB' ? 1 : (ship.fx[t.currencyCode] || 0);
-        const isRebate = !!(pol && pol.isRebate);
-        return {
-            key: t.tariffId, seqNo: 99,
-            subSysName: t.subSysName, jobClass: t.jobClass, expCode: t.expCode,
-            chargeName: t.chargeName, category: 'CUSTOMS', basis: t.basis, containerType: t.containerType,
-            qty: q, costUnit: t.amount, currency: t.currencyCode, fxRate: fx,
-            costTHB: q * t.amount * fx,
-            pricingMode: pol ? pol.pricingMode : 'PASS', policyMissing: !pol,
-            sellUnit: sell.value, sellVia: sell.via,
-            sellTHB: isRebate ? 0 : q * sell.value * fx,
-            isRebate, costOnly: isRebate,
-            source: { kind: 'TARIFF', tariffId: t.tariffId, ref: t.sourceRef, remark: t.remark,
-                      validFrom: t.validFrom, validTo: t.validTo },
-            work: null, overridden: false, overrideReason: null,
-            badFx: t.currencyCode !== 'THB' && !(fx > 0)
-        };
     }
 
     /* ---------------- render ---------------- */

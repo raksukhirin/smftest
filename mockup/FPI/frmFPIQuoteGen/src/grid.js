@@ -139,7 +139,10 @@ window.QG.grid = (function () {
         const box = $('#addonBox');
         const list = $('#addonList');
         const ship = state.shipment;
-        const used = new Set(opt.lines.map(l => l.expCode));
+        // Exclude only expCodes the rate already carries — NOT ones present because they were
+        // just toggled on as an add-on, otherwise a checked add-on drops out of the list and
+        // can never be un-checked.
+        const used = new Set(opt.lines.filter(l => !l.isAddon).map(l => l.expCode));
 
         const avail = QG.state.db.localChargeTariff.filter(t =>
             t.status === 'CONFIRMED' &&

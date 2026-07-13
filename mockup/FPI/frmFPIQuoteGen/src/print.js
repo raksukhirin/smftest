@@ -83,6 +83,9 @@ window.QG.print = (function () {
             const opt = lane.candidates.find(o => o.rateId === lane.selectedRateId);
             if (!opt) return;
             const lines = opt.lines.filter(l => !l.costOnly);
+            // A line whose FX is missing contributes 0 THB — its amount and any total that
+            // includes it are wrong, not just low. Never emit a plausible-looking number for it.
+            const badFx = lines.filter(l => l.badFx);
             const total = lines.reduce((s, l) => s + l.sellTHB, 0);
 
             const meta = opt.historyOption
@@ -93,6 +96,9 @@ window.QG.print = (function () {
                   (opt.rate.freeTimeDest ? ' · Free time ' + opt.rate.freeTimeDest + ' days at destination' : '');
             body += '<section class="opt"><h3>Option ' + (i + 1) + ' — ' + esc(ship.pol) + ' → ' + esc(lane.pod) + '</h3>' +
                 '<div class="meta">' + meta + '</div>' +
+                (badFx.length ? '<div class="invalid">⚠ Incomplete — ' + badFx.length +
+                    ' charge(s) have no FX rate for their currency. Amounts and total below are not valid; ' +
+                    'this option must not be sent to the customer until the exchange rate is set.</div>' : '') +
                 '<table><thead><tr><th>#</th><th>Description</th><th>Basis</th><th class="r">Qty</th>' +
                 '<th class="r">Unit price</th><th>Cur</th><th class="r">Amount (THB)</th></tr></thead><tbody>';
             lines.forEach(l => {
@@ -101,10 +107,10 @@ window.QG.print = (function () {
                     '<td class="r">' + qty(l.qty) + '</td>' +
                     '<td class="r">' + money(l.sellUnit, 2) + '</td>' +
                     '<td>' + esc(l.currency) + '</td>' +
-                    '<td class="r">' + money(l.sellTHB, 2) + '</td></tr>';
+                    '<td class="r">' + (l.badFx ? '<span class="bad">FX?</span>' : money(l.sellTHB, 2)) + '</td></tr>';
             });
             body += '</tbody><tfoot><tr><td colspan="6" class="r">Total (THB)</td>' +
-                '<td class="r"><b>' + money(total, 2) + '</b></td></tr></tfoot></table></section>';
+                '<td class="r"><b>' + (badFx.length ? '<span class="bad">—</span>' : money(total, 2)) + '</b></td></tr></tfoot></table></section>';
         });
 
         return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">' +
