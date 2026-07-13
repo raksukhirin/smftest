@@ -17,6 +17,8 @@ UI mockups + data-mapping specs สำหรับการ port ฟอร์ม
 |---|---|---|---|
 | [`frmSFJob_IM/`](./frmSFJob_IM/) | ✅ Complete | Inbound Master Reference (SF Job — Import) | 🟢 Emerald |
 | [`frmSFQuotation/`](./frmSFQuotation/) | ✅ Complete | Sea Freight Quotation (Import + Export) — มี validation, lookup, print preview | 🟣 Violet |
+| [`frmARInvoice/`](./frmARInvoice/) | ✅ Complete | Outbound Billing Entry (A/R · SF · EX) — line-item grid, VAT/THB calc, status workflow, ทุก DocType | 🌹 Rose |
+| [`FPI/frmFPIQuoteGen/`](./FPI/frmFPIQuoteGen/) | ✅ Complete | **Freight Pricing Intelligence** — Quotation Generator: multi-lane Good/Better/Best, PricingMode engine, Air take-lower, estimated margin | 🩵 Teal |
 | [`_template/`](./_template/) | 📋 Starter | Skeleton สำหรับ copy ไปสร้าง module ใหม่ | 🔵 Indigo |
 
 > เพิ่ม module ใหม่ → ดู [**CONTRIBUTING.md**](./CONTRIBUTING.md)
@@ -82,7 +84,9 @@ Optional (เพิ่มเมื่อจำเป็น):
 | Outbound (EX) | Indigo | `bg-indigo-600` / `text-indigo-700` |
 | Inbound (IM) | Emerald | `bg-emerald-600` / `text-emerald-700` |
 | Quotation | Violet | `bg-violet-600` / `text-violet-700` |
-| HBL (TBD) | Sky | `bg-sky-600` |
+| A/R Billing | Rose | `bg-rose-600` / `text-rose-700` |
+| Sea Rate Control | Sky | `bg-sky-700` |
+| FPI Quotation Generator | Teal | `bg-teal-700` / `text-teal-700` |
 | Booking (TBD) | Amber | `bg-amber-600` |
 
 ### localStorage keys
