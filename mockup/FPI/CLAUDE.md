@@ -64,7 +64,8 @@ data/                                 ชุด JSON สำหรับ Mockup:
   rate_charges.json       51 บรรทัด ครบทุก Basis รวม REBATE และ Air Break
   local_charge_tariff.json 3 Tariff ครบ 3 PricingMode
   quotations.json         1 ใบ 2 Port (Hamburg/Rotterdam) พร้อม rateRef Traceability
-  bookings.json           3 Scenario: PASS / NEED_APPROVE (Superseded+Delta) / BLOCKED (BadFx)
+  bookings.json           7 ใบ: 3 เดิม (PASS / NEED_APPROVE Superseded+Delta / BLOCKED BadFx)
+                          + 4 เพิ่มสำหรับ Approval Inbox (STRAT override / ลูกค้าใหม่ราคาต่ำ / ขาดทุน / ดีลใหญ่ใกล้เกณฑ์)
 
 frmFPIQuoteGen/                       หน้าจอที่ 2 (Quotation Generator) — Mockup ใช้งานได้จริง
                                       Pricing Engine อยู่ที่ src/engine.js (ไม่แตะ DOM, ทดสอบใน Node ได้)
@@ -85,7 +86,7 @@ frmFPIQuoteGen/                       หน้าจอที่ 2 (Quotation G
 
 1. Rate Management — Search/Compare/Confirm + Expiry Alert
 2. ✅ Quotation Generator — [`frmFPIQuoteGen/`](./frmFPIQuoteGen/) — Engine reproduce `QSE26080001` ได้ครบทุกบรรทัด (golden test ใน README)
-3. ✅ Booking Margin Gate — [`frmFPIBookingGate/`](./frmFPIBookingGate/) — vFPI_BookProfit + FPI_EvaluateBookingMargin reproduce `bookings.json` ครบ 3 ใบ (PASS/NEED_APPROVE/BLOCKED) + Cost Auto-fill/Delta/Workflow
-4. Approval Inbox — Sold/Cost/Margin/สาเหตุ ครบในหน้าเดียว
+3. ✅ Booking Margin Gate — [`frmFPIBookingGate/`](./frmFPIBookingGate/) — vFPI_BookProfit + FPI_EvaluateBookingMargin reproduce `bookings.json` (PASS/NEED_APPROVE/BLOCKED) + Cost Auto-fill/Delta/Workflow
+4. ✅ Approval Inbox — [`frmFPIApprovalInbox/`](./frmFPIApprovalInbox/) — คิว NEED_APPROVE ฝั่ง Manager (reuse engine ของ Booking Gate), จัดกลุ่มสาเหตุ (ตลาดขึ้น/ราคาต่ำ/ขาดทุน) + Approve/Reject/Batch, แชร์ localStorage กับหน้า 3
 5. KB Dashboard — Rate ใกล้หมดอายุ, Quote Active ที่ Rate ตาย, Margin Average
 6. AI Knowledge Search — ถามภาษาธรรมชาติ ตอบพร้อมอ้างอิง RateNo/เอกสารเสมอ
