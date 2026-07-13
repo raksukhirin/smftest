@@ -60,6 +60,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8762", "--directory", "mockup/FPI"],
       "port": 8762
+    },
+    {
+      "name": "fpi-knowledgesearch-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8763", "--directory", "mockup/FPI"],
+      "port": 8763
     }
   ]
 }

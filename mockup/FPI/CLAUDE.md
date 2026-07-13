@@ -90,4 +90,7 @@ frmFPIQuoteGen/                       หน้าจอที่ 2 (Quotation G
 3. ✅ Booking Margin Gate — [`frmFPIBookingGate/`](./frmFPIBookingGate/) — vFPI_BookProfit + FPI_EvaluateBookingMargin reproduce `bookings.json` (PASS/NEED_APPROVE/BLOCKED) + Cost Auto-fill/Delta/Workflow
 4. ✅ Approval Inbox — [`frmFPIApprovalInbox/`](./frmFPIApprovalInbox/) — คิว NEED_APPROVE ฝั่ง Manager (reuse engine ของ Booking Gate), จัดกลุ่มสาเหตุ (ตลาดขึ้น/ราคาต่ำ/ขาดทุน) + Approve/Reject/Batch, แชร์ localStorage กับหน้า 3
 5. ✅ KB Dashboard — [`frmFPIKBDashboard/`](./frmFPIKBDashboard/) — reuse ทุก engine (RM.alerts + BG.profit + BG.autofill); Rate health, **Quote at Risk D2 (Rate ตาย + Δ ทุน)**, Margin average, Top lane, Win rate
-6. AI Knowledge Search — ถามภาษาธรรมชาติ ตอบพร้อมอ้างอิง RateNo/เอกสารเสมอ
+6. ✅ AI Knowledge Search — [`frmFPIKnowledgeSearch/`](./frmFPIKnowledgeSearch/) — rule-based intent matcher ตอบพร้อม citation เสมอ (Tier 1 Rate KB / Tier 2 ประวัติ D11), reuse ทุก engine, เว้น hook ต่อ LLM/MCP ที่ KB.engine.query()
+
+> **ครบทั้ง 6 หน้าจอแล้ว** — วงจร Rate(1) → Quote(2) → Booking Gate(3) → Approve(4) + Dashboard(5) + AI Search(6)
+> Engine เขียนครั้งเดียว reuse ข้ามหน้า: RM.alerts (Rate Mgmt) · BG.profit/autofill (Booking Gate) · QG.engine (Quotation)
