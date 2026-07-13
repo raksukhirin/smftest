@@ -36,6 +36,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8758", "--directory", "mockup/FPI"],
       "port": 8758
+    },
+    {
+      "name": "fpi-bookinggate-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8759", "--directory", "mockup/FPI"],
+      "port": 8759
     }
   ]
 }

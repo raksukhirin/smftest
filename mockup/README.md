@@ -19,6 +19,7 @@ UI mockups + data-mapping specs สำหรับการ port ฟอร์ม
 | [`frmSFQuotation/`](./frmSFQuotation/) | ✅ Complete | Sea Freight Quotation (Import + Export) — มี validation, lookup, print preview | 🟣 Violet |
 | [`frmARInvoice/`](./frmARInvoice/) | ✅ Complete | Outbound Billing Entry (A/R · SF · EX) — line-item grid, VAT/THB calc, status workflow, ทุก DocType | 🌹 Rose |
 | [`FPI/frmFPIQuoteGen/`](./FPI/frmFPIQuoteGen/) | ✅ Complete | **Freight Pricing Intelligence** — Quotation Generator: multi-lane Good/Better/Best, PricingMode engine, Air take-lower, estimated margin | 🩵 Teal |
+| [`FPI/frmFPIBookingGate/`](./FPI/frmFPIBookingGate/) | ✅ Complete | **FPI** — Booking Margin Gate: vFPI_BookProfit + evaluate (PASS/NEED_APPROVE/BLOCKED), Cost Auto-fill + Superseded Chain + Delta Alert, approval workflow | 🟠 Amber |
 | [`_template/`](./_template/) | 📋 Starter | Skeleton สำหรับ copy ไปสร้าง module ใหม่ | 🔵 Indigo |
 
 > เพิ่ม module ใหม่ → ดู [**CONTRIBUTING.md**](./CONTRIBUTING.md)
@@ -87,7 +88,7 @@ Optional (เพิ่มเมื่อจำเป็น):
 | A/R Billing | Rose | `bg-rose-600` / `text-rose-700` |
 | Sea Rate Control | Sky | `bg-sky-700` |
 | FPI Quotation Generator | Teal | `bg-teal-700` / `text-teal-700` |
-| Booking (TBD) | Amber | `bg-amber-600` |
+| FPI Booking Margin Gate | Amber | `bg-amber-600` / `text-amber-700` |
 
 ### localStorage keys
 

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPI — Booking Margin Gate</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- ===== Top bar ===== -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="px-5 py-2.5 flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-amber-600 text-white flex items-center justify-center font-bold">⚖</div>
+            <div>
+                <div class="text-[10px] uppercase tracking-wider text-slate-500">Freight Pricing Intelligence</div>
+                <div class="font-semibold text-sm leading-none">Booking Margin Gate <span class="text-slate-400">[DEMO]</span></div>
+            </div>
+        </div>
+
+        <div class="ml-6 flex items-center gap-3 text-xs text-slate-500">
+            <span>Bookings: <span id="statBookings" class="font-semibold text-slate-700 tabular-nums">0</span></span>
+            <span>•</span>
+            <span>Source: <span id="statSource" class="font-mono text-slate-700">—</span></span>
+        </div>
+
+        <div class="ml-auto flex items-center gap-2">
+            <span class="text-[11px] text-slate-400">จุดเคาะ Margin จริง (D1) — ต่างจากประมาณการในหน้า Quotation</span>
+            <button class="btn-ghost text-xs" id="resetBtn" title="ล้าง workflow ที่บันทึกไว้ทั้งหมด">↺ Reset workflow</button>
+        </div>
+    </div>
+</header>
+
+<main class="p-4 grid grid-cols-12 gap-4 items-start">
+
+    <!-- ================= LEFT: booking list ================= -->
+    <section class="col-span-12 xl:col-span-3 space-y-3">
+        <div class="card">
+            <div class="card-hd">1 · Bookings</div>
+            <div id="bookingList" class="p-2 space-y-1.5"></div>
+        </div>
+
+        <div class="card">
+            <div class="card-hd">Header</div>
+            <div id="headerBox" class="p-3 text-xs text-slate-400">— เลือก booking —</div>
+        </div>
+    </section>
+
+    <!-- ================= MIDDLE: Bill / Cost grid ================= -->
+    <section class="col-span-12 xl:col-span-5 space-y-3">
+        <div class="card">
+            <div class="card-hd flex items-center justify-between">
+                <span>2 · Bill / Cost Lines</span>
+                <span class="text-[10px] font-normal text-slate-500 normal-case">FX ต่อบรรทัด (vFPI_BookProfit §6.1)</span>
+            </div>
+            <div class="p-3">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs" id="lineTable">
+                        <thead>
+                            <tr class="text-left text-slate-500 border-b border-slate-200">
+                                <th class="py-1.5 pr-2 font-medium">Type</th>
+                                <th class="py-1.5 pr-2 font-medium">Charge</th>
+                                <th class="py-1.5 pr-2 font-medium text-right">Qty</th>
+                                <th class="py-1.5 pr-2 font-medium text-right">Unit</th>
+                                <th class="py-1.5 pr-2 font-medium">Cur</th>
+                                <th class="py-1.5 pr-2 font-medium">FX</th>
+                                <th class="py-1.5 pr-1 font-medium text-right">THB</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lineBody">
+                            <tr><td colspan="7" class="py-8 text-center text-slate-400">—</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cost Auto-fill traceability -->
+        <div id="autofillCard" class="card hidden">
+            <div class="card-hd">Cost Auto-fill · ที่มาต้นทุน <span class="text-[10px] font-normal text-slate-500 normal-case">— Superseded Chain §4.3 + Delta Alert (D8)</span></div>
+            <div id="autofillBody" class="p-3"></div>
+        </div>
+    </section>
+
+    <!-- ================= RIGHT: gate + margin + workflow ================= -->
+    <section class="col-span-12 xl:col-span-4 space-y-3">
+        <!-- verdict -->
+        <div id="verdictCard" class="card hidden">
+            <div id="verdictBanner" class="px-4 py-3"></div>
+            <div id="marginMath" class="px-4 pb-3"></div>
+        </div>
+
+        <!-- why margin moved -->
+        <div id="whyCard" class="card hidden">
+            <div class="card-hd">ทำไม Margin ตก</div>
+            <div id="whyBody" class="p-3"></div>
+        </div>
+
+        <!-- workflow -->
+        <div id="workflowCard" class="card hidden">
+            <div class="card-hd flex items-center justify-between">
+                <span>Workflow</span>
+                <span id="docStatPill"></span>
+            </div>
+            <div id="workflowBody" class="p-3 space-y-3"></div>
+        </div>
+    </section>
+</main>
+
+<!-- ===== Approve / reason modal ===== -->
+<div id="reasonModal" class="hidden fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div class="px-4 py-3 border-b border-slate-200 font-semibold text-sm" id="reasonTitle">อนุมัติ</div>
+        <div class="p-4 space-y-3">
+            <p id="reasonDesc" class="text-xs text-slate-500 leading-relaxed"></p>
+            <textarea id="reasonText" rows="3" class="inp" placeholder="เหตุผล / เงื่อนไข (เช่น ลูกค้าเชิงกลยุทธ์ ยอมรับ margin ต่ำเพื่อรักษาสัมพันธ์)"></textarea>
+            <p id="reasonErr" class="hidden text-[11px] text-rose-600">ต้องระบุเหตุผลอย่างน้อย 5 ตัวอักษร</p>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+            <button id="reasonCancel" class="btn-ghost text-xs">ยกเลิก</button>
+            <button id="reasonOk" class="btn-primary text-xs">ยืนยัน</button>
+        </div>
+    </div>
+</div>
+
+<script src="data.js"></script>
+<script src="src/utils.js"></script>
+<script src="src/state.js"></script>
+<script src="src/profit.js"></script>
+<script src="src/autofill.js"></script>
+<script src="src/grid.js"></script>
+<script src="src/gate.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

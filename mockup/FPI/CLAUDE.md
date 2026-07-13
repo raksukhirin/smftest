@@ -85,7 +85,7 @@ frmFPIQuoteGen/                       หน้าจอที่ 2 (Quotation G
 
 1. Rate Management — Search/Compare/Confirm + Expiry Alert
 2. ✅ Quotation Generator — [`frmFPIQuoteGen/`](./frmFPIQuoteGen/) — Engine reproduce `QSE26080001` ได้ครบทุกบรรทัด (golden test ใน README)
-3. Booking Margin Gate — Cost Auto-fill + Delta Alert + ผล PASS/NEED_APPROVE/BLOCKED
+3. ✅ Booking Margin Gate — [`frmFPIBookingGate/`](./frmFPIBookingGate/) — vFPI_BookProfit + FPI_EvaluateBookingMargin reproduce `bookings.json` ครบ 3 ใบ (PASS/NEED_APPROVE/BLOCKED) + Cost Auto-fill/Delta/Workflow
 4. Approval Inbox — Sold/Cost/Margin/สาเหตุ ครบในหน้าเดียว
 5. KB Dashboard — Rate ใกล้หมดอายุ, Quote Active ที่ Rate ตาย, Margin Average
 6. AI Knowledge Search — ถามภาษาธรรมชาติ ตอบพร้อมอ้างอิง RateNo/เอกสารเสมอ
