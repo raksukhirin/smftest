@@ -1,0 +1,100 @@
+/* FPI Booking Margin Gate — theme accent: Amber
+   (QuoteGen=Teal, SeaRate=Sky, ARInvoice=Rose, SFJob_IM=Emerald) */
+
+* { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+body { font-size: 13px; }
+
+.card { background: #fff; border: 1px solid #e2e8f0; border-radius: .5rem; overflow: hidden; }
+.card-hd {
+    padding: .5rem .75rem; background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #334155;
+}
+
+.inp {
+    width: 100%; border: 1px solid #cbd5e1; border-radius: .375rem;
+    padding: .3rem .5rem; font-size: 12px; background: #fff; color: #1e293b;
+}
+.inp:focus { outline: none; border-color: #d97706; box-shadow: 0 0 0 2px rgb(217 119 6 / .15); }
+
+/* ---------- buttons ---------- */
+.btn-primary { background: #d97706; color: #fff; font-weight: 600; padding: .4rem .75rem; border-radius: .375rem; font-size: 12px; }
+.btn-primary:hover { background: #b45309; }
+.btn-primary:disabled { background: #fcd9a5; cursor: not-allowed; }
+.btn-approve { background: #059669; color: #fff; font-weight: 600; padding: .4rem .75rem; border-radius: .375rem; font-size: 12px; }
+.btn-approve:hover { background: #047857; }
+.btn-approve:disabled { background: #a7f3d0; cursor: not-allowed; }
+.btn-ghost { background: #fff; color: #475569; border: 1px solid #cbd5e1; padding: .3rem .6rem; border-radius: .375rem; }
+.btn-ghost:hover { background: #f8fafc; }
+.btn-ghost:disabled { color: #cbd5e1; cursor: not-allowed; }
+
+/* ---------- pills ---------- */
+.pill {
+    display: inline-flex; align-items: center; gap: .2rem; padding: .05rem .4rem;
+    border-radius: 9999px; font-size: 10px; font-weight: 600; line-height: 1.4; white-space: nowrap;
+}
+.pill-bill    { background: #eff6ff; color: #1d4ed8; }
+.pill-cost    { background: #fef3c7; color: #92400e; }
+.pill-rebate  { background: #fffbeb; color: #b45309; }
+.pill-badfx   { background: #fee2e2; color: #b91c1c; }
+.pill-ok      { background: #d1fae5; color: #065f46; }
+.pill-warn    { background: #fef3c7; color: #92400e; }
+.pill-danger  { background: #fee2e2; color: #b91c1c; }
+.pill-info    { background: #e0f2fe; color: #075985; }
+.pill-muted   { background: #f1f5f9; color: #64748b; }
+.pill-wait    { background: #ffedd5; color: #9a3412; }
+
+/* status dot for booking list */
+.dot { width: 8px; height: 8px; border-radius: 9999px; display: inline-block; flex: 0 0 auto; }
+.dot-pass { background: #059669; } .dot-need { background: #d97706; } .dot-blocked { background: #dc2626; }
+.dot-confirmed { background: #059669; } .dot-wait { background: #ea580c; } .dot-open { background: #94a3b8; }
+
+/* ---------- booking list items ---------- */
+.bk {
+    border: 1px solid #e2e8f0; border-radius: .5rem; padding: .5rem .625rem; cursor: pointer;
+    background: #fff; transition: border-color .12s, box-shadow .12s;
+}
+.bk:hover { border-color: #fcd34d; }
+.bk.sel { border-color: #d97706; box-shadow: 0 0 0 2px rgb(217 119 6 / .18); background: #fffbeb; }
+
+/* ---------- verdict banners ---------- */
+.verdict { border-radius: .5rem; padding: .75rem 1rem; }
+.verdict-pass    { background: #ecfdf5; border: 1px solid #a7f3d0; }
+.verdict-need    { background: #fffbeb; border: 1px solid #fde68a; }
+.verdict-blocked { background: #fef2f2; border: 1px solid #fecaca; }
+.verdict h2 { font-size: 20px; font-weight: 700; line-height: 1; }
+.v-pass h2 { color: #047857; } .v-need h2 { color: #b45309; } .v-blocked h2 { color: #b91c1c; }
+
+/* ---------- line grid ---------- */
+#lineTable tbody tr { border-bottom: 1px solid #f1f5f9; }
+#lineTable td { padding: .3rem .5rem .3rem 0; vertical-align: middle; }
+#lineTable tr.cost-row { background: #fffdf7; }
+#lineTable tr.badfx-row { background: #fef2f2; }
+.num { font-variant-numeric: tabular-nums; text-align: right; }
+.rowsum td { border-top: 1px solid #e2e8f0; font-weight: 600; }
+
+/* margin math table */
+.mm { width: 100%; font-size: 12px; }
+.mm td { padding: .2rem 0; }
+.mm td:last-child { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.mm tr.total td { border-top: 1px solid #cbd5e1; padding-top: .35rem; font-size: 13px; }
+
+/* alerts */
+.alert { border-radius: .375rem; padding: .5rem .625rem; font-size: 11px; line-height: 1.5; border: 1px solid; display: flex; gap: .4rem; }
+.alert-danger { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.alert-warn   { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+.alert-info   { background: #f0f9ff; border-color: #bae6fd; color: #075985; }
+.alert-ok     { background: #ecfdf5; border-color: #a7f3d0; color: #065f46; }
+
+/* chain steps */
+.chain-step { font-family: ui-monospace, monospace; font-size: 10px; }
+.chain-arrow { color: #d97706; }
+
+/* workflow step */
+.wf-step { display: flex; align-items: center; gap: .5rem; font-size: 12px; }
+.wf-num { width: 20px; height: 20px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex: 0 0 auto; }
+.wf-done { background: #059669; color: #fff; }
+.wf-active { background: #d97706; color: #fff; }
+.wf-todo { background: #e2e8f0; color: #94a3b8; }
+
+.tabular { font-variant-numeric: tabular-nums; }
+kbd { font-family: ui-monospace, monospace; font-size: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 3px; padding: 0 .2rem; }
