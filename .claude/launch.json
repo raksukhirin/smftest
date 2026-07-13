@@ -48,6 +48,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8760", "--directory", "mockup/FPI"],
       "port": 8760
+    },
+    {
+      "name": "fpi-ratemgmt-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8761", "--directory", "mockup/FPI"],
+      "port": 8761
     }
   ]
 }

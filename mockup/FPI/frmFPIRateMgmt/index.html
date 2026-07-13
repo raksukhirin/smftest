@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPI — Rate Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- ===== Top bar ===== -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="px-5 py-2.5 flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-cyan-700 text-white flex items-center justify-center font-bold">⚓</div>
+            <div>
+                <div class="text-[10px] uppercase tracking-wider text-slate-500">Freight Pricing Intelligence</div>
+                <div class="font-semibold text-sm leading-none">Rate Management <span class="text-slate-400">[DEMO]</span></div>
+            </div>
+        </div>
+
+        <div class="ml-6 flex items-center gap-3 text-xs text-slate-500">
+            <span>Rates: <span id="statRates" class="font-semibold text-slate-700 tabular-nums">0</span></span>
+            <span>•</span>
+            <span>Active: <span id="statActive" class="font-semibold text-emerald-700 tabular-nums">0</span></span>
+            <span>•</span>
+            <span>Source: <span id="statSource" class="font-mono text-slate-700">—</span></span>
+        </div>
+
+        <div class="ml-auto flex items-center gap-2">
+            <label class="text-[11px] text-slate-500">As-of</label>
+            <input type="date" id="asOf" class="inp text-xs w-36">
+            <button class="btn-ghost text-xs" id="resetBtn" title="ล้าง Confirm/Cancel ที่บันทึกไว้">↺ Reset</button>
+            <button class="btn-secondary text-xs" id="uploadBtn" title="stub">⬆ Upload (Excel + AI Parse)</button>
+        </div>
+    </div>
+</header>
+
+<!-- ===== Alert strip (vFPI_RateAlert) ===== -->
+<div id="alertStrip" class="px-4 pt-3 grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+<main class="p-4 grid grid-cols-12 gap-4 items-start">
+
+    <!-- ================= LEFT: search + results ================= -->
+    <section class="col-span-12 xl:col-span-5 space-y-3">
+        <div class="card">
+            <div class="card-hd">Search</div>
+            <div class="p-3 grid grid-cols-2 gap-2">
+                <div><label class="lbl">Mode</label><select id="fMode" class="inp"><option value="">ทั้งหมด</option><option>SEA</option><option>AIR</option></select></div>
+                <div><label class="lbl">Class</label><select id="fClass" class="inp"><option value="">ทั้งหมด</option><option>EX</option><option>IM</option></select></div>
+                <div><label class="lbl">POL</label><select id="fPol" class="inp"></select></div>
+                <div><label class="lbl">POD</label><select id="fPod" class="inp"></select></div>
+                <div><label class="lbl">Carrier</label><select id="fCarrier" class="inp"></select></div>
+                <div><label class="lbl">Source</label><select id="fSource" class="inp"><option value="">ทั้งหมด</option><option>CONTRACT</option><option>SPOT</option><option>CARRIER_QUOTE</option><option>TARIFF</option><option>LEGACY_IMPORT</option></select></div>
+                <div><label class="lbl">Status</label><select id="fStatus" class="inp"><option value="">ทั้งหมด</option><option>CONFIRMED</option><option>DRAFT</option><option>SUPERSEDED</option><option>EXPIRED</option><option>CANCELLED</option></select></div>
+                <div><label class="lbl">Rate No.</label><input id="fText" class="inp" placeholder="FR-..."></div>
+                <div class="col-span-2 flex items-center gap-2 pt-1">
+                    <label class="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer"><input type="checkbox" id="fActiveOnly" class="accent-cyan-700"> เฉพาะที่ Active ณ as-of</label>
+                    <button id="clearBtn" class="btn-ghost text-xs ml-auto">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-hd flex items-center justify-between">
+                <span>Results (<span id="resCount">0</span>)</span>
+                <span id="cmpHint" class="text-[10px] font-normal text-slate-400 normal-case">ติ๊ก ≥2 ใบ lane เดียวกันเพื่อเทียบ</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs" id="resTable">
+                    <thead>
+                        <tr class="text-left text-slate-500 border-b border-slate-200">
+                            <th class="py-1.5 pl-3 pr-1 w-6"></th>
+                            <th class="py-1.5 pr-2 font-medium">Rate</th>
+                            <th class="py-1.5 pr-2 font-medium">Lane · Carrier</th>
+                            <th class="py-1.5 pr-2 font-medium">Validity</th>
+                            <th class="py-1.5 pr-2 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= RIGHT: detail / compare ================= -->
+    <section class="col-span-12 xl:col-span-7 space-y-3">
+        <div id="comparePanel" class="card hidden">
+            <div class="card-hd flex items-center justify-between">
+                <span>Compare</span>
+                <span class="flex items-center gap-2 text-[10px] font-normal normal-case text-slate-500">
+                    Container <select id="cmpCntr" class="inp text-[11px] py-0.5 w-24"></select>
+                    <button id="cmpClear" class="text-cyan-700 hover:underline">ล้าง</button>
+                </span>
+            </div>
+            <div id="compareBody" class="p-3 overflow-x-auto"></div>
+        </div>
+
+        <div id="detailCard" class="card">
+            <div class="card-hd">Rate Detail</div>
+            <div id="detailBody" class="p-3 text-xs text-slate-400">— เลือก rate จากรายการ —</div>
+        </div>
+    </section>
+</main>
+
+<!-- ===== confirm modal ===== -->
+<div id="confirmModal" class="hidden fixed inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div class="px-4 py-3 border-b border-slate-200 font-semibold text-sm" id="cfTitle">ยืนยัน Rate</div>
+        <div class="p-4 space-y-3">
+            <p id="cfDesc" class="text-xs text-slate-500 leading-relaxed"></p>
+            <div id="cfNoSource" class="hidden alert alert-warn text-[11px]"></div>
+        </div>
+        <div class="px-4 py-3 border-t border-slate-200 flex justify-end gap-2">
+            <button id="cfCancel" class="btn-ghost text-xs">ยกเลิก</button>
+            <button id="cfOk" class="btn-primary text-xs">ยืนยัน</button>
+        </div>
+    </div>
+</div>
+
+<script src="data.js"></script>
+<script src="src/utils.js"></script>
+<script src="src/state.js"></script>
+<script src="src/alerts.js"></script>
+<script src="src/ui.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>
