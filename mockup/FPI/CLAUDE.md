@@ -64,7 +64,7 @@ data/                                 ชุด JSON สำหรับ Mockup:
                           ทุกใบมี createdAtUtc/confirmedAtUtc (vFPI_RateAlert)
   rate_charges.json       57 บรรทัด ครบทุก Basis รวม REBATE และ Air Break
   local_charge_tariff.json 3 Tariff ครบ 3 PricingMode
-  quotations.json         1 ใบ 2 Port (Hamburg/Rotterdam) พร้อม rateRef Traceability
+  quotations.json         4 ใบ: QSE26080001 (2 Port, golden) + healthy/at-risk/expired สำหรับ KB Dashboard (D2)
   bookings.json           7 ใบ: 3 เดิม (PASS / NEED_APPROVE Superseded+Delta / BLOCKED BadFx)
                           + 4 เพิ่มสำหรับ Approval Inbox (STRAT override / ลูกค้าใหม่ราคาต่ำ / ขาดทุน / ดีลใหญ่ใกล้เกณฑ์)
 
@@ -89,5 +89,5 @@ frmFPIQuoteGen/                       หน้าจอที่ 2 (Quotation G
 2. ✅ Quotation Generator — [`frmFPIQuoteGen/`](./frmFPIQuoteGen/) — Engine reproduce `QSE26080001` ได้ครบทุกบรรทัด (golden test ใน README)
 3. ✅ Booking Margin Gate — [`frmFPIBookingGate/`](./frmFPIBookingGate/) — vFPI_BookProfit + FPI_EvaluateBookingMargin reproduce `bookings.json` (PASS/NEED_APPROVE/BLOCKED) + Cost Auto-fill/Delta/Workflow
 4. ✅ Approval Inbox — [`frmFPIApprovalInbox/`](./frmFPIApprovalInbox/) — คิว NEED_APPROVE ฝั่ง Manager (reuse engine ของ Booking Gate), จัดกลุ่มสาเหตุ (ตลาดขึ้น/ราคาต่ำ/ขาดทุน) + Approve/Reject/Batch, แชร์ localStorage กับหน้า 3
-5. KB Dashboard — Rate ใกล้หมดอายุ, Quote Active ที่ Rate ตาย, Margin Average
+5. ✅ KB Dashboard — [`frmFPIKBDashboard/`](./frmFPIKBDashboard/) — reuse ทุก engine (RM.alerts + BG.profit + BG.autofill); Rate health, **Quote at Risk D2 (Rate ตาย + Δ ทุน)**, Margin average, Top lane, Win rate
 6. AI Knowledge Search — ถามภาษาธรรมชาติ ตอบพร้อมอ้างอิง RateNo/เอกสารเสมอ
