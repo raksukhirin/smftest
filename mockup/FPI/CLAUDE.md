@@ -59,9 +59,10 @@ data/                                 ชุด JSON สำหรับ Mockup:
   lane_history.json       31 รายการ — ตัวแทนข้อมูลจริงจาก OPTRANSDETAIL
   margin_rules.json       4 Rules (Default 10% + Tier A/B/NEW)
   customer_profiles.json  4 ลูกค้า (สังเคราะห์)
-  rate_headers.json       7 Rates: Sea Contract+Spot, Superseded Chain (R-0001→R-0003), Air Weight Break
-                          + R-0005/6/7 บน THLCH→DEHAM สำหรับเทียบ Good/Better/Best
-  rate_charges.json       51 บรรทัด ครบทุก Basis รวม REBATE และ Air Break
+  rate_headers.json       9 Rates: Sea Contract+Spot, Superseded Chain (R-0001→R-0003), Air Weight Break
+                          + R-0005/6/7 (THLCH→DEHAM เทียบ GBB) + R-0008 DRAFT ค้าง / R-0009 no-source (Rate Mgmt alerts)
+                          ทุกใบมี createdAtUtc/confirmedAtUtc (vFPI_RateAlert)
+  rate_charges.json       57 บรรทัด ครบทุก Basis รวม REBATE และ Air Break
   local_charge_tariff.json 3 Tariff ครบ 3 PricingMode
   quotations.json         1 ใบ 2 Port (Hamburg/Rotterdam) พร้อม rateRef Traceability
   bookings.json           7 ใบ: 3 เดิม (PASS / NEED_APPROVE Superseded+Delta / BLOCKED BadFx)
@@ -84,7 +85,7 @@ frmFPIQuoteGen/                       หน้าจอที่ 2 (Quotation G
 
 ## หน้าจอที่ต้องออกแบบ (ตาม Concept + v0.3 ข้อ 8)
 
-1. Rate Management — Search/Compare/Confirm + Expiry Alert
+1. ✅ Rate Management — [`frmFPIRateMgmt/`](./frmFPIRateMgmt/) — Search/Compare/Confirm + Expiry Alert (vFPI_RateAlert: EXPIRING_7D/STALE_DRAFT_30D/NO_SOURCE_REF) + Superseded chain
 2. ✅ Quotation Generator — [`frmFPIQuoteGen/`](./frmFPIQuoteGen/) — Engine reproduce `QSE26080001` ได้ครบทุกบรรทัด (golden test ใน README)
 3. ✅ Booking Margin Gate — [`frmFPIBookingGate/`](./frmFPIBookingGate/) — vFPI_BookProfit + FPI_EvaluateBookingMargin reproduce `bookings.json` (PASS/NEED_APPROVE/BLOCKED) + Cost Auto-fill/Delta/Workflow
 4. ✅ Approval Inbox — [`frmFPIApprovalInbox/`](./frmFPIApprovalInbox/) — คิว NEED_APPROVE ฝั่ง Manager (reuse engine ของ Booking Gate), จัดกลุ่มสาเหตุ (ตลาดขึ้น/ราคาต่ำ/ขาดทุน) + Approve/Reject/Batch, แชร์ localStorage กับหน้า 3

@@ -26,7 +26,9 @@
     "status": "SUPERSEDED",
     "supersededBy": "R-0003",
     "createdBy": "PRICING1",
-    "confirmedBy": "PRICING_MGR"
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-06-26T00:00:00",
+    "confirmedAtUtc": "2026-06-28T00:00:00"
   },
   {
     "rateId": "R-0002",
@@ -55,7 +57,9 @@
     "status": "CONFIRMED",
     "supersededBy": null,
     "createdBy": "PRICING1",
-    "confirmedBy": "PRICING_MGR"
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-06-26T00:00:00",
+    "confirmedAtUtc": "2026-06-28T00:00:00"
   },
   {
     "rateId": "R-0003",
@@ -84,7 +88,9 @@
     "status": "CONFIRMED",
     "supersededBy": null,
     "createdBy": "PRICING1",
-    "confirmedBy": "PRICING_MGR"
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-08-27T00:00:00",
+    "confirmedAtUtc": "2026-08-29T00:00:00"
   },
   {
     "rateId": "R-0004",
@@ -113,7 +119,9 @@
     "status": "CONFIRMED",
     "supersededBy": null,
     "createdBy": "PRICING2",
-    "confirmedBy": "PRICING_MGR"
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-06-26T00:00:00",
+    "confirmedAtUtc": "2026-06-28T00:00:00"
   },
   {
     "rateId": "R-0005",
@@ -142,7 +150,9 @@
     "status": "CONFIRMED",
     "supersededBy": null,
     "createdBy": "PRICING1",
-    "confirmedBy": "PRICING_MGR"
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-06-26T00:00:00",
+    "confirmedAtUtc": "2026-06-28T00:00:00"
   },
   {
     "rateId": "R-0006",
@@ -171,7 +181,9 @@
     "status": "CONFIRMED",
     "supersededBy": null,
     "createdBy": "PRICING1",
-    "confirmedBy": "PRICING_MGR"
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-06-26T00:00:00",
+    "confirmedAtUtc": "2026-06-28T00:00:00"
   },
   {
     "rateId": "R-0007",
@@ -200,6 +212,70 @@
     "status": "CONFIRMED",
     "supersededBy": null,
     "createdBy": "PRICING1",
-    "confirmedBy": "PRICING_MGR"
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-06-26T00:00:00",
+    "confirmedAtUtc": "2026-06-28T00:00:00"
+  },
+  {
+    "rateId": "R-0008",
+    "rateNo": "FR-2605-00008",
+    "mode": "SEA",
+    "jobClass": "EX",
+    "serviceType": "FCL",
+    "carrierNo": "ONE001",
+    "carrierName": "Ocean Network Express",
+    "agentNo": null,
+    "pol": "THLCH",
+    "pod": "JPYOK",
+    "finalDest": null,
+    "routing": "Direct",
+    "transitDaysMin": 9,
+    "transitDaysMax": 12,
+    "freeTimeOrigin": null,
+    "freeTimeDest": 7,
+    "contractNo": null,
+    "customerNo": null,
+    "rateSource": "SPOT",
+    "sourceRef": "ONE spot draft 01-May-2026",
+    "takeLowerEnabled": true,
+    "validFrom": "2026-05-01",
+    "validTo": "2026-05-31",
+    "status": "DRAFT",
+    "supersededBy": null,
+    "createdBy": "PRICING2",
+    "confirmedBy": null,
+    "createdAtUtc": "2026-05-01T09:00:00",
+    "confirmedAtUtc": null
+  },
+  {
+    "rateId": "R-0009",
+    "rateNo": "FR-2607-00009",
+    "mode": "SEA",
+    "jobClass": "EX",
+    "serviceType": "FCL",
+    "carrierNo": "HLC001",
+    "carrierName": "Hapag-Lloyd",
+    "agentNo": null,
+    "pol": "THLCH",
+    "pod": "AUMEL",
+    "finalDest": null,
+    "routing": "via Singapore",
+    "transitDaysMin": 18,
+    "transitDaysMax": 22,
+    "freeTimeOrigin": null,
+    "freeTimeDest": 10,
+    "contractNo": null,
+    "customerNo": null,
+    "rateSource": "CARRIER_QUOTE",
+    "sourceRef": null,
+    "takeLowerEnabled": true,
+    "validFrom": "2026-07-01",
+    "validTo": "2026-12-31",
+    "status": "CONFIRMED",
+    "supersededBy": null,
+    "createdBy": "PRICING1",
+    "confirmedBy": "PRICING_MGR",
+    "createdAtUtc": "2026-06-25T09:00:00",
+    "confirmedAtUtc": "2026-06-28T09:00:00"
   }
 ]
