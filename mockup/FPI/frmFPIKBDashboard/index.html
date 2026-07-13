@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPI — KB Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- ===== Top bar ===== -->
+<header class="bg-slate-800 text-white sticky top-0 z-30">
+    <div class="px-5 py-2.5 flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center font-bold">📊</div>
+            <div>
+                <div class="text-[10px] uppercase tracking-wider text-slate-300">Freight Pricing Intelligence</div>
+                <div class="font-semibold text-sm leading-none">KB Dashboard <span class="text-slate-400">[DEMO]</span></div>
+            </div>
+        </div>
+        <div class="ml-6 text-xs text-slate-300">ภาพรวม Rate KB · Quote · Booking — รวมทุก engine</div>
+        <div class="ml-auto flex items-center gap-2 text-xs">
+            <label class="text-slate-300">As-of</label>
+            <input type="date" id="asOf" class="inp-dark text-xs w-36">
+            <span class="text-slate-400">Source: <span id="statSource" class="font-mono text-slate-200">—</span></span>
+        </div>
+    </div>
+</header>
+
+<main class="p-4 space-y-4 max-w-6xl mx-auto">
+
+    <!-- ===== KPI row ===== -->
+    <div id="kpis" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3"></div>
+
+    <div class="grid grid-cols-12 gap-4 items-start">
+
+        <!-- LEFT column -->
+        <div class="col-span-12 lg:col-span-5 space-y-4">
+            <div class="card">
+                <div class="card-hd">Rate Health <span class="normal-case font-normal text-slate-400 text-[10px]">— vFPI_RateAlert</span></div>
+                <div id="rateHealth" class="p-3"></div>
+            </div>
+            <div class="card">
+                <div class="card-hd">Top Lanes</div>
+                <div id="topLanes" class="p-3"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT column -->
+        <div class="col-span-12 lg:col-span-7 space-y-4">
+            <div class="card ring-2 ring-rose-100">
+                <div class="card-hd flex items-center justify-between">
+                    <span>⚠ Quotes at Risk <span class="normal-case font-normal text-slate-400 text-[10px]">— D2: Quote ยัง Active แต่ Rate ต้นทางตาย</span></span>
+                    <span id="atRiskCount" class="pill pill-danger"></span>
+                </div>
+                <div id="atRisk" class="p-3"></div>
+            </div>
+            <div class="card">
+                <div class="card-hd">Margin Health <span class="normal-case font-normal text-slate-400 text-[10px]">— vFPI_BookProfit · เคาะจริงที่ Booking (D1)</span></div>
+                <div id="marginHealth" class="p-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-[10px] text-slate-400 text-center pb-4">
+        Dashboard นี้ reuse engine จากทุกหน้า: <b>RM.alerts</b> (Rate Mgmt) · <b>BG.profit</b> + <b>BG.autofill</b> (Booking Gate) — ไม่ทำ logic ซ้ำ
+    </div>
+</main>
+
+<script src="../frmFPIBookingGate/data.js"></script>
+<script src="../frmFPIBookingGate/src/utils.js"></script>
+<script src="../frmFPIBookingGate/src/state.js"></script>
+<script src="../frmFPIBookingGate/src/profit.js"></script>
+<script src="../frmFPIBookingGate/src/autofill.js"></script>
+<script src="../frmFPIRateMgmt/src/utils.js"></script>
+<script src="../frmFPIRateMgmt/src/alerts.js"></script>
+<script src="src/dashboard.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>

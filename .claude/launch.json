@@ -54,6 +54,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8761", "--directory", "mockup/FPI"],
       "port": 8761
+    },
+    {
+      "name": "fpi-kbdashboard-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8762", "--directory", "mockup/FPI"],
+      "port": 8762
     }
   ]
 }
