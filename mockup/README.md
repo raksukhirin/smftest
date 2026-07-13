@@ -23,6 +23,7 @@ UI mockups + data-mapping specs สำหรับการ port ฟอร์ม
 | [`FPI/frmFPIBookingGate/`](./FPI/frmFPIBookingGate/) | ✅ Complete | **FPI** — Booking Margin Gate: vFPI_BookProfit + evaluate (PASS/NEED_APPROVE/BLOCKED), Cost Auto-fill + Superseded Chain + Delta Alert, approval workflow | 🟠 Amber |
 | [`FPI/frmFPIApprovalInbox/`](./FPI/frmFPIApprovalInbox/) | ✅ Complete | **FPI** — Approval Inbox: คิว NEED_APPROVE ฝั่ง Manager, จัดกลุ่มสาเหตุ + Approve/Reject/Batch (reuse engine ของ Booking Gate, แชร์ localStorage) | 🔵 Indigo |
 | [`FPI/frmFPIKBDashboard/`](./FPI/frmFPIKBDashboard/) | ✅ Complete | **FPI** — KB Dashboard: Rate health, Quote-at-risk (D2 + Δ ทุน), Margin/Win-rate/Top-lane (reuse ทุก engine, read-only) | ⬛ Slate |
+| [`FPI/frmFPIKnowledgeSearch/`](./FPI/frmFPIKnowledgeSearch/) | ✅ Complete | **FPI** — AI Knowledge Search: ถามภาษาธรรมชาติ ตอบพร้อม citation เสมอ (Tier 1/Tier 2), rule-based + hook ต่อ LLM/MCP | 🟣 Purple |
 | [`_template/`](./_template/) | 📋 Starter | Skeleton สำหรับ copy ไปสร้าง module ใหม่ | 🔵 Indigo |
 
 > เพิ่ม module ใหม่ → ดู [**CONTRIBUTING.md**](./CONTRIBUTING.md)
@@ -94,6 +95,8 @@ Optional (เพิ่มเมื่อจำเป็น):
 | FPI Quotation Generator | Teal | `bg-teal-700` / `text-teal-700` |
 | FPI Booking Margin Gate | Amber | `bg-amber-600` / `text-amber-700` |
 | FPI Approval Inbox | Indigo | `bg-indigo-600` / `text-indigo-700` |
+| FPI KB Dashboard | Slate | `bg-slate-800` |
+| FPI AI Knowledge Search | Purple | `bg-purple-700` / `text-purple-700` |
 
 ### localStorage keys
 

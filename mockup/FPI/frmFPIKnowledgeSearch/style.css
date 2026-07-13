@@ -1,0 +1,67 @@
+/* FPI AI Knowledge Search — theme accent: Purple */
+
+* { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif; }
+body { font-size: 13px; }
+
+.inp { border: 1px solid #cbd5e1; border-radius: .5rem; padding: .45rem .7rem; font-size: 13px; background: #fff; color: #1e293b; }
+.inp:focus { outline: none; border-color: #7c3aed; box-shadow: 0 0 0 2px rgb(124 58 237 / .15); }
+.inp-dark { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.25); border-radius: .375rem; padding: .2rem .45rem; color: #fff; font-size: 11px; }
+.inp-dark::-webkit-calendar-picker-indicator { filter: invert(1); }
+
+.btn-primary { background: #7c3aed; color: #fff; font-weight: 600; padding: .45rem 1rem; border-radius: .5rem; font-size: 13px; }
+.btn-primary:hover { background: #6d28d9; }
+
+/* ---------- chat bubbles ---------- */
+.msg-user { display: flex; justify-content: flex-end; }
+.msg-user .bubble { background: #7c3aed; color: #fff; border-radius: .75rem .75rem .1rem .75rem; padding: .5rem .8rem; max-width: 80%; font-size: 13px; }
+
+.msg-ai { display: flex; justify-content: flex-start; }
+.answer { background: #fff; border: 1px solid #e2e8f0; border-radius: .75rem .75rem .75rem .1rem; max-width: 92%; width: 100%; overflow: hidden; }
+.answer-hd { padding: .5rem .75rem; border-bottom: 1px solid #f1f5f9; display: flex; align-items: center; gap: .5rem; }
+.answer-hd .title { font-weight: 600; font-size: 13px; color: #1e293b; flex: 1; }
+.answer-body { padding: .5rem .75rem; font-size: 12px; }
+.answer-body p { margin: .25rem 0; }
+.answer-body .hint { color: #94a3b8; font-size: 11px; }
+
+/* tier badge */
+.tier { font-size: 10px; font-weight: 700; padding: .1rem .4rem; border-radius: 9999px; }
+.tier-TIER1 { background: #d1fae5; color: #065f46; }
+.tier-TIER2 { background: #fef3c7; color: #92400e; }
+.tier-NONE { background: #f1f5f9; color: #94a3b8; }
+
+/* ---------- citations ---------- */
+.cites { padding: .5rem .75rem; background: #faf5ff; border-top: 1px dashed #e9d5ff; }
+.cites-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #9333ea; font-weight: 600; margin-bottom: .3rem; }
+.cite { display: inline-flex; align-items: center; gap: .3rem; background: #fff; border: 1px solid #e9d5ff; border-radius: .375rem; padding: .15rem .45rem; font-size: 11px; margin: 0 .25rem .25rem 0; }
+.cite .c-t { font-size: 9px; font-weight: 700; padding: 0 .25rem; border-radius: 3px; }
+.cite .c-t.TIER1 { background: #d1fae5; color: #065f46; }
+.cite .c-t.TIER2 { background: #fef3c7; color: #92400e; }
+.cite .c-ref { font-family: ui-monospace, monospace; font-weight: 600; }
+.cite .c-date { color: #94a3b8; }
+
+/* ---------- chips ---------- */
+.chip { font-size: 11px; padding: .25rem .6rem; border-radius: 9999px; border: 1px solid #e9d5ff; background: #faf5ff; color: #6d28d9; cursor: pointer; }
+.chip:hover { background: #f3e8ff; }
+.followups { padding: .4rem .75rem .6rem; display: flex; flex-wrap: wrap; gap: .35rem; }
+.followups .f-lbl { font-size: 10px; color: #94a3b8; width: 100%; }
+
+/* ---------- answer tables / kv ---------- */
+table.ans { width: 100%; font-size: 11px; margin-top: .25rem; }
+table.ans.mt { margin-top: .5rem; }
+table.ans th { text-align: left; color: #94a3b8; font-weight: 500; padding: 2px 8px 3px 0; font-size: 10px; border-bottom: 1px solid #e2e8f0; }
+table.ans td { padding: 3px 8px 3px 0; border-bottom: 1px solid #f6f7f9; }
+table.ans tr.best td { background: #ecfdf5; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: .15rem .75rem; font-size: 12px; }
+.kv > div:nth-child(odd) { color: #94a3b8; }
+
+.pill { display: inline-flex; align-items: center; padding: .05rem .4rem; border-radius: 9999px; font-size: 10px; font-weight: 600; }
+.pill-ok { background: #d1fae5; color: #065f46; } .pill-warn { background: #fef3c7; color: #92400e; }
+.pill-danger { background: #fee2e2; color: #b91c1c; } .pill-info { background: #e0f2fe; color: #075985; } .pill-muted { background: #f1f5f9; color: #64748b; }
+.st-CONFIRMED { background: #d1fae5; color: #065f46; } .st-DRAFT { background: #f1f5f9; color: #475569; }
+.st-SUPERSEDED { background: #ede9fe; color: #6d28d9; } .st-EXPIRED { background: #fee2e2; color: #b91c1c; } .st-CANCELLED { background: #f1f5f9; color: #94a3b8; }
+.font-mono { font-family: ui-monospace, monospace; }
+.delta-up { color: #b91c1c; font-weight: 600; }
+.mini-lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; margin: .5rem 0 .15rem; }
+.alert { border-radius: .375rem; padding: .4rem .6rem; font-size: 11px; line-height: 1.5; border: 1px solid; display: flex; gap: .4rem; margin-bottom: .4rem; }
+.alert-warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+kbd { font-family: ui-monospace, monospace; font-size: 10px; background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 3px; padding: 0 .2rem; }

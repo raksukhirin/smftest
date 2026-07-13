@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPI — AI Knowledge Search</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<header class="bg-purple-700 text-white sticky top-0 z-30">
+    <div class="px-5 py-2.5 flex items-center gap-3">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center font-bold">🔍</div>
+            <div>
+                <div class="text-[10px] uppercase tracking-wider text-purple-200">Freight Pricing Intelligence</div>
+                <div class="font-semibold text-sm leading-none">AI Knowledge Search <span class="text-purple-300">[DEMO]</span></div>
+            </div>
+        </div>
+        <div class="ml-6 text-xs text-purple-200">ถามภาษาธรรมชาติ — ตอบพร้อมอ้างอิงเสมอ (Tier 1 Rate KB / Tier 2 ประวัติ)</div>
+        <div class="ml-auto flex items-center gap-2 text-xs">
+            <label class="text-purple-200">As-of</label>
+            <input type="date" id="asOf" class="inp-dark w-32">
+            <span class="text-purple-300">Source: <span id="statSource" class="font-mono text-purple-100">—</span></span>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-3xl mx-auto p-4 pb-40">
+    <div id="chat" class="space-y-4"></div>
+</main>
+
+<!-- ===== input bar ===== -->
+<div class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-[0_-2px_8px_rgba(0,0,0,.05)]">
+    <div class="max-w-3xl mx-auto px-4 py-3">
+        <div id="suggestions" class="flex flex-wrap gap-1.5 mb-2"></div>
+        <div class="flex items-center gap-2">
+            <input id="q" class="inp flex-1" placeholder="เช่น: มี rate FCL Laem Chabang ไป Hamburg ไหม" autocomplete="off">
+            <button id="sendBtn" class="btn-primary">ถาม</button>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-1.5">
+            ⓘ Mockup ใช้ rule-based intent matcher (โปร่งใส ตรวจสอบได้) — จุดต่อ LLM/MCP จริงอยู่ที่ <kbd>KB.engine.query()</kbd> · ทุกคำตอบต้องมี citation
+        </div>
+    </div>
+</div>
+
+<!-- reuse engines from other FPI screens -->
+<script src="../frmFPIQuoteGen/data.js"></script>
+<script src="../frmFPIRateMgmt/src/utils.js"></script>
+<script src="../frmFPIRateMgmt/src/alerts.js"></script>
+<script src="../frmFPIBookingGate/src/utils.js"></script>
+<script src="../frmFPIBookingGate/src/state.js"></script>
+<script src="../frmFPIBookingGate/src/profit.js"></script>
+<script src="../frmFPIBookingGate/src/autofill.js"></script>
+<script src="src/kb.js"></script>
+<script src="src/helpers.js"></script>
+<script src="src/app.js"></script>
+</body>
+</html>
