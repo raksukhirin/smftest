@@ -66,6 +66,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8763", "--directory", "mockup/FPI"],
       "port": 8763
+    },
+    {
+      "name": "sfcontainerplan-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8770", "--directory", "mockup/frmSFContainerPlan"],
+      "port": 8770
     }
   ]
 }
