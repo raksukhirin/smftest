@@ -66,7 +66,10 @@ body { font-size: 13px; }
 .btn-sec:hover { border-color: #059669; color: #047857; background: #f0fdf4; }
 
 /* 3D */
-.view3d { width: 100%; height: 440px; background: #f1f5f9; }
+.view3d { width: 100%; height: 440px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+.view3d-msg { font-size: 12px; color: #94a3b8; text-align: center; line-height: 1.7; padding: 1rem; }
+.view3d-msg.err { color: #b91c1c; font-weight: 600; }
+.view3d-msg .sub { display: block; font-size: 11px; color: #94a3b8; font-weight: 400; margin-top: .25rem; }
 .view3d canvas { display: block; border-radius: 0 0 .6rem .6rem; cursor: grab; }
 .view3d canvas:active { cursor: grabbing; }
 .pick-info { position: absolute; top: .6rem; left: .6rem; background: rgba(255,255,255,.96); border: 1px solid #e2e8f0; border-radius: .45rem; padding: .45rem .6rem; font-size: 11px; line-height: 1.6; box-shadow: 0 2px 8px rgb(0 0 0 / .08); pointer-events: none; }

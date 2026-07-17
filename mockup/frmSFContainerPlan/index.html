@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=6">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body class="bg-slate-100 text-slate-800">
 
@@ -141,7 +141,8 @@
         </div>
       </div>
       <div class="relative">
-        <div id="view3d" class="view3d"></div>
+        <!-- ถ้า 3D โหลดไม่ได้ ข้อความนี้จะค้างอยู่ = บอกสาเหตุ แทนที่จะเป็นพื้นเทาเงียบ ๆ -->
+        <div id="view3d" class="view3d"><div id="view3dMsg" class="view3d-msg">กำลังโหลด 3D (Three.js จาก unpkg.com)…</div></div>
         <div id="pickInfo" class="pick-info hidden"></div>
       </div>
     </div>
@@ -160,12 +161,36 @@
 }
 </script>
 
-<script src="data.js?v=6"></script>
-<script src="src/packer.js?v=6"></script>
-<script src="src/view2d.js?v=6"></script>
-<script src="src/report.js?v=6"></script>
-<script src="src/app.js?v=6"></script>
+<script src="data.js?v=7"></script>
+<script src="src/packer.js?v=7"></script>
+<script src="src/view2d.js?v=7"></script>
+<script src="src/report.js?v=7"></script>
+<script src="src/app.js?v=7"></script>
 <!-- 3D เป็น ES module (deferred) — app.js รอ event 'ctn3d-ready' -->
-<script type="module" src="src/view3d.js?v=6"></script>
+<script type="module" src="src/view3d.js?v=7"></script>
+
+<script>
+// ---- ตัวตรวจจับ 3D โหลดไม่สำเร็จ ----------------------------------------
+// 3D พึ่ง Three.js จาก CDN + importmap + WebGL — พังได้หลายทาง
+// ถ้าพังแล้วไม่บอก ผู้ใช้จะเห็นแค่พื้นเทาว่าง ๆ (เดาไม่ถูกว่าเกิดอะไร)
+// จึงต้องฟ้องสาเหตุเสมอ (หลักเดียวกับ no-silent-data-loss ของ engine)
+window.addEventListener('error', function (e) {
+  const src = (e.target && (e.target.src || e.target.href)) || '';
+  if (/three|view3d/i.test(src)) window.__ctn3dErr = 'โหลดไฟล์ไม่ได้: ' + src;
+  else if (e.message) window.__ctn3dErr = e.message;
+}, true);
+
+setTimeout(function () {
+  if (window.CTNView3D) return;                 // โหลดสำเร็จแล้ว ไม่ต้องทำอะไร
+  const m = document.getElementById('view3dMsg');
+  if (!m) return;
+  const why = window.__ctn3dErr
+    || (window.WebGLRenderingContext ? 'Three.js โหลดจาก unpkg.com ไม่สำเร็จ (เน็ต/ไฟร์วอลล์บล็อก CDN?)'
+                                     : 'เบราว์เซอร์นี้ไม่รองรับ WebGL');
+  m.className = 'view3d-msg err';
+  m.innerHTML = '⚠ แสดงผล 3D ไม่ได้<br><span class="sub">' + why + '</span>'
+    + '<span class="sub">ผังจัดเรียง 2D ด้านบนยังใช้งานได้ตามปกติ · ดูรายละเอียดที่ DevTools › Console</span>';
+}, 8000);
+</script>
 </body>
 </html>

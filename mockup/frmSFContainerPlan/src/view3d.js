@@ -30,7 +30,9 @@ function init(el) {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf1f5f9);
 
-  const w = el.clientWidth || 800, h = el.clientHeight || 420;
+  // ใช้ getBoundingClientRect (ละเอียดกว่า clientWidth) และ fallback ตามสัดส่วนจริงของ CSS
+  const rc = el.getBoundingClientRect();
+  const w = Math.round(rc.width) || 800, h = Math.round(rc.height) || 440;
   camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 200);
   camera.position.set(9, 6, 9);
 
@@ -57,10 +59,11 @@ function init(el) {
   renderer.domElement.addEventListener('click', handleClick);
 
   new ResizeObserver(() => {
-    if (!host.clientWidth) return;
-    camera.aspect = host.clientWidth / host.clientHeight;
+    const r = host.getBoundingClientRect();
+    if (!r.width || !r.height) return;          // ตอนถูกซ่อนอยู่ อย่าไปตั้งขนาด 0
+    camera.aspect = r.width / r.height;
     camera.updateProjectionMatrix();
-    renderer.setSize(host.clientWidth, host.clientHeight);
+    renderer.setSize(Math.round(r.width), Math.round(r.height));
   }).observe(host);
 
   (function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera); })();
@@ -188,7 +191,8 @@ function snapshot(w, h, type, quality) {
   renderer.render(scene, camera);
   const url = renderer.domElement.toDataURL(type || 'image/png', quality || 0.92);
 
-  renderer.setSize(old.x || 1, old.y || 1, false);
+  // คืนขนาดเดิม — ต้อง updateStyle:true ไม่งั้น CSS ของ canvas ค้างผิดขนาด
+  renderer.setSize(old.x || 1, old.y || 1, true);
   camera.aspect = oldAspect || 1; camera.updateProjectionMatrix();
   return url;
 }
