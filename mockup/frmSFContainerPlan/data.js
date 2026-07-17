@@ -73,7 +73,6 @@
   // ---- Settings (ค่าเริ่มต้น — ตรงกับ Settings sheet ของ demo เดิม) --------
   const defaultSettings = {
     allowRotate: true,       // อนุญาตหมุน 2D (สลับ L↔W)
-    heightBucketMm: 50,      // ปัดความสูงเป็นช่วง (ใช้จัดเรียง/มองเป็นชั้น)
     wallClearanceMm: 50,     // ระยะห่างจากผนัง (สำหรับ item ที่ noWall)
     doorZoneMm: 1200,        // ความกว้างเขตประตู (สำหรับ item ที่ nearDoor)
     doorAt: 'FRONT',         // ประตูอยู่ฝั่ง FRONT | BACK

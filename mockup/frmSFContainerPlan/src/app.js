@@ -71,7 +71,6 @@
         wallClearanceMm: +$('setWall').value || 0,
         doorZoneMm: +$('setDoor').value || 0,
         doorAt: $('setDoorAt').value,
-        heightBucketMm: 50,
       },
     };
   }
@@ -87,10 +86,12 @@
   function kpiCard(v, l, cls) { return `<div class="kpi ${cls || ''}"><div class="v">${v}</div><div class="l">${l}</div></div>`; }
   function renderKPI(r) {
     const k = r.kpi;
-    const placeCls = k.piecesUnplaced === 0 ? 'good' : 'warn';
+    // เทียบกับยอด "ที่ขอจริง" เสมอ — ถ้าโดนตัด cap ต้องเห็นชัดว่าไม่ครบ
+    const denom = k.piecesRequested != null ? k.piecesRequested : k.piecesTotal;
+    const placeCls = k.piecesDropped > 0 ? 'bad' : (k.piecesUnplaced === 0 ? 'good' : 'warn');
     const wtCls = k.weightUtilPct > 100 ? 'bad' : (k.weightUtilPct > 90 ? 'warn' : 'good');
     $('kpiRow').innerHTML =
-      kpiCard(`${k.piecesPlaced}<span class="text-slate-400 text-sm">/${k.piecesTotal}</span>`, 'ชิ้นที่วางได้', placeCls) +
+      kpiCard(`${k.piecesPlaced}<span class="text-slate-400 text-sm">/${denom}</span>`, 'ชิ้นที่วางได้', placeCls) +
       kpiCard(k.floorUtilPct + '%', 'ใช้พื้น') +
       kpiCard(k.volumeUtilPct + '%', 'ใช้ปริมาตร') +
       kpiCard(k.weightUtilPct + '%', 'ใช้พิกัดน้ำหนัก', wtCls) +
@@ -229,7 +230,14 @@
     document.querySelectorAll('input[name=src]').forEach((el) => el.onchange = (e) => {
       state.source = e.target.value;
       $('bookingBox').style.display = state.source === 'booking' ? '' : 'none';
-      if (state.source === 'manual' && !state.items.length) { state.items = [{ sku: D.skuCatalog[0].sku, qty: 10 }]; renderItems(); }
+      if (state.source === 'manual') {
+        // ต้องล้าง meta — ไม่งั้นแผนที่กรอกเองจะถูกอ้างเป็น Booking ล่าสุด
+        // (Loading Instruction จะพิมพ์เลข Booking ผิด)
+        state.meta = {};
+        if (!state.items.length) { state.items = [{ sku: D.skuCatalog[0].sku, qty: 10 }]; renderItems(); }
+      } else {
+        loadBooking($('bookingSel').value);   // สลับกลับ → ดึงข้อมูล Booking คืน
+      }
     });
     $('bookingSel').onchange = (e) => loadBooking(e.target.value);
     $('ctnSel').onchange = updateDims;

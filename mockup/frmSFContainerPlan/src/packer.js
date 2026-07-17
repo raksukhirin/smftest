@@ -26,14 +26,21 @@
   const yn = (v) => v === true || String(v).trim().toUpperCase() === 'Y';
 
   // ---- 1) expand cargoItems → รายชิ้น (join กับ skuCatalog) ---------------
+  // คืน { pieces, unknownSkus, requestedQty, droppedQty }
+  // สำคัญ: ห้าม "หายเงียบ" — SKU ไม่รู้จัก / เกิน cap ต้องรายงานกลับเสมอ
+  // เพื่อให้ plan() ยกเป็น warning (ไม่งั้น KPI จะโกหกว่าของครบ)
   function expandItems(cargoItems, skuCatalog, cap = 5000) {
     const bySku = {};
     skuCatalog.forEach((s) => { bySku[s.sku] = s; });
     const pieces = [];
+    const unknownSkus = [];
+    let requestedQty = 0;
     for (const line of cargoItems) {
+      const want = Math.max(0, Number(line.qty) || 0);
       const s = bySku[line.sku];
-      if (!s) continue;                       // SKU ไม่รู้จัก → ข้าม (UI เตือนแยก)
-      const qty = Math.max(0, Math.min(Number(line.qty) || 0, cap - pieces.length));
+      if (!s) { if (want > 0) unknownSkus.push({ sku: String(line.sku), qty: want }); continue; }
+      requestedQty += want;
+      const qty = Math.min(want, Math.max(0, cap - pieces.length));
       for (let i = 0; i < qty; i++) {
         pieces.push({
           sku: s.sku, L: +s.Lmm, W: +s.Wmm, H: +s.Hmm, weight: +s.weightKg,
@@ -42,9 +49,10 @@
           dgClass: String(s.dgClass || '').trim(), color: s.color || '#64748b',
         });
       }
-      if (pieces.length >= cap) break;
+      // ไม่ break — ต้องนับ requestedQty ของบรรทัดที่เหลือให้ครบ
+      // เพื่อรายงาน droppedQty ได้ถูกต้อง (ถ้า break จะหายเงียบซ้ำอีกชั้น)
     }
-    return pieces;
+    return { pieces, unknownSkus, requestedQty, droppedQty: requestedQty - pieces.length };
   }
 
   // ---- 2) สร้างคอลัมน์ (vertical stacks) ---------------------------------
@@ -217,14 +225,15 @@
   function plan(input) {
     const { container, cargoItems, skuCatalog, settings } = input;
     const cfg = Object.assign({
-      allowRotate: true, heightBucketMm: 50, wallClearanceMm: 50,
+      allowRotate: true, wallClearanceMm: 50,
       doorZoneMm: 1200, doorAt: 'FRONT', topFill: true,
     }, settings || {});
 
     const contL = +container.innerLmm, contW = +container.innerWmm, contH = +container.innerHmm;
     const tare = +container.tareKg, maxPayload = +container.maxPayloadKg;
 
-    const pieces = expandItems(cargoItems, skuCatalog);
+    const ex = expandItems(cargoItems, skuCatalog);
+    const pieces = ex.pieces;
     const columns = buildColumns(pieces, contH);
     const cont = { L: contL, W: contW, H: contH };
 
@@ -282,13 +291,14 @@
 
     return buildResult({
       container, contL, contW, contH, tare, maxPayload,
-      placements, remainingCols: remaining, pieces, cfg,
+      placements, remainingCols: remaining, pieces, cfg, ex,
     });
   }
 
   // ---- ประกอบผลลัพธ์ + KPI ----------------------------------------------
   function buildResult(s) {
     const { contL, contW, contH, tare, maxPayload, placements, remainingCols, pieces, cfg } = s;
+    const ex = s.ex || { unknownSkus: [], requestedQty: pieces.length, droppedQty: 0 };
 
     // ระเบิดคอลัมน์เป็น "กล่องรายชิ้น" 3D (สำหรับ view / รายงาน)
     const boxes = [];
@@ -342,9 +352,20 @@
       warnings.push({ level: 'danger', code: 'OVERWEIGHT', msg: 'น้ำหนักสินค้าเกินพิกัดบรรทุกของตู้' });
     if (unplacedPieces > 0)
       warnings.push({ level: 'warn', code: 'UNPLACED', msg: `วางไม่ลง ${unplacedPieces} ชิ้น — ต้องใช้ตู้เพิ่มหรือปรับแผน` });
+    // ห้ามหายเงียบ: ของที่ engine ไม่ได้พิจารณาเลย ต้องเตือนดัง ๆ
+    if (ex.unknownSkus.length) {
+      const t = ex.unknownSkus.reduce((a, u) => a + u.qty, 0);
+      warnings.push({ level: 'danger', code: 'UNKNOWN_SKU',
+        msg: `ไม่รู้จัก SKU: ${ex.unknownSkus.map((u) => u.sku).join(', ')} (รวม ${t} ชิ้น) — ไม่ถูกนำมาคำนวณ` });
+    }
+    if (ex.droppedQty > 0)
+      warnings.push({ level: 'danger', code: 'CAP_EXCEEDED',
+        msg: `จำนวนชิ้นเกินขีดจำกัด mockup (${pieces.length} ชิ้น) — ตัดออก ${ex.droppedQty} ชิ้น ผลลัพธ์ไม่ครบ` });
 
     const kpi = {
-      piecesTotal: pieces.length,
+      piecesRequested: ex.requestedQty,        // ที่ผู้ใช้ขอจริง (ก่อนตัด cap)
+      piecesTotal: pieces.length,              // ที่ engine พิจารณา (หลังตัด cap)
+      piecesDropped: ex.droppedQty,            // ถูกตัดเพราะเกิน cap
       piecesPlaced: boxes.length,
       piecesUnplaced: unplacedPieces,
       columns: placements.length,
