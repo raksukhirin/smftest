@@ -1,16 +1,24 @@
 /* ============================================================================
- * frmSFContainerPlan — 3D Viewer (Three.js, ES module)
+ * frmSFContainerPlan — 3D Viewer (Three.js — classic script / IIFE)
  * ----------------------------------------------------------------------------
  * - กล่องทึบจริง (ไม่ใช่ wireframe แบนแบบ demo Python เดิม)
  * - InstancedMesh ต่อ SKU → เรนเดอร์ 600+ กล่องลื่น
  * - OrbitControls: หมุน/ซูม/แพน · คลิกกล่องเพื่อดูรายละเอียด
- * - สไลเดอร์ "ตัดชั้น" (maxZ) เพื่อมองทะลุเข้าไปข้างใน
+ * - สไลเดอร์ "ตัดชั้น" ใช้ clipping plane จริง เพื่อมองทะลุเข้าไปข้างใน
+ *
+ * ⚠ ทำไมเป็น classic script ไม่ใช่ ES module:
+ *   mockup ของ SMF ต้อง double-click เปิดจาก file:// ได้ (ธรรมเนียมของ repo)
+ *   แต่ ES module โดน CORS บล็อกบน file:// เสมอ (origin 'null')
+ *   → ใช้ Three.js UMD build (r147) + OrbitControls แบบ classic แทน
+ *   (ทีมเคยเจอปัญหาเดียวกันแล้วแก้แบบนี้: commit "frmSFQuotation: convert
+ *    ES modules to IIFE + SFQ namespace for file:// support")
  *
  * แกน: three(X)=ยาว(L) · three(Y)=สูง(H) · three(Z)=กว้าง(W) — หน่วยเมตร (mm/1000)
  * export: window.CTNView3D  แล้วยิง event 'ctn3d-ready' (app.js รอฟัง)
  * ==========================================================================*/
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+(function () {
+'use strict';
+if (typeof THREE === 'undefined') return;    // Three.js โหลดไม่ได้ → ตัวตรวจจับใน index.html จะฟ้องเอง
 
 const S = 1000;                 // mm → m
 const GAP = 8;                  // ย่อกล่องด้านละ (mm) ให้เห็นรอยต่อ
@@ -44,7 +52,7 @@ function init(el) {
   el.innerHTML = '';
   el.appendChild(renderer.domElement);
 
-  controls = new OrbitControls(camera, renderer.domElement);
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
 
@@ -199,3 +207,4 @@ function snapshot(w, h, type, quality) {
 
 window.CTNView3D = { init, render, setMaxZ, resetView, setPickHandler, snapshot };
 window.dispatchEvent(new Event('ctn3d-ready'));
+})();

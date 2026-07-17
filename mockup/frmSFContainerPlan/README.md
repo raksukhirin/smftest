@@ -18,19 +18,25 @@ python -m http.server 8770
 ## ไฟล์
 
 ```
-index.html        UI (ธีม Emerald) + importmap ของ Three.js
+index.html        UI (ธีม Emerald) + โหลด Three.js UMD (classic script)
 style.css         รวม print styles ของ Loading Instruction
 data.js           ตู้ 4 ISO + Booking ตัวอย่าง (mirror SFCTNLISTBOOK) + SKU + settings
 src/
   packer.js       ★ Engine (DOM-free) — skyline bin-packing + stacking + เงื่อนไข + KPI + planBest()
   view2d.js       วาด SVG: floor plan (บน) + elevation (ข้าง) + legend
-  view3d.js       3D จริง (Three.js, ES module) — InstancedMesh + orbit + คลิกดู + ตัดชั้น
+  view3d.js       3D จริง (Three.js UMD, IIFE) — InstancedMesh + orbit + คลิกดู + clipping plane
   report.js       Loading Instruction → window.print() (Save as PDF) + ลำดับการโหลด
   app.js          DOM wiring: ตาราง/ปุ่ม → planBest() → เรนเดอร์ผล + บันทึก
 ```
 
-> ⚠ **ต้องรันผ่าน http://** (ไม่ใช่ file://) — Three.js โหลดผ่าน importmap/ES module จาก CDN
-> ถ้าแก้ไฟล์แล้วหน้าไม่เปลี่ยน = เบราว์เซอร์ cache → เพิ่ม `?v=` ที่ query หรือ hard reload
+> ✅ **Double-click `index.html` (file://) ใช้งานได้ครบ รวม 3D** — ตามธรรมเนียม mockup ของ SMF
+>
+> ⚠ **ห้ามเปลี่ยน `view3d.js` เป็น ES module / importmap** — ES module โดน CORS บล็อกบน `file://` เสมอ
+> (`origin 'null'`) ทำให้ 3D ตายเงียบ ๆ เหลือแต่พื้นเทา ส่วน classic script โหลดได้ปกติ
+> จึงใช้ **Three.js UMD (r147) + OrbitControls แบบ classic**
+> (ทีมเคยเจอปัญหาเดียวกัน: commit `frmSFQuotation: convert ES modules to IIFE ... for file:// support`)
+>
+> ⚠ ถ้าแก้ไฟล์แล้วหน้าไม่เปลี่ยน = เบราว์เซอร์ cache → hard reload (`Ctrl+Shift+R`) หรือบั๊ม `?v=` ใน `index.html`
 
 ## Engine (`packer.js`) — ปรับปรุงจาก Python demo
 

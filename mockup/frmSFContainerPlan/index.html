@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body class="bg-slate-100 text-slate-800">
 
@@ -152,22 +152,18 @@
 <div id="tooltip" class="tooltip hidden"></div>
 <div id="printArea"></div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
+<!-- Three.js UMD (r147) + OrbitControls แบบ classic
+     ⚠ ห้ามเปลี่ยนเป็น ES module / importmap — จะทำให้ double-click เปิดจาก file:// ไม่ได้
+        (ES module โดน CORS บล็อกบน file:// เสมอ) ดูหมายเหตุใน src/view3d.js -->
+<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
 
-<script src="data.js?v=7"></script>
-<script src="src/packer.js?v=7"></script>
-<script src="src/view2d.js?v=7"></script>
-<script src="src/report.js?v=7"></script>
-<script src="src/app.js?v=7"></script>
-<!-- 3D เป็น ES module (deferred) — app.js รอ event 'ctn3d-ready' -->
-<script type="module" src="src/view3d.js?v=7"></script>
+<script src="data.js?v=8"></script>
+<script src="src/packer.js?v=8"></script>
+<script src="src/view2d.js?v=8"></script>
+<script src="src/report.js?v=8"></script>
+<script src="src/view3d.js?v=8"></script>
+<script src="src/app.js?v=8"></script>
 
 <script>
 // ---- ตัวตรวจจับ 3D โหลดไม่สำเร็จ ----------------------------------------
