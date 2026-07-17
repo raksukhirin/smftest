@@ -19,7 +19,11 @@ let renderer, scene, camera, controls, host;
 let meshes = [];                // InstancedMesh[] (ต่อ SKU)
 let boxRef = [];                // [{mesh, boxes:[]}] map instanceId → box
 let raycaster, pointer, onPick = null;
-let curResult = null, curMaxZ = Infinity;
+let curResult = null;
+// ระนาบตัดแนวนอน: normal ชี้ลง (0,-1,0) → เก็บเฉพาะส่วนที่ y <= constant
+// ใช้ clipping plane จริง ⇒ (ก) ตัดกลางกล่องได้ ตรงกับชื่อ "ตัดชั้น"
+//                        (ข) เลื่อนสไลเดอร์แล้วแค่อัปเดต constant ไม่ต้อง rebuild ฉาก
+const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), Infinity);
 
 function init(el) {
   host = el;
@@ -30,7 +34,9 @@ function init(el) {
   camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 200);
   camera.position.set(9, 6, 9);
 
-  renderer = new THREE.WebGLRenderer({ antialias: true });
+  // preserveDrawingBuffer: จำเป็นสำหรับ snapshot() (toDataURL หลัง render)
+  renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.localClippingEnabled = true;     // ใช้ตัดชั้นแนวนอน (setMaxZ)
   renderer.setSize(w, h);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   el.innerHTML = '';
@@ -103,16 +109,17 @@ function addContainer(r) {
 }
 
 // ---- วาดกล่อง (InstancedMesh ต่อ SKU) -----------------------------------
-function addBoxes(r, maxZ) {
+function addBoxes(r) {
   const bySku = {};
-  for (const b of r.boxes) {
-    if (b.z > maxZ) continue;                    // ตัดชั้น
-    (bySku[b.sku] = bySku[b.sku] || []).push(b);
-  }
+  for (const b of r.boxes) (bySku[b.sku] = bySku[b.sku] || []).push(b);
   const unit = new THREE.BoxGeometry(1, 1, 1);
   for (const sku of Object.keys(bySku)) {
     const list = bySku[sku];
-    const mat = new THREE.MeshLambertMaterial({ color: new THREE.Color(list[0].color) });
+    // clippingPlanes + DoubleSide: ให้เห็นหน้าตัดตอนถูกตัด (ไม่งั้นกล่องจะกลวง)
+    const mat = new THREE.MeshLambertMaterial({
+      color: new THREE.Color(list[0].color),
+      clippingPlanes: [clipPlane], clipShadows: true, side: THREE.DoubleSide,
+    });
     const im = new THREE.InstancedMesh(unit.clone(), mat, list.length);
     const m = new THREE.Matrix4();
     list.forEach((b, i) => {
@@ -145,14 +152,15 @@ function handleClick(e) {
 function render(result, opts) {
   opts = opts || {};
   curResult = result;
-  curMaxZ = opts.maxZ != null ? opts.maxZ : Infinity;
   clearScene();
   addContainer(result);
-  addBoxes(result, curMaxZ);
+  addBoxes(result);
+  setMaxZ(opts.maxZ != null ? opts.maxZ : result.container.H);
   if (opts.resetView !== false) resetView();
 }
 
-function setMaxZ(z) { if (curResult) { clearScene(); addContainer(curResult); addBoxes(curResult, z); curMaxZ = z; } }
+// ตัดชั้นที่ความสูง z (mm) — แค่ขยับระนาบ ไม่ต้องสร้างฉากใหม่
+function setMaxZ(z) { clipPlane.constant = (z == null ? Infinity : z / S); }
 
 function resetView() {
   if (!curResult) return;
@@ -165,5 +173,25 @@ function resetView() {
 
 function setPickHandler(fn) { onPick = fn; }
 
-window.CTNView3D = { init, render, setMaxZ, resetView, setPickHandler };
+// ---- snapshot: เรนเดอร์ที่ขนาดกำหนด แล้วคืน dataURL -------------------
+// ใช้ได้ทั้ง (ก) แปะภาพ 3D ลง Loading Instruction  (ข) ตรวจงานตอน dev
+// ต้องมี preserveDrawingBuffer:true ตอนสร้าง renderer ไม่งั้นได้ภาพว่าง
+function snapshot(w, h, type, quality) {
+  if (!renderer || !curResult) return null;
+  w = w || 1200; h = h || 675;
+  const old = new THREE.Vector2();
+  renderer.getSize(old);
+  const oldAspect = camera.aspect;
+
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  const url = renderer.domElement.toDataURL(type || 'image/png', quality || 0.92);
+
+  renderer.setSize(old.x || 1, old.y || 1, false);
+  camera.aspect = oldAspect || 1; camera.updateProjectionMatrix();
+  return url;
+}
+
+window.CTNView3D = { init, render, setMaxZ, resetView, setPickHandler, snapshot };
 window.dispatchEvent(new Event('ctn3d-ready'));

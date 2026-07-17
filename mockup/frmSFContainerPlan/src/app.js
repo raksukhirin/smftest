@@ -139,20 +139,24 @@
   // ---- strategy (โปร่งใส: เลือกอะไร เพราะอะไร) --------------------------
   function renderStrategy(r) {
     if (!r.strategy) { $('strategyBox').innerHTML = ''; return; }
+    const modeTh = r.strategy.mode;
     const rows = r.strategy.tried.map((t) => {
-      const on = t.sortKey === r.strategy.chosen;
+      const on = t.sortKey === r.strategy.chosen && t.mode === modeTh;
       return `<tr class="${on ? 'font-semibold text-emerald-700' : 'text-slate-500'}">
         <td>${on ? '✓ ' : ''}${t.sortKey}</td>
+        <td class="text-[9px]">${t.mode}</td>
         <td class="text-right font-mono">${t.placed}</td>
-        <td class="text-right font-mono">${t.floorPct}%</td>
-        <td class="text-right font-mono">${t.frontPct}%</td></tr>`;
+        <td class="text-right font-mono">${t.frontPct}%${t.balanced ? ' <span class="text-emerald-600">✓</span>' : ''}</td></tr>`;
     }).join('');
     $('strategyBox').innerHTML =
       `<table class="w-full text-[10px]"><thead><tr class="text-slate-400">
-        <th class="text-left">กลยุทธ์</th><th class="text-right">วางได้</th>
-        <th class="text-right">พื้น</th><th class="text-right">หน้า</th></tr></thead>
+        <th class="text-left">กลยุทธ์</th><th class="text-left">ทิศ</th>
+        <th class="text-right">วางได้</th><th class="text-right">หน้า</th></tr></thead>
        <tbody>${rows}</tbody></table>
-       <div class="text-slate-400 mt-1.5 leading-relaxed">เลือกจาก: วางได้มากสุด → สมดุลใกล้ 50/50 → ใช้พื้นคุ้มสุด</div>`;
+       <div class="text-slate-400 mt-1.5 leading-relaxed">
+         ลองทุกกลยุทธ์ × ทิศทางเติม (ทิศเดียว/สองทิศ) แล้วเลือกอัตโนมัติ<br>
+         เกณฑ์: วางได้มากสุด — แต่ยอมแลกได้ถึง 5 ชิ้น ถ้าทำให้สมดุลผ่าน 35–65% (<span class="text-emerald-600">✓</span>)
+       </div>`;
   }
 
   // ---- 3D ---------------------------------------------------------------

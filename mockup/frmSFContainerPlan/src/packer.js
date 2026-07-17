@@ -186,6 +186,22 @@
     return { placed, leftover, segs };
   }
 
+  // ---- แบ่งคอลัมน์เป็น 2 กอง น้ำหนักใกล้เคียงกัน (สำหรับ balanceMode) -----
+  // ของมีเงื่อนไข (nearDoor/noWall) บังคับเข้ากอง A เสมอ เพราะกอง B ถูก mirror
+  // ไปฝั่งท้าย → เงื่อนไข "ใกล้ประตู" จะเสียความหมาย
+  function splitByWeight(cols) {
+    const A = [], B = [];
+    let wA = 0, wB = 0;
+    const forced = cols.filter((c) => c.nearDoor || c.noWall);
+    for (const c of forced) { A.push(c); wA += c.weight; }
+    const rest = cols.filter((c) => !c.nearDoor && !c.noWall)
+      .sort((a, b) => b.weight - a.weight);          // หนักก่อน = greedy least-loaded
+    for (const c of rest) {
+      if (wA <= wB) { A.push(c); wA += c.weight; } else { B.push(c); wB += c.weight; }
+    }
+    return [A, B];
+  }
+
   // ---- top-fill: วางคอลัมน์เตี้ยที่เหลือบนหัวคอลัมน์ที่วางแล้ว -----------
   function topFill(placements, leftover, contH, cfg) {
     const stillLeft = [];
@@ -263,7 +279,21 @@
 
     // 2) non-DG เติมโซนหน้า [0, frontL]
     let segs = skyInit(contW);
-    if (groups._NON_DG) {
+    if (groups._NON_DG && cfg.balanceMode) {
+      // bidirectional: แบ่ง 2 กองน้ำหนักเท่า ๆ กัน แล้วเติมจากสองปลายเข้าหากัน
+      // กอง A: [0, half] เติมปกติ | กอง B: [half, frontL] เติมย้อนกลับ (mirror)
+      // ⇒ น้ำหนักกระจายสองฝั่งโดยโครงสร้าง แทนที่จะเทไปด้านที่เติมก่อน
+      const half = Math.floor(frontL / 2);
+      const [gA, gB] = splitByWeight(groups._NON_DG);
+      const rA = packGroup(skyInit(contW), gA, { L: half, W: contW, H: contH }, cfg);
+      rA.placed.forEach((p) => placements.push(p));
+      unplacedCols.push(...rA.leftover);
+
+      const lenB = frontL - half;
+      const rB = packGroup(skyInit(contW), gB, { L: lenB, W: contW, H: contH }, cfg);
+      rB.placed.forEach((p) => { p.x = frontL - (p.x + p.l); placements.push(p); });  // mirror
+      unplacedCols.push(...rB.leftover);
+    } else if (groups._NON_DG) {
       const res = packGroup(segs, groups._NON_DG, { L: frontL, W: contW, H: contH }, cfg);
       res.placed.forEach((p) => placements.push(p));
       unplacedCols.push(...res.leftover);
@@ -392,23 +422,37 @@
   // ---- 4) planBest(): ลองหลายกลยุทธ์ แล้วเลือกแผนที่ดีที่สุด --------------
   // เกณฑ์: วางได้มากสุดก่อน → แล้วสมดุลน้ำหนักใกล้ 50/50 สุด → แล้วใช้พื้นคุ้มสุด
   // (packer เร็วพอที่จะรันทุกกลยุทธ์แล้วเทียบ — โปร่งใส ตรวจสอบได้)
-  function scorePlan(r) {
-    const k = r.kpi;
-    const dev = Math.abs(k.balance.frontPct - 50) + Math.abs(k.balance.leftPct - 50);
-    return k.piecesPlaced * 1e6 - dev * 1e3 + k.floorUtilPct;
+  // เกณฑ์สมดุลเป็น "ผ่าน/ไม่ผ่าน" (35–65%) ไม่ใช่ยิ่งใกล้ 50 ยิ่งดีแบบไม่จำกัด
+  // ⇒ พอผ่านเกณฑ์แล้ว ให้เอาของลงให้ได้มากที่สุดแทน
+  // BALANCE_BONUS_PIECES = ยอมแลกได้กี่ชิ้นเพื่อให้ตู้ผ่านเกณฑ์สมดุล
+  //   (ตั้ง 5: สมดุลผ่านเกณฑ์คุ้มกว่าเสียของไม่กี่ชิ้น แต่ไม่คุ้มถ้าต้องทิ้งเป็นสิบ)
+  const BALANCE_BONUS_PIECES = 5;
+  function inBalanceBand(b) {
+    return b.frontPct >= 35 && b.frontPct <= 65 && b.leftPct >= 35 && b.leftPct <= 65;
   }
+  function scorePlan(r) {
+    const k = r.kpi, b = k.balance;
+    const dev = Math.abs(b.frontPct - 50) + Math.abs(b.leftPct - 50);
+    const bonus = inBalanceBand(b) ? BALANCE_BONUS_PIECES * 1e6 : 0;
+    return k.piecesPlaced * 1e6 + bonus - dev * 1e3 + k.floorUtilPct;
+  }
+  // ลองทุกกลยุทธ์ × ทั้ง 2 ทิศทางการเติม (ทิศเดียว / สองทิศ) แล้วเลือกที่ดีที่สุด
+  // ผู้ใช้ไม่ต้องเลือกโหมดเอง — packer เร็วพอที่จะลองหมดแล้วเทียบ (โปร่งใส ดูตารางได้)
   function planBest(input) {
-    const keys = Object.keys(SORT_KEYS);
-    let best = null, tried = [];
-    for (const sortKey of keys) {
-      const settings = Object.assign({}, input.settings || {}, { sortKey });
-      const r = plan(Object.assign({}, input, { settings }));
-      const sc = scorePlan(r);
-      tried.push({ sortKey, placed: r.kpi.piecesPlaced, floorPct: r.kpi.floorUtilPct,
-                   frontPct: r.kpi.balance.frontPct, score: Math.round(sc) });
-      if (!best || sc > best.score) best = { r, score: sc, sortKey };
+    const base = input.settings || {};
+    let best = null; const tried = [];
+    for (const bm of [false, true]) {
+      for (const sortKey of Object.keys(SORT_KEYS)) {
+        const settings = Object.assign({}, base, { sortKey, balanceMode: bm });
+        const r = plan(Object.assign({}, input, { settings }));
+        const sc = scorePlan(r);
+        tried.push({ sortKey, mode: bm ? 'สองทิศ' : 'ทิศเดียว', placed: r.kpi.piecesPlaced,
+                     floorPct: r.kpi.floorUtilPct, frontPct: r.kpi.balance.frontPct,
+                     balanced: inBalanceBand(r.kpi.balance), score: Math.round(sc) });
+        if (!best || sc > best.score) best = { r, score: sc, sortKey, mode: bm };
+      }
     }
-    best.r.strategy = { chosen: best.sortKey, tried };   // โชว์ใน UI ได้ว่าเลือกอะไร ทำไม
+    best.r.strategy = { chosen: best.sortKey, mode: best.mode ? 'สองทิศ' : 'ทิศเดียว', tried };
     return best.r;
   }
 
