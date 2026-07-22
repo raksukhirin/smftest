@@ -1,0 +1,630 @@
+<title>FPI — แผนที่ระบบ 7 หน้าจอ + คู่มือใช้งาน</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ink:#0d1b22; --paper:#eef3f4; --surface:#ffffff; --surface-2:#f5f8f9;
+    --line:#d3dee1; --line-strong:#b9c9ce; --muted:#586970; --faint:#83969d;
+    --accent:#0e7490; --accent-soft:#cfeef3;
+    --s1:#0891b2; --s2:#0d9488; --s3:#c2690a; --s4:#4f46e5; --s5:#475569; --s6:#7c3aed; --s7:#a1622c;
+    --good:#047857; --warn:#b45309; --risk:#c0362c;
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Sans Thai", sans-serif;
+    --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+    --maxw: 1080px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink:#e4eef1; --paper:#0a1216; --surface:#111e23; --surface-2:#0e191e;
+      --line:#22333b; --line-strong:#2e4249; --muted:#93a7ae; --faint:#6d828a;
+      --accent:#2fbdd2; --accent-soft:#0d353d;
+      --s1:#22b8cf; --s2:#2dd4bf; --s3:#e8951f; --s4:#818cf8; --s5:#94a3b8; --s6:#a78bfa; --s7:#d99a5b;
+      --good:#34d399; --warn:#f59e0b; --risk:#f2685c;
+    }
+  }
+  :root[data-theme="light"] {
+    --ink:#0d1b22; --paper:#eef3f4; --surface:#ffffff; --surface-2:#f5f8f9;
+    --line:#d3dee1; --line-strong:#b9c9ce; --muted:#586970; --faint:#83969d;
+    --accent:#0e7490; --accent-soft:#cfeef3;
+    --s1:#0891b2; --s2:#0d9488; --s3:#c2690a; --s4:#4f46e5; --s5:#475569; --s6:#7c3aed; --s7:#a1622c;
+    --good:#047857; --warn:#b45309; --risk:#c0362c;
+  }
+  :root[data-theme="dark"] {
+    --ink:#e4eef1; --paper:#0a1216; --surface:#111e23; --surface-2:#0e191e;
+    --line:#22333b; --line-strong:#2e4249; --muted:#93a7ae; --faint:#6d828a;
+    --accent:#2fbdd2; --accent-soft:#0d353d;
+    --s1:#22b8cf; --s2:#2dd4bf; --s3:#e8951f; --s4:#818cf8; --s5:#94a3b8; --s6:#a78bfa; --s7:#d99a5b;
+    --good:#34d399; --warn:#f59e0b; --risk:#f2685c;
+  }
+
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-sans); font-size:15px; line-height:1.6;
+    font-feature-settings:"kern";
+  }
+  .wrap { max-width:var(--maxw); margin:0 auto; padding:0 20px; }
+  code, .mono { font-family:var(--font-mono); font-variant-numeric:tabular-nums; }
+  a { color:var(--accent); text-decoration:none; }
+  a:focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:3px; }
+
+  /* ---------- header ---------- */
+  header.hero {
+    border-bottom:1px solid var(--line);
+    background:
+      radial-gradient(120% 140% at 88% -20%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 60%),
+      var(--surface);
+  }
+  .hero .wrap { padding-top:34px; padding-bottom:28px; }
+  .eyebrow {
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 10px;
+  }
+  h1 {
+    font-size:clamp(27px, 4.6vw, 40px); line-height:1.08; margin:0; letter-spacing:-.01em;
+    text-wrap:balance; font-weight:750;
+  }
+  .lede { color:var(--muted); font-size:16px; max-width:60ch; margin:12px 0 0; }
+  .metarow { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
+  .tag {
+    font-family:var(--font-mono); font-size:11.5px; letter-spacing:.02em;
+    padding:4px 9px; border-radius:999px; border:1px solid var(--line-strong);
+    color:var(--muted); background:var(--surface-2); white-space:nowrap;
+  }
+  .tag b { color:var(--ink); font-weight:600; }
+  .tag.ok { color:var(--good); border-color:color-mix(in oklab, var(--good) 40%, var(--line)); }
+
+  /* ---------- section rhythm ---------- */
+  section { padding:38px 0; border-bottom:1px solid var(--line); }
+  section:last-of-type { border-bottom:0; }
+  .kicker {
+    display:flex; align-items:baseline; gap:12px; margin:0 0 4px;
+  }
+  .kicker .n {
+    font-family:var(--font-mono); font-size:12px; color:var(--accent); font-weight:600;
+    border:1px solid var(--accent-soft); background:color-mix(in oklab,var(--accent) 8%, transparent);
+    border-radius:6px; padding:1px 7px;
+  }
+  h2 { font-size:21px; margin:0; letter-spacing:-.01em; font-weight:700; text-wrap:balance; }
+  .sub { color:var(--muted); font-size:14px; margin:6px 0 22px; max-width:66ch; }
+
+  /* ---------- flow diagram ---------- */
+  .diagram { width:100%; overflow-x:auto; }
+  .diagram svg { display:block; min-width:720px; width:100%; height:auto; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px 20px; margin-top:14px; font-size:12.5px; color:var(--muted); }
+  .legend span { display:inline-flex; align-items:center; gap:7px; }
+  .swatch { width:22px; height:0; border-top:2px solid currentColor; display:inline-block; }
+  .swatch.solid { border-top-style:solid; }
+  .swatch.dash { border-top-style:dashed; }
+  .swatch.risk { color:var(--risk); }
+
+  /* ---------- screen cards ---------- */
+  .screens { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:14px; }
+  .screen {
+    position:relative; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:16px 16px 15px; overflow:hidden;
+  }
+  .screen::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; background:var(--sc); }
+  .screen .top { display:flex; align-items:center; gap:9px; }
+  .screen .idx {
+    font-family:var(--font-mono); font-size:12px; font-weight:700; color:#fff; background:var(--sc);
+    width:22px; height:22px; border-radius:6px; display:grid; place-items:center; flex:0 0 auto;
+  }
+  .screen h3 { margin:0; font-size:16px; font-weight:680; letter-spacing:-.005em; }
+  .screen .folder { font-family:var(--font-mono); font-size:11.5px; color:var(--muted); margin:3px 0 0; }
+  .screen .role { font-size:13.5px; color:var(--ink); margin:11px 0 12px; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:5px 12px; font-size:12.5px; align-items:baseline; }
+  .kv dt { color:var(--faint); font-family:var(--font-mono); font-size:11px; letter-spacing:.02em; }
+  .kv dd { margin:0; color:var(--muted); }
+  .kv dd b { color:var(--ink); font-weight:600; }
+  .kv .io { color:var(--ink); }
+  .kv .io i { color:var(--faint); font-style:normal; padding:0 4px; }
+  .persist { color:var(--good); } .noPersist { color:var(--faint); }
+
+  /* ---------- reuse map ---------- */
+  .reuse { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px; }
+  .engine { border:1px solid var(--line); border-radius:11px; padding:15px; background:var(--surface); }
+  .engine .name { font-family:var(--font-mono); font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px; }
+  .engine .name .dot { width:10px; height:10px; border-radius:3px; background:var(--sc); flex:0 0 auto; }
+  .engine .who { font-size:12.5px; color:var(--muted); margin:4px 0 10px; }
+  .engine .used { display:flex; flex-wrap:wrap; gap:6px; }
+  .pill {
+    font-family:var(--font-mono); font-size:11px; padding:3px 8px; border-radius:999px;
+    border:1px solid var(--line-strong); color:var(--muted); background:var(--surface-2);
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .pill .d { width:7px; height:7px; border-radius:2px; }
+  .selfnote { font-size:12px; color:var(--faint); margin-top:2px; }
+
+  /* ---------- callout ---------- */
+  .callout {
+    border:1px solid var(--line); border-left:4px solid var(--warn);
+    background:color-mix(in oklab, var(--warn) 6%, var(--surface));
+    border-radius:10px; padding:14px 16px; font-size:13.5px;
+  }
+  .callout.risk { border-left-color:var(--risk); background:color-mix(in oklab, var(--risk) 6%, var(--surface)); }
+  .callout h4 { margin:0 0 5px; font-size:14px; }
+  .callout code { font-size:12.5px; background:color-mix(in oklab,var(--ink) 7%, transparent); padding:1px 5px; border-radius:4px; }
+
+  /* ---------- run block ---------- */
+  .runwrap { display:grid; grid-template-columns:1.1fr 1fr; gap:18px; align-items:start; }
+  pre.code {
+    margin:0; background:var(--ink); color:#e7f1f3; border-radius:11px; padding:15px 16px;
+    font-family:var(--font-mono); font-size:12.5px; line-height:1.7; overflow-x:auto;
+    border:1px solid var(--line-strong);
+  }
+  @media (prefers-color-scheme:dark){ pre.code{ background:#060d10; } }
+  :root[data-theme="dark"] pre.code { background:#060d10; }
+  pre.code .c { color:#7fb8c4; } pre.code .k { color:#7fdbb0; } pre.code .u { color:#e0b877; }
+  .portlist { font-size:12.5px; }
+  .portlist table { width:100%; border-collapse:collapse; }
+  .portlist td { padding:5px 8px 5px 0; border-bottom:1px solid var(--line); }
+  .portlist td.p { font-family:var(--font-mono); color:var(--accent); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .portlist td.d { width:12px; }
+  .portlist td.d span { width:10px; height:10px; border-radius:3px; display:inline-block; }
+
+  /* ---------- walkthrough ---------- */
+  .steps { display:grid; gap:12px; counter-reset:step; }
+  .step {
+    display:grid; grid-template-columns:34px 1fr; gap:14px; align-items:start;
+    background:var(--surface); border:1px solid var(--line); border-radius:11px; padding:14px 16px;
+  }
+  .step .num {
+    counter-increment:step; font-family:var(--font-mono); font-weight:700; font-size:14px;
+    color:#fff; background:var(--sc,var(--accent)); width:30px; height:30px; border-radius:8px;
+    display:grid; place-items:center;
+  }
+  .step .num::before { content:counter(step); }
+  .step h4 { margin:0 0 3px; font-size:14.5px; }
+  .step h4 .fn { font-family:var(--font-mono); font-size:12px; color:var(--muted); font-weight:500; }
+  .step p { margin:0; font-size:13px; color:var(--muted); }
+  .step .try { margin-top:7px; font-size:12.5px; color:var(--ink); }
+  .step .try b { color:var(--sc,var(--accent)); }
+
+  /* ---------- decisions ---------- */
+  .decisions { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+  .dec { display:flex; gap:11px; align-items:baseline; padding:11px 13px; border:1px solid var(--line); border-radius:10px; background:var(--surface); }
+  .dec .code { color:var(--accent); font-weight:700; font-size:13px; flex:0 0 auto; }
+  .dec .t { font-size:13px; color:var(--muted); }
+  .dec .t b { color:var(--ink); font-weight:600; }
+
+  footer { padding:26px 0 46px; color:var(--faint); font-size:12.5px; }
+  footer .wrap { display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center; }
+
+  @media (max-width:720px) {
+    .runwrap { grid-template-columns:1fr; }
+    h1 { font-size:28px; }
+  }
+  @media (prefers-reduced-motion:no-preference) {
+    .screen, .step, .engine { transition:border-color .15s ease; }
+  }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Freight Pricing Intelligence · Mockup</p>
+    <h1>แผนที่ระบบ 7 หน้าจอ &amp; คู่มือใช้งาน</h1>
+    <p class="lede">ชั้น Pricing Intelligence ทับ ERP เดิม (VB6 + SQL Server) — แบ่งเป็น <b>2 ชั้นเวลา</b>:
+      <b>Estimated</b> (หน้า 1–6) ราคาที่สัญญาไว้ก่อนงานเดิน · <b>Actual</b> (หน้า 7 · D12) เงินที่เกิดขึ้นจริงหลังงานจบ
+      — หน้า 7 ปิดวงจรด้วยการเทียบกลับไปหาสิ่งที่เคาะไว้ที่ Booking Gate</p>
+    <div class="metarow">
+      <span class="tag ok">✓ ครบ <b>7 / 7</b> หน้าจอ</span>
+      <span class="tag ok">หน้า 7 · เทียบรายงานจริง <b>golden 3 ชุด</b></span>
+      <span class="tag">Standalone site · <b>HTML + Vanilla JS</b></span>
+      <span class="tag">Data <b>camelCase 1:1</b> กับ DDL</span>
+      <span class="tag">Engine เขียนครั้งเดียว · <b>reuse ข้ามหน้า</b></span>
+    </div>
+  </div>
+</header>
+
+<!-- ======================= 1. WORKFLOW ======================= -->
+<section>
+  <div class="wrap">
+    <div class="kicker"><span class="n">01</span><h2>วงจรธุรกิจ — ข้อมูลไหลอย่างไร</h2></div>
+    <p class="sub">4 หน้าจอเป็นสายทำงานหลัก (transactional) เรียงตามลำดับ · อีก 2 หน้าอ่านจากทุกหน้าแบบ read-only.
+      ลูกศรบอกว่า “อะไรไหลต่อ” — และเส้นสีแดงคือ D2: ใบเสนอราคายัง Active แต่ Rate ต้นทางตายไปแล้ว</p>
+
+    <div class="diagram" role="img" aria-label="ผังการไหลของข้อมูล: Rate Management ส่ง rateRef ให้ Quotation, Quotation ส่งให้ Booking Gate ด้วย cost auto-fill, Booking Gate ที่ต่ำกว่าเกณฑ์ส่งเข้า Approval Inbox; KB Dashboard และ AI Search อ่านจากทุกหน้า">
+      <svg viewBox="0 0 980 540" xmlns="http://www.w3.org/2000/svg" font-family="var(--font-sans)">
+        <defs>
+          <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="var(--muted)"/>
+          </marker>
+          <marker id="arwR" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="var(--risk)"/>
+          </marker>
+          <marker id="arw7" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 z" fill="var(--s7)"/>
+          </marker>
+        </defs>
+
+        <!-- spine connectors -->
+        <g stroke="var(--muted)" stroke-width="1.6" fill="none" marker-end="url(#arw)">
+          <line x1="214" y1="92" x2="252" y2="92"/>
+          <line x1="454" y1="92" x2="492" y2="92"/>
+          <line x1="694" y1="92" x2="732" y2="92"/>
+        </g>
+        <g font-family="var(--font-mono)" font-size="10.5" fill="var(--muted)" text-anchor="middle">
+          <text x="233" y="80">rateRef</text>
+          <text x="473" y="74">cost auto-fill</text>
+          <text x="473" y="86">+ chain</text>
+          <text x="713" y="80">NEED_APPROVE</text>
+        </g>
+
+        <!-- spine nodes -->
+        <g>
+          <rect x="54" y="58" width="160" height="68" rx="11" fill="var(--surface)" stroke="var(--s1)" stroke-width="1.6"/>
+          <rect x="54" y="58" width="4" height="68" rx="2" fill="var(--s1)"/>
+          <text x="74" y="84" font-size="13" font-weight="700" fill="var(--ink)">Rate Management</text>
+          <text x="74" y="103" font-size="10.5" font-family="var(--font-mono)" fill="var(--muted)">1 · Rate KB (ต้นน้ำ)</text>
+
+          <rect x="294" y="58" width="160" height="68" rx="11" fill="var(--surface)" stroke="var(--s2)" stroke-width="1.6"/>
+          <rect x="294" y="58" width="4" height="68" rx="2" fill="var(--s2)"/>
+          <text x="314" y="84" font-size="13" font-weight="700" fill="var(--ink)">Quotation Gen</text>
+          <text x="314" y="103" font-size="10.5" font-family="var(--font-mono)" fill="var(--muted)">2 · เสนอราคา</text>
+
+          <rect x="534" y="58" width="160" height="68" rx="11" fill="var(--surface)" stroke="var(--s3)" stroke-width="1.6"/>
+          <rect x="534" y="58" width="4" height="68" rx="2" fill="var(--s3)"/>
+          <text x="554" y="84" font-size="13" font-weight="700" fill="var(--ink)">Booking Gate</text>
+          <text x="554" y="103" font-size="10.5" font-family="var(--font-mono)" fill="var(--muted)">3 · เคาะ Margin (D1)</text>
+
+          <rect x="774" y="58" width="160" height="68" rx="11" fill="var(--surface)" stroke="var(--s4)" stroke-width="1.6"/>
+          <rect x="774" y="58" width="4" height="68" rx="2" fill="var(--s4)"/>
+          <text x="794" y="84" font-size="13" font-weight="700" fill="var(--ink)">Approval Inbox</text>
+          <text x="794" y="103" font-size="10.5" font-family="var(--font-mono)" fill="var(--muted)">4 · Manager อนุมัติ</text>
+        </g>
+
+        <!-- shared-state link 3<->4 -->
+        <path d="M614 126 C614 150, 854 150, 854 126" stroke="var(--s4)" stroke-width="1.3" fill="none" stroke-dasharray="4 3"/>
+        <text x="734" y="150" font-size="10" font-family="var(--font-mono)" fill="var(--s4)" text-anchor="middle">แชร์ localStorage (approve ↔ credit)</text>
+
+        <!-- read-only band -->
+        <rect x="54" y="248" width="880" height="120" rx="13" fill="none" stroke="var(--line-strong)" stroke-width="1.3" stroke-dasharray="2 4"/>
+        <text x="70" y="242" font-size="10.5" font-family="var(--font-mono)" fill="var(--faint)" text-anchor="start" transform="translate(0,20)">อ่านจากทุกหน้า · read-only</text>
+
+        <rect x="150" y="286" width="290" height="64" rx="11" fill="var(--surface)" stroke="var(--s5)" stroke-width="1.6"/>
+        <rect x="150" y="286" width="4" height="64" rx="2" fill="var(--s5)"/>
+        <text x="170" y="312" font-size="13" font-weight="700" fill="var(--ink)">KB Dashboard</text>
+        <text x="170" y="330" font-size="10.5" font-family="var(--font-mono)" fill="var(--muted)">5 · รวมภาพ + Quote-at-risk (D2)</text>
+
+        <rect x="548" y="286" width="290" height="64" rx="11" fill="var(--surface)" stroke="var(--s6)" stroke-width="1.6"/>
+        <rect x="548" y="286" width="4" height="64" rx="2" fill="var(--s6)"/>
+        <text x="568" y="312" font-size="13" font-weight="700" fill="var(--ink)">AI Knowledge Search</text>
+        <text x="568" y="330" font-size="10.5" font-family="var(--font-mono)" fill="var(--muted)">6 · ถาม-ตอบ + citation</text>
+
+        <!-- read connectors (faint dashed up) -->
+        <g stroke="var(--faint)" stroke-width="1.1" fill="none" stroke-dasharray="3 4" opacity="0.7">
+          <path d="M230 286 C230 210, 134 200, 134 128"/>
+          <path d="M300 286 C300 220, 374 200, 374 128"/>
+          <path d="M690 286 C690 220, 614 200, 614 128"/>
+          <path d="M760 286 C760 210, 854 200, 854 128"/>
+        </g>
+
+        <!-- D2 risk arc: Rate died -> Quote at risk -->
+        <path d="M120 58 C120 18, 374 18, 374 54" stroke="var(--risk)" stroke-width="1.7" fill="none"
+              stroke-dasharray="6 4" marker-end="url(#arwR)"/>
+        <text x="247" y="14" font-size="10.5" font-family="var(--font-mono)" fill="var(--risk)" text-anchor="middle">D2 · Rate ตาย → Quote เสี่ยง (Δ ทุน)</text>
+
+        <!-- ===== เส้นแบ่งชั้นเวลา ===== -->
+        <line x1="54" y1="396" x2="934" y2="396" stroke="var(--line-strong)" stroke-width="1.2" stroke-dasharray="5 5"/>
+        <text x="494" y="390" font-size="10.5" font-family="var(--font-mono)" fill="var(--faint)" text-anchor="middle">Confirm → งานเดิน → วางบิล / ตั้งหนี้</text>
+        <text x="60" y="418" font-size="10" font-family="var(--font-mono)" fill="var(--s7)" text-anchor="start">ชั้น ACTUAL</text>
+
+        <!-- ===== หน้า 7 ===== -->
+        <rect x="534" y="424" width="400" height="76" rx="11" fill="var(--surface)" stroke="var(--s7)" stroke-width="1.6"/>
+        <rect x="534" y="424" width="4" height="76" rx="2" fill="var(--s7)"/>
+        <text x="554" y="450" font-size="13" font-weight="700" fill="var(--ink)">Margin Actualization</text>
+        <text x="554" y="469" font-size="10.5" font-family="var(--font-mono)" fill="var(--muted)">7 · D12 · OPTRANSDETAIL + ARINVDETAIL</text>
+        <text x="554" y="486" font-size="10" font-family="var(--font-mono)" fill="var(--s7)">กำไรจริงหลังงานจบ · แยก Sale / Consol</text>
+
+        <!-- วนกลับไปเทียบกับ Booking Gate -->
+        <path d="M560,424 C486,378 486,196 556,128" stroke="var(--s7)" stroke-width="1.7" fill="none"
+              stroke-dasharray="7 4" marker-end="url(#arw7)"/>
+        <text x="472" y="222" font-size="10.5" font-family="var(--font-mono)" fill="var(--s7)" text-anchor="end">เทียบกลับ estimated</text>
+        <text x="472" y="236" font-size="10.5" font-family="var(--font-mono)" fill="var(--s7)" text-anchor="end">ผ่าน SFHBL.BOOKREF</text>
+      </svg>
+    </div>
+
+    <div class="legend">
+      <span style="color:var(--muted)"><span class="swatch solid"></span> ข้อมูลไหลต่อ (transactional)</span>
+      <span style="color:var(--s4)"><span class="swatch dash"></span> แชร์สถานะ (localStorage)</span>
+      <span style="color:var(--faint)"><span class="swatch dash"></span> อ่าน (read-only)</span>
+      <span class="risk"><span class="swatch dash"></span> D2 · Rate ตายทั้งที่ Quote ยังใช้ได้</span>
+      <span style="color:var(--s7)"><span class="swatch dash"></span> D12 · actual วนกลับมาเทียบ estimated</span>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 2. SCREENS ======================= -->
+<section>
+  <div class="wrap">
+    <div class="kicker"><span class="n">02</span><h2>7 หน้าจอ — บทบาท &amp; Input → Output</h2></div>
+    <p class="sub">หน้า 1–6 เป็น standalone site ที่ใช้ Data layer เดียวกัน (<code>../data/*.json</code>) และ reuse engine ข้ามกัน ·
+      <b>หน้า 7 ต่างออกไป</b> — ใช้ข้อมูลจริงจาก <code>smfdb</code> และสูตรที่ reverse-engineer จาก Crystal Report</p>
+
+    <div class="screens">
+      <article class="screen" style="--sc:var(--s1)">
+        <div class="top"><span class="idx">1</span><h3>Rate Management</h3></div>
+        <p class="folder">frmFPIRateMgmt · Cyan</p>
+        <p class="role">คลัง Rate (ต้นน้ำ) — ค้นหา / เทียบ / Confirm + เตือนหมดอายุ</p>
+        <dl class="kv">
+          <dt>IN</dt><dd class="io">Rate KB<i>→</i>Search / Compare</dd>
+          <dt>OUT</dt><dd class="io">Rate ที่ CONFIRMED + Alert</dd>
+          <dt>ENGINE</dt><dd><b>RM.alerts</b> (vFPI_RateAlert)</dd>
+          <dt>STATE</dt><dd class="persist">Confirm/Cancel → localStorage</dd>
+        </dl>
+      </article>
+
+      <article class="screen" style="--sc:var(--s2)">
+        <div class="top"><span class="idx">2</span><h3>Quotation Generator</h3></div>
+        <p class="folder">frmFPIQuoteGen · Teal</p>
+        <p class="role">เสนอราคา — Shipment → หลาย Lane (Good/Better/Best) → ราคาแนะนำ → PDF</p>
+        <dl class="kv">
+          <dt>IN</dt><dd class="io">Rate KB + Customer<i>→</i>Shipment</dd>
+          <dt>OUT</dt><dd class="io">Quote + Margin ประมาณการ</dd>
+          <dt>ENGINE</dt><dd><b>QG.engine</b> (pricing)</dd>
+          <dt>STATE</dt><dd class="noPersist">generate เท่านั้น</dd>
+        </dl>
+      </article>
+
+      <article class="screen" style="--sc:var(--s3)">
+        <div class="top"><span class="idx">3</span><h3>Booking Margin Gate</h3></div>
+        <p class="folder">frmFPIBookingGate · Amber</p>
+        <p class="role">จุดเคาะ Margin จริง (D1) — Cost auto-fill + Delta → PASS / NEED_APPROVE / BLOCKED</p>
+        <dl class="kv">
+          <dt>IN</dt><dd class="io">Quote + Rate ณ วันจอง</dd>
+          <dt>OUT</dt><dd class="io">verdict + workflow</dd>
+          <dt>ENGINE</dt><dd><b>BG.profit · BG.autofill</b></dd>
+          <dt>STATE</dt><dd class="persist">workflow → localStorage</dd>
+        </dl>
+      </article>
+
+      <article class="screen" style="--sc:var(--s4)">
+        <div class="top"><span class="idx">4</span><h3>Approval Inbox</h3></div>
+        <p class="folder">frmFPIApprovalInbox · Indigo</p>
+        <p class="role">คิวฝั่ง Manager — จัดกลุ่มสาเหตุ → Approve / ตีกลับ / Batch</p>
+        <dl class="kv">
+          <dt>IN</dt><dd class="io">Booking ที่ NEED_APPROVE</dd>
+          <dt>OUT</dt><dd class="io">Approve → กลับหน้า 3</dd>
+          <dt>ENGINE</dt><dd><b>reuse BG.*</b></dd>
+          <dt>STATE</dt><dd class="persist">แชร์ key เดียวกับหน้า 3</dd>
+        </dl>
+      </article>
+
+      <article class="screen" style="--sc:var(--s5)">
+        <div class="top"><span class="idx">5</span><h3>KB Dashboard</h3></div>
+        <p class="folder">frmFPIKBDashboard · Slate</p>
+        <p class="role">ภาพรวม Executive — Rate health · Quote-at-risk (D2) · Margin · Win rate</p>
+        <dl class="kv">
+          <dt>IN</dt><dd class="io">ทุกตาราง (read-only)</dd>
+          <dt>OUT</dt><dd class="io">KPI + at-risk + Δ ทุน</dd>
+          <dt>ENGINE</dt><dd><b>reuse RM + BG</b></dd>
+          <dt>STATE</dt><dd class="noPersist">read-only</dd>
+        </dl>
+      </article>
+
+      <article class="screen" style="--sc:var(--s6)">
+        <div class="top"><span class="idx">6</span><h3>AI Knowledge Search</h3></div>
+        <p class="folder">frmFPIKnowledgeSearch · Purple</p>
+        <p class="role">ถามภาษาธรรมชาติ — ตอบพร้อม citation เสมอ (Tier 1 Rate KB / Tier 2 ประวัติ)</p>
+        <dl class="kv">
+          <dt>IN</dt><dd class="io">คำถาม + as-of</dd>
+          <dt>OUT</dt><dd class="io">คำตอบ + อ้างอิงเลขเอกสาร</dd>
+          <dt>ENGINE</dt><dd><b>reuse ทุก engine</b></dd>
+          <dt>STATE</dt><dd class="noPersist">read-only · hook LLM/MCP</dd>
+        </dl>
+      </article>
+
+      <article class="screen" style="--sc:var(--s7)">
+        <div class="top"><span class="idx">7</span><h3>Margin Actualization</h3></div>
+        <p class="folder">frmFPIMarginActual · Sand · <b>D12</b></p>
+        <p class="role"><b>ชั้น actual</b> — กำไรจริงหลังงานจบ แยกมุม Sale Dept / Consol Dept แล้วเทียบกลับ Booking</p>
+        <dl class="kv">
+          <dt>IN</dt><dd class="io">OPTRANSDETAIL + ARINVDETAIL<i>→</i>ledger จริง</dd>
+          <dt>OUT</dt><dd class="io">Profit by House + variance ต่อ booking</dd>
+          <dt>ENGINE</dt><dd><b>สูตร Crystal</b> (4 ชั้น)</dd>
+          <dt>STATE</dt><dd class="noPersist">read-only · golden A/B/C</dd>
+        </dl>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 3. ENGINE REUSE ======================= -->
+<section>
+  <div class="wrap">
+    <div class="kicker"><span class="n">03</span><h2>Engine เขียนครั้งเดียว — reuse ข้ามหน้า</h2></div>
+    <p class="sub">สูตร margin / alert / chain อยู่ที่เดียว โหลดข้ามหน้าผ่าน relative <code>&lt;script&gt;</code> —
+      แก้สูตรจุดเดียว ทุกหน้าตรงกันเสมอ (หลักที่ได้จาก code review)</p>
+
+    <div class="reuse">
+      <div class="engine" style="--sc:var(--s1)">
+        <div class="name"><span class="dot"></span>RM.alerts</div>
+        <p class="who">vFPI_RateAlert / vFPI_ActiveRate — จาก Rate Management</p>
+        <div class="used">
+          <span class="pill"><span class="d" style="background:var(--s5)"></span>Dashboard</span>
+          <span class="pill"><span class="d" style="background:var(--s6)"></span>AI Search</span>
+        </div>
+      </div>
+      <div class="engine" style="--sc:var(--s3)">
+        <div class="name"><span class="dot"></span>BG.profit · BG.autofill</div>
+        <p class="who">vFPI_BookProfit + evaluate + Superseded Chain — จาก Booking Gate</p>
+        <div class="used">
+          <span class="pill"><span class="d" style="background:var(--s4)"></span>Approval Inbox</span>
+          <span class="pill"><span class="d" style="background:var(--s5)"></span>Dashboard</span>
+          <span class="pill"><span class="d" style="background:var(--s6)"></span>AI Search</span>
+        </div>
+      </div>
+      <div class="engine" style="--sc:var(--s2)">
+        <div class="name"><span class="dot"></span>QG.engine</div>
+        <p class="who">Pricing engine (PricingMode / take-lower / GBB) — Quotation</p>
+        <div class="used"><span class="selfnote">ใช้ในหน้า Quotation · reproduce ใบเสนอราคาจริงได้ทุกบรรทัด (golden test)</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 4. STATE + DATA ======================= -->
+<section>
+  <div class="wrap">
+    <div class="kicker"><span class="n">04</span><h2>Data layer &amp; สถานะที่แชร์กัน</h2></div>
+    <p class="sub">ทุกหน้าอ่านจากไฟล์ JSON ชุดเดียว — เปลี่ยนเป็น SQL Server ภายหลังได้เพราะ field ตั้งชื่อ camelCase ตรงกับ DDL</p>
+    <div class="reuse" style="grid-template-columns:1fr 1fr;">
+      <div class="callout">
+        <h4>Data — source of truth เดียว</h4>
+        <code>mockup/FPI/data/*.json</code> (rates · quotes · bookings · lane_history · ...)<br>
+        เสิร์ฟผ่าน http → อ่าน <code>../data</code> · เปิดจากไฟล์ตรง ๆ → fallback <code>data.js</code> (สำเนาฝัง auto-generated)
+      </div>
+      <div class="callout risk">
+        <h4>⚠ สถานะแชร์ = ต้อง origin เดียวกัน</h4>
+        หน้า 3 ↔ 4 แชร์ <code>localStorage['fpi_booking_gate_v1']</code> (approve ที่ Inbox → Booking Gate ขึ้นขั้น Credit).
+        <b>คนละ port = คนละ origin = คนละ localStorage</b> — ต้องเสิร์ฟทั้งสองหน้าจาก <b>เซิร์ฟเวอร์ตัวเดียว</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 5. USAGE ======================= -->
+<section>
+  <div class="wrap">
+    <div class="kicker"><span class="n">05</span><h2>วิธีรัน — เซิร์ฟเวอร์ตัวเดียวสำหรับทุกหน้า</h2></div>
+    <p class="sub">เพื่อให้หน้า 3 ↔ 4 แชร์สถานะกันได้ ให้เสิร์ฟทั้ง <code>mockup/FPI</code> จาก origin เดียว แล้วเปิดแต่ละหน้าตาม path</p>
+
+    <div class="runwrap">
+      <pre class="code"><span class="c"># รันทั้งชุดจาก origin เดียว (แนะนำ)</span>
+cd D:/DEV.AI/SMP.AI/mockup/FPI
+python <span class="k">-m</span> http.server <span class="u">8080</span>
+
+<span class="c"># แล้วเปิด (ทุกหน้าใช้ localhost:8080)</span>
+/frmFPIRateMgmt/index.html
+/frmFPIQuoteGen/index.html
+/frmFPIBookingGate/index.html
+/frmFPIApprovalInbox/index.html
+/frmFPIKBDashboard/index.html
+/frmFPIKnowledgeSearch/index.html
+
+หน้า 7 ไม่ต้องใช้เซิร์ฟเวอร์ — double-click ได้เลย
+  frmFPIMarginActual/index.html
+  node frmFPIMarginActual/verify.js   → ต้องได้ A 6/6 · B 3/3 · C 3/3</pre>
+
+      <div class="portlist">
+        <p style="margin:0 0 8px; color:var(--muted); font-size:12.5px;">หรือรันแยก port ต่อหน้า (<code>.claude/launch.json</code>) — สะดวกตอน dev แต่ <b>หน้า 3↔4 จะไม่แชร์สถานะ</b>:</p>
+        <table>
+          <tr><td class="d"><span style="background:var(--s1)"></span></td><td class="p">8761</td><td>Rate Management</td></tr>
+          <tr><td class="d"><span style="background:var(--s2)"></span></td><td class="p">8758</td><td>Quotation Generator</td></tr>
+          <tr><td class="d"><span style="background:var(--s3)"></span></td><td class="p">8759</td><td>Booking Margin Gate</td></tr>
+          <tr><td class="d"><span style="background:var(--s4)"></span></td><td class="p">8760</td><td>Approval Inbox</td></tr>
+          <tr><td class="d"><span style="background:var(--s5)"></span></td><td class="p">8762</td><td>KB Dashboard</td></tr>
+          <tr><td class="d"><span style="background:var(--s6)"></span></td><td class="p">8763</td><td>AI Knowledge Search</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 6. WALKTHROUGH ======================= -->
+<section>
+  <div class="wrap">
+    <div class="kicker"><span class="n">06</span><h2>เดินชมทั้งวงจร — เดโม 7 ขั้น</h2></div>
+    <p class="sub">ลำดับนี้ทำให้เห็นข้อมูลไหลจากต้นน้ำถึงปลายน้ำ และเห็นการตัดสินใจสำคัญทีละข้อ</p>
+
+    <div class="steps">
+      <div class="step" style="--sc:var(--s1)"><div class="num"></div><div>
+        <h4>Rate Management <span class="fn">/frmFPIRateMgmt</span></h4>
+        <p>ดู Alert 3 แบบ (ใกล้หมดอายุ / Draft ค้าง / ไม่มี Source) · คลิกการ์ด Alert เพื่อกรอง · เทียบ 3 Rate บน DEHAM</p>
+        <p class="try">ลอง: Confirm <b>FR-2605-00008</b> (Draft) → มันหมดอายุทันทีเพราะ validity ผ่านไปแล้ว</p>
+      </div></div>
+
+      <div class="step" style="--sc:var(--s2)"><div class="num"></div><div>
+        <h4>Quotation Generator <span class="fn">/frmFPIQuoteGen</span></h4>
+        <p>เลือก scenario จาก dropdown บน top bar — แต่ละอันสอนคนละกฎ</p>
+        <p class="try">ลอง: <b>A</b> (reproduce ใบจริง) · <b>B</b> (Good/Better/Best) · <b>D</b> (กับดัก Air ขายเท่าทุน) · <b>F</b> (BadFx → BLOCKED)</p>
+      </div></div>
+
+      <div class="step" style="--sc:var(--s3)"><div class="num"></div><div>
+        <h4>Booking Margin Gate <span class="fn">/frmFPIBookingGate</span></h4>
+        <p>เลือก <b>BSE26090004</b> — เคสสำคัญสุด: ต้นทุนตลาดขึ้นผ่าน Superseded Chain → Margin ตกจาก 10% เหลือ 4%</p>
+        <p class="try">ดู panel “ทำไม Margin ตก” → เดิน workflow: ส่งอนุมัติ → Approve Profit → Credit → Confirm</p>
+      </div></div>
+
+      <div class="step" style="--sc:var(--s4)"><div class="num"></div><div>
+        <h4>Approval Inbox <span class="fn">/frmFPIApprovalInbox</span></h4>
+        <p>เห็นคิว 5 ใบ จัดกลุ่มตามสาเหตุ (ขาดทุน / ตลาดขึ้น / ราคาต่ำ) พร้อมคำแนะนำ</p>
+        <p class="try">Approve <b>BSE26090004</b> → กลับไปหน้า 3 (origin เดียวกัน) จะเห็นขั้น <b>Approve Credit</b> โผล่ต่อ</p>
+      </div></div>
+
+      <div class="step" style="--sc:var(--s5)"><div class="num"></div><div>
+        <h4>KB Dashboard <span class="fn">/frmFPIKBDashboard</span></h4>
+        <p>ตั้ง as-of = <b>2026-09-15</b> → เห็น Quote-at-risk (D2): ใบเสนอราคายังใช้ได้ แต่ Rate ตาย</p>
+        <p class="try">แถว <b>QSE26080001 → R-0001→R-0003</b> โชว์ Δ ทุน <b>+120 USD (+4,380 THB/ตู้)</b></p>
+      </div></div>
+
+      <div class="step" style="--sc:var(--s6)"><div class="num"></div><div>
+        <h4>AI Knowledge Search <span class="fn">/frmFPIKnowledgeSearch</span></h4>
+        <p>พิมพ์คำถามหรือกด chip — ทุกคำตอบมี citation (Tier 1 Rate KB / Tier 2 ประวัติ)</p>
+        <p class="try">ลอง: “มี rate FCL Laem Chabang ไป Hamburg ไหม” · “C-BRAVO ควรบวก margin เท่าไหร่” · “THLCH SGSIN เคยจ่ายเท่าไหร่”</p>
+      </div></div>
+
+      <div class="step" style="--sc:var(--s7)"><div class="num"></div><div>
+        <h4>Margin Actualization <span class="fn">/frmFPIMarginActual</span></h4>
+        <p><b>ข้ามชั้นเวลา</b> — จากราคาที่สัญญาไว้ มาดูเงินที่เกิดขึ้นจริงกับ job <b>SE17050002</b> (consol 5 house)</p>
+        <p class="try">§01 สลับ <b>แผนก Sale ↔ Consol</b> — ฝั่ง Sale ไม่เห็นคอลัมน์ Consol เลย เหมือน Single Job ·
+          สลับ <b>ผู้ใช้ทั่วไป</b> — ราคาโอนถูกปิดแต่ธงยังอยู่</p>
+        <p class="try">§03 กด <b>ไม่เฉลี่ยเลย → เฉลี่ยทั้งหมด</b> — ยอด Sale ขยับ <b>12,934.60</b> แล้วกลับมาเป๊ะ ·
+          ทำให้เป็นสถานะ <b>ผสม</b> จะเห็นแถบเตือนสีแดง</p>
+        <p class="try">§05 <b>golden 3 ชุด</b> — ย้อนสถานะข้อมูลกลับไปวันที่พิมพ์รายงานแต่ละฉบับแล้วคำนวณใหม่</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= 7. DECISIONS ======================= -->
+<section>
+  <div class="wrap">
+    <div class="kicker"><span class="n">07</span><h2>การตัดสินใจสำคัญที่มองเห็นในเดโม</h2></div>
+    <p class="sub">แต่ละข้อ (Decision Log v0.3) มีหน้าจอที่ทำให้เห็นจริง — ไม่ใช่แค่เอกสาร</p>
+    <div class="decisions">
+      <div class="dec"><span class="code">D1</span><span class="t"><b>เคาะ Margin ที่ Booking</b> ไม่ใช่ตอนเสนอราคา — หน้า 3</span></div>
+      <div class="dec"><span class="code">D2</span><span class="t"><b>Quote 1:N + จองซ้ำได้</b> · Rate ตายแต่ Quote ยังใช้ได้ — หน้า 5</span></div>
+      <div class="dec"><span class="code">D6</span><span class="t"><b>Contract-first</b> เลือก Rate · ข้ามลำดับต้องมีเหตุผล — หน้า 2</span></div>
+      <div class="dec"><span class="code">D7</span><span class="t"><b>Air take-lower</b> ดันน้ำหนักถ้าถูกกว่า — หน้า 2</span></div>
+      <div class="dec"><span class="code">D8</span><span class="t"><b>เตือนต้นทุนเปลี่ยน</b> ≥3% หรือ ≥2,000 THB — หน้า 3/5</span></div>
+      <div class="dec"><span class="code">D9</span><span class="t"><b>Rebate (KB) บวกกลับ</b> เข้าฐาน Margin — หน้า 2/3</span></div>
+      <div class="dec"><span class="code">D11</span><span class="t"><b>ประวัติ = Indicative</b> ห้าม Auto-fill — หน้า 2/6</span></div>
+      <div class="dec" style="--sc:var(--s7)"><span class="code">D12</span><span class="t"><b>Actual อ่านจาก ledger จริง</b> ไม่ใช่ cost ที่กรอกใน booking — หน้า 7</span></div>
+      <div class="dec" style="--sc:var(--s7)"><span class="code">D12</span><span class="t"><b>แถว Allocated ไม่รับส่วนเฉลี่ย</b> — ต่างจากรายงานเดิมโดยตั้งใจ — หน้า 7</span></div>
+      <div class="dec" style="--sc:var(--s7)"><span class="code">D12</span><span class="t"><b>SALETEXTRATE = ราคาโอน</b> ว่าง / ตัวเลข / <code>'0'</code> คุมทีละบรรทัด — หน้า 7</span></div>
+      <div class="dec" style="--sc:var(--s7)"><span class="code">D12</span><span class="t"><b>สิทธิ์ 2 แกน</b> แผนก (เห็นคอลัมน์ไหน) · Com Price (เห็นตัวเลขไหม) — หน้า 7</span></div>
+    </div>
+
+    <div class="sub" style="margin-top:22px; padding:14px 16px; border-radius:11px;
+         border:1px solid color-mix(in oklab, var(--risk) 32%, var(--line-strong));
+         background:color-mix(in oklab, var(--risk) 6%, var(--surface))">
+      <b style="color:var(--risk)">⚠ อ่านหน้า 7 อย่างไรให้ไม่หลงทาง</b><br>
+      หน้า 7 ดูน่าเชื่อกว่าหน้าอื่นเพราะเทียบกับรายงานที่พิมพ์จริงได้ — แต่<b>ขอบเขตที่พิสูจน์แล้วแคบกว่าที่หน้าตาบอก</b>
+      <table style="width:100%; margin-top:10px; border-collapse:collapse; font-size:12.5px">
+        <tr><td style="padding:4px 10px 4px 0; vertical-align:top; width:50%">
+          <b style="color:var(--good)">✓ เชื่อได้</b><br>
+          สูตร 4 ชั้น · basis <code>SHP</code> / <code>CBM</code><br>
+          การแบ่งแผนก Sale / Consol<br>
+          ราคาโอนและธง <code>'0'</code>
+        </td><td style="padding:4px 0 4px 10px; vertical-align:top; border-left:1px solid var(--line-strong)">
+          <b style="color:var(--risk)">✗ ยังเชื่อไม่ได้</b><br>
+          basis <code>KGS</code> / <code>D/O</code> — ยังไม่เคยรัน<br>
+          <b>roll-up → booking</b> — golden ทั้ง 3 ชุดเป็น job <b>booking เดียว</b><br>
+          §04 Booking Gate — ประมาณการในใบสาธิตแทบว่าง
+        </td></tr>
+      </table>
+      <div style="margin-top:8px">
+        <b>roll-up คือเหตุผลที่ D12 มีอยู่ แต่ยังไม่เคยผลิตตัวเลขที่ถูกตรวจ</b> —
+        ต้องหา job หลาย booking จาก production มายืนยันก่อนจึงจะเขียนชั้นนั้นเป็นโค้ดได้
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>FPI Mockup · 7/7 หน้าจอ · estimated (1–6) + actual (7 · D12) · เหนือ ERP เดิม (VB6 + SQL Server <code class="mono">smfdb</code>)</span>
+    <span>เฟสถัดไป: หา job หลาย booking จาก production → ยืนยัน roll-up → เขียน <code class="mono">vFPI_JobActual</code></span>
+  </div>
+</footer>

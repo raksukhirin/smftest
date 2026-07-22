@@ -1,0 +1,1028 @@
+<title>D12 — Margin Actualization · Computed Mockup</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ink:#151109; --paper:#f2efe9; --surface:#fff; --surface-2:#faf8f4;
+    --line:#e0d9cc; --line-2:#c9bfae; --muted:#6b6153; --faint:#948a7a;
+    --est:#8c8375; --sale:#0f6f57; --consol:#5b4bb8; --alloc:#a4551b;
+    --good:#0f6f57; --warn:#b06a12; --risk:#b3372c; --accent:#a4551b;
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Menlo,Consolas,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Tahoma,"Noto Sans Thai",sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{--ink:#ece7de;--paper:#12100c;--surface:#1b1813;--surface-2:#171410;
+    --line:#2e2920;--line-2:#413a2d;--muted:#a09585;--faint:#7d7364;--est:#8a8172;
+    --sale:#3fbf9c;--consol:#9d8ff0;--alloc:#e0913f;--good:#3fbf9c;--warn:#e0a13f;--risk:#f0776a;--accent:#e0913f}}
+  :root[data-theme="light"]{--ink:#151109;--paper:#f2efe9;--surface:#fff;--surface-2:#faf8f4;--line:#e0d9cc;--line-2:#c9bfae;
+    --muted:#6b6153;--faint:#948a7a;--est:#8c8375;--sale:#0f6f57;--consol:#5b4bb8;--alloc:#a4551b;
+    --good:#0f6f57;--warn:#b06a12;--risk:#b3372c;--accent:#a4551b}
+  :root[data-theme="dark"]{--ink:#ece7de;--paper:#12100c;--surface:#1b1813;--surface-2:#171410;--line:#2e2920;--line-2:#413a2d;
+    --muted:#a09585;--faint:#7d7364;--est:#8a8172;--sale:#3fbf9c;--consol:#9d8ff0;--alloc:#e0913f;
+    --good:#3fbf9c;--warn:#e0a13f;--risk:#f0776a;--accent:#e0913f}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+  .mono,code{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+
+  header.hero{border-bottom:1px solid var(--line);background:var(--surface)}
+  .hero .wrap{padding:28px 20px 22px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);margin:0 0 8px}
+  h1{font-size:clamp(23px,4vw,32px);margin:0;letter-spacing:-.01em;font-weight:750;text-wrap:balance}
+  .lede{color:var(--muted);max-width:66ch;margin:10px 0 0;font-size:14.5px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+  .chip{font-family:var(--mono);font-size:11px;padding:4px 9px;border-radius:999px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface-2)}
+  .chip b{color:var(--ink)}
+  .chip.live{color:var(--good);border-color:color-mix(in oklab,var(--good) 45%,var(--line))}
+
+  section{padding:30px 0;border-bottom:1px solid var(--line)}
+  section:last-of-type{border:0}
+  .kick{display:flex;align-items:baseline;gap:11px;margin-bottom:3px}
+  .kick .n{font-family:var(--mono);font-size:11.5px;color:var(--accent);border:1px solid color-mix(in oklab,var(--accent) 30%,transparent);border-radius:5px;padding:1px 6px;font-weight:600}
+  h2{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:13.5px;margin:6px 0 18px;max-width:70ch}
+
+  .card{background:var(--surface);border:1px solid var(--line-2);border-radius:11px;overflow:hidden}
+  .card-hd{background:var(--surface-2);border-bottom:1px solid var(--line);padding:8px 13px;font-size:12px;font-weight:650;display:flex;align-items:center;gap:8px}
+  .card-hd .note{margin-left:auto;font-family:var(--mono);font-size:10.5px;color:var(--faint);font-weight:400}
+  .card-bd{padding:14px}
+
+  .lens{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 11px;border-radius:9px;background:var(--surface-2);border:1px solid var(--line);margin-bottom:13px}
+  .lens-lbl{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+  .lb{font-size:12px;padding:4px 11px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface);font-weight:600;cursor:pointer}
+  .lb.on-sale{background:var(--sale);border-color:var(--sale);color:#fff}
+  .lb.on-consol{background:var(--consol);border-color:var(--consol);color:#fff}
+  .lens-why{font-size:11.5px;color:var(--muted);margin-left:auto}
+
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+  table.t{width:100%;border-collapse:collapse;font-size:11px}
+  table.t th,table.t td{padding:4px 8px;white-space:nowrap}
+  table.t thead tr.grp th{font-size:10.5px;font-weight:700;text-align:center;padding-bottom:2px;border-bottom:1.5px solid currentColor}
+  table.t thead tr.grp th.sp{border-bottom:0}
+  .g-sale{color:var(--sale)}.g-consol{color:var(--consol)}.g-alloc{color:var(--alloc)}
+  table.t thead tr.sub th{font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--faint);font-weight:600;text-align:left;border-bottom:1px solid var(--line-2);vertical-align:bottom}
+  table.t thead tr.sub th.num{text-align:right}
+  table.t tbody td{border-bottom:1px solid var(--surface-2)}
+  table.t tbody tr.master td{background:color-mix(in oklab,var(--alloc) 7%,transparent)}
+  table.t tbody tr.dim td{color:var(--faint)}
+  td.s{background:color-mix(in oklab,var(--sale) 5%,transparent)}
+  td.c{background:color-mix(in oklab,var(--consol) 5%,transparent)}
+  td.a{background:color-mix(in oklab,var(--alloc) 8%,transparent);color:var(--alloc);font-weight:650}
+  td.neg{color:var(--risk);font-weight:650}
+  table.t tfoot td{border-top:1.5px solid var(--line-2);font-weight:700;padding-top:6px}
+  .divl{border-left:1px dashed var(--line-2)}
+
+  pre.code{margin:0;background:#0e0c08;color:#e9e2d4;border-radius:9px;padding:12px 14px;font-family:var(--mono);font-size:11.5px;line-height:1.65;overflow-x:auto;border:1px solid var(--line-2)}
+  pre.code .k{color:#7fdbb0}pre.code .c{color:#8a7f6d}pre.code .h{color:#e0a13f;font-weight:700}pre.code .s{color:#8fd0e8}
+
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:820px){.two{grid-template-columns:1fr}}
+
+  .strip{display:flex;align-items:flex-start;gap:8px;padding:8px 11px;border-radius:8px;font-size:12px;border:1px solid;margin-top:10px}
+  .strip.warn{background:color-mix(in oklab,var(--warn) 8%,var(--surface));border-color:color-mix(in oklab,var(--warn) 35%,var(--line));color:var(--warn)}
+  .strip.ok{background:color-mix(in oklab,var(--good) 7%,var(--surface));border-color:color-mix(in oklab,var(--good) 30%,var(--line));color:var(--good)}
+  .strip.risk{background:color-mix(in oklab,var(--risk) 8%,var(--surface));border-color:color-mix(in oklab,var(--risk) 35%,var(--line));color:var(--risk)}
+  .strip.info{background:color-mix(in oklab,var(--consol) 7%,var(--surface));border-color:color-mix(in oklab,var(--consol) 30%,var(--line));color:var(--consol)}
+  .strip b{font-weight:700}
+
+  .vfy{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+  .vfy th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--faint);text-align:left;padding:0 8px 4px 0;border-bottom:1px solid var(--line)}
+  .vfy th.num,.vfy td.num{text-align:right}
+  .vfy td{padding:4px 8px 4px 0;border-bottom:1px solid var(--surface-2)}
+  .ok-b{color:var(--good);font-weight:700}.bad-b{color:var(--risk);font-weight:700}
+
+  .anno{border-left:3px solid var(--accent);background:color-mix(in oklab,var(--accent) 5%,var(--surface));padding:11px 14px;border-radius:0 8px 8px 0;font-size:13px;margin-top:13px}
+  .anno h4{margin:0 0 4px;font-size:13px;color:var(--accent)}
+  .anno p{margin:0;color:var(--muted)}
+  .pill{font-family:var(--mono);font-size:9.5px;padding:1px 5px;border-radius:4px;font-weight:600}
+  .p-alloc{background:color-mix(in oklab,var(--alloc) 18%,transparent);color:var(--alloc)}
+  .p-direct{background:color-mix(in oklab,var(--sale) 14%,transparent);color:var(--sale)}
+  .p-na{background:color-mix(in oklab,var(--risk) 16%,transparent);color:var(--risk)}
+  .p-x-none{background:color-mix(in oklab,var(--faint) 18%,transparent);color:var(--faint)}
+  .p-x-zero{background:color-mix(in oklab,var(--warn) 20%,transparent);color:var(--warn)}
+  .p-x-set{background:color-mix(in oklab,var(--consol) 16%,transparent);color:var(--consol)}
+  .lock{opacity:.45;font-size:11px}
+  .rb{font-size:12px;padding:4px 11px;border-radius:99px;border:1px solid var(--line-2);color:var(--muted);background:var(--surface);font-weight:600;cursor:pointer}
+  .rb.on{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  .jb{font-size:11px;padding:2px 9px;border-radius:99px;border:1px solid currentColor;cursor:pointer;margin-right:4px;opacity:.55}
+  .jb.on{opacity:1;font-weight:700;background:color-mix(in oklab,currentColor 14%,transparent)}
+  .p-un{background:color-mix(in oklab,var(--warn) 18%,transparent);color:var(--warn)}
+  footer{padding:22px 0 42px;color:var(--faint);font-size:12px}
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">FPI · Decision D12</p>
+    <h1>Margin Actualization — Mockup ที่คำนวณจริง</h1>
+    <p class="lede">ข้อมูลดึงจาก <b>smfdb</b> ของ job <span class="mono">SE17050002</span> · สูตรแกะจาก
+      <span class="mono">SFDPFJOB01_CONSOL.rpt</span> แล้วเขียนเป็น JS ในหน้านี้ →
+      <b>ตัวเลขทุกตัวคำนวณสด ไม่ได้พิมพ์ทับ</b> แล้วเทียบกับรายงานจริงว่าตรงหรือไม่</p>
+    <div class="chips">
+      <span class="chip live">● คำนวณสดในหน้านี้</span>
+      <span class="chip">source <b>OPTRANSDETAIL · SFHBL · SFJOB · ARINVDETAIL/HEAD</b></span>
+      <span class="chip">สูตร <b>Crystal → JS</b></span>
+      <span class="chip" id="chipVfy">verify …</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════ 01 DATA ═══════════ -->
+<section>
+  <div class="wrap">
+    <div class="kick"><span class="n">01</span><h2>ข้อมูลตั้งต้น — ดึงจาก smfdb</h2></div>
+    <p class="sub">Mockup ใช้ข้อมูลจริงของ job นี้ ไม่ได้สมมติ · ตารางล่างคือ ledger ทั้งหมดที่คำนวณจากมัน</p>
+    <div class="card">
+      <div class="card-hd">SFJOB + SFHBL<span class="note" id="hdrJob"></span></div>
+      <div class="card-bd">
+        <div class="scroll"><table class="t" id="tblHouses"></table></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="card-hd">OPTRANSDETAIL — ledger<span class="note" id="hdrLines"></span></div>
+      <div class="card-bd">
+        <div class="lens">
+          <span class="lens-lbl">มองด้วยสิทธิ์</span>
+          <span id="deptBtns"></span>
+          <span style="color:var(--line-2)">|</span>
+          <span id="roleBtns"></span>
+          <span class="lens-why"><b>Com Rate / Com Price จำกัดสิทธิ์</b> — ผู้มีอำนาจเท่านั้นเห็นตัวเลข
+            · สลับดูว่าคนทั่วไปเห็นอะไร</span>
+        </div>
+        <div id="roleNote"></div>
+        <div class="scroll" style="margin-top:10px"><table class="t" id="tblLines"></table></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 02 FORMULAS ═══════════ -->
+<section>
+  <div class="wrap">
+    <div class="kick"><span class="n">02</span><h2>สูตรที่แกะจาก Crystal → เขียนเป็น JS</h2></div>
+    <p class="sub">ซ้าย = ต้นฉบับใน <span class="mono">.rpt</span> · ขวา = โค้ดที่หน้านี้ใช้คำนวณจริง</p>
+    <div class="two">
+      <div class="card"><div class="card-hd">ต้นฉบับ Crystal</div><div class="card-bd">
+<pre class="code"><span class="c">'--- 4 สูตรที่ประกอบเป็นตาราง 03</span>
+<span class="h">Sale Dept</span>   rev  = n_billrev_thb_net
+             cost = n_vchr_thb_tot
+<span class="h">Consol Dept</span> rev  = n_billrev_thb_consol
+             cost = n_vchr_thb_consol
+<span class="c">'(คอลัมน์ "ส่วนเฉลี่ย" = xBillRevThb_Alloc</span>
+<span class="c">' / xVchrThb_Alloc บวกเข้าฝั่ง Sale)</span>
+
+<span class="c">'--- ยอด THB ต่อบรรทัด</span>
+<span class="k">If</span> ITEMTYPE=<span class="s">"ADV"</span> <span class="k">Then</span> nDetTotal <span class="k">Else</span> nDetGross
+  × nDocBal
+<span class="c">'  nDetGross/Total อ่านจาก ARINVDETAIL</span>
+<span class="c">'  nDocBal = SRCTYPE AR/AP ? 1 : -1</span>
+
+<span class="c">'--- Sale Revenue (n_billrev_thb_net)</span>
+formula = n_billref_thb + n_billrev_thb
+        + n_billadv_thb          <span class="c">'ทั้ง 3 กรอง post</span>
+<span class="k">If</span> chgGroup1=<span class="s">"Saleperson"</span> <span class="k">And</span>
+   chgGroup2=<span class="s">"House B/L"</span> <span class="k">Then</span>
+   <span class="k">If</span> Trim(SALETEXTRATE)=<span class="s">"0"</span> → 0
+   <span class="k">ElseIf</span> SFHBL.SALENO=SFHBL_M.SALENO → 0
+   <span class="k">ElseIf</span> <span class="h">n_bill_com &lt;&gt; 0 → n_bill_com</span>
+   <span class="k">Else</span> formula
+
+<span class="c">'--- Sale Cost (n_vchr_thb_tot)</span>
+formula = n_vchr_kb + n_vchr_thb
+<span class="c">'  ชั้น Saleperson เหมือนกัน แต่ใช้ n_cost_com</span>
+
+<span class="c">'--- ราคาโอน (n_bill_com / n_cost_com)</span>
+<span class="c">'  ★ ไม่มีด่าน post</span>
+nDocBalOP × QTY × <span class="h">SALEPRICE</span>
+          × IIF(ITEMCURR=<span class="s">"THB"</span>,1,SALERATE)
+
+<span class="c">'--- บรรทัดโอน (n_vchr_n_a_consol)</span>
+<span class="k">If</span> DOCTYPE=<span class="h">"N/A"</span> <span class="k">Then</span>
+   <span class="k">If</span> TRANSTYPE=<span class="s">"Bill"</span> <span class="k">Then</span> n_billrev_thb_net
+   <span class="k">Else</span> <span class="h">-1</span>*(vchr_kb+vchr_thb+vchradv_thb)
+<span class="k">Else</span> 0
+
+<span class="c">'--- Consol Revenue</span>
+<span class="k">If</span> isnull(ARINVDETAIL.DETID) <span class="k">Then</span> 0
+<span class="k">ElseIf</span> POSTENTRY=3 <span class="k">Then</span> 0
+<span class="k">ElseIf</span> <span class="h">SFHBL.SALENO = SFHBL_M.SALENO</span> <span class="k">Then</span> …
+<span class="k">ElseIf</span> Trim(SALETEXTRATE)=<span class="s">"0"</span> <span class="k">Then</span> …
+<span class="k">Else</span> 0
+<span class="k">If</span> n_a_consol&gt;0 <span class="k">Then</span> +0 <span class="k">Else</span> +<span class="h">Abs</span>(n_a_consol)
+
+<span class="c">'--- เฉลี่ยจาก master</span>
+xBillRevThb_Alloc = _cbm + _shp + _kgs + _do
+ _shp: × 1/SFJOB.TOTBL
+ _cbm: × n_cbm ÷ SFJOB.CBM|REVTON
+ _kgs: × SFHBL.GW ÷ SFJOB.GW
+ _do : × SFHBL.TOTDO ÷ SFJOB.TOTDO
+xVchrThb_Alloc = เหมือนกัน (ฝั่ง Cost)
+
+<span class="c">'--- ธง "ไม่ให้" (n_BillAvg_* / n_vchrAvg*)</span>
+<span class="k">ElseIf</span> chgGroup1=<span class="s">"Saleperson"</span> <span class="k">And</span>
+       Trim(SALETEXTRATE)=<span class="s">"0"</span> <span class="k">Then</span>
+    Formula = 0 <span class="c">'ไม่ให้มี Real Allocate</span>
+
+<span class="c">'--- {@cAllocBy} : basis ต่อบรรทัด</span>
+<span class="k">If</span> IsNull(ALLOCBY) <span class="k">Or</span> Trim(ALLOCBY)=<span class="s">""</span> <span class="k">Then</span>
+   Left(UOM,2)=<span class="s">"KG"</span>  → <span class="h">"KGS"</span>
+   Left(UOM,3)=<span class="s">"CBM"</span> → <span class="h">"CBM"</span>
+   Left(UOM,2)=<span class="s">"M3"</span>  → <span class="h">"CBM"</span>
+   <span class="k">Else</span>              → <span class="h">"SHP"</span>
+<span class="k">Else</span> Formula = ALLOCBY</pre>
+      </div></div>
+      <div class="card"><div class="card-hd">JS ที่หน้านี้รันจริง</div><div class="card-bd">
+<pre class="code"><span class="c">// ยอด THB ต่อบรรทัด (+ กรณี THBAMT ยังไม่ post)</span>
+<span class="k">function</span> amtThb(l){
+  <span class="k">const</span> b = l.ITEMTYPE===<span class="s">'ADV'</span> ? l.THBTOT : l.THBAMT;
+  <span class="k">if</span>(b!=<span class="k">null</span>) <span class="k">return</span> b*(l.DOCBAL||1);
+  <span class="c">// THBAMT ว่าง → CALAMT × SALERATE</span>
+  <span class="k">const</span> c = l.ITEMTYPE===<span class="s">'ADV'</span> ? l.CALTOT : l.CALAMT;
+  <span class="k">return</span> c*(+l.SALERATE||0)*(l.DOCBAL||1);
+}
+<span class="k">const</span> isNA     = l =&gt; l.DOCTYPE===<span class="h">'N/A'</span>;
+<span class="k">const</span> posted   = l =&gt; l.REFINVDETID!=<span class="k">null</span> &amp;&amp; l.POSTENTRY!==3;
+<span class="c">// ธง "ไม่ให้" ที่ผู้ใช้ตั้งเอง — ไม่ใช่ BadFx</span>
+<span class="k">const</span> excluded = l =&gt; (l.SALETEXTRATE||<span class="s">''</span>).trim()===<span class="s">'0'</span>;
+
+<span class="c">// lens: house SALENO ตรงกับ master → ฝั่ง Consol</span>
+<span class="k">const</span> isConsol = h =&gt; h.SALENO===MASTER.SALENO;
+
+<span class="c">// pool ที่ให้เฉลี่ย: ตัดบรรทัดที่ติดธง "0" ออก</span>
+<span class="k">const</span> allocPool = () =&gt; LN().filter(l =&gt;
+  l.HBLREF===MASTER.DOCNO &amp;&amp; posted(l) &amp;&amp; !excluded(l));
+
+<span class="c">// {@cAllocBy}: ALLOCBY ชนะ · ว่างจึงเดาจาก UOM</span>
+<span class="k">function</span> ratio(l,h){
+  <span class="k">switch</span>(basisOf(l)){
+   <span class="k">case</span> <span class="s">'shp'</span>: <span class="k">return</span> JOB.TOTBL? 1/JOB.TOTBL : 1;
+   <span class="k">case</span> <span class="s">'cbm'</span>: <span class="k">return</span> JOB.REVTON? h.REVTON/JOB.REVTON : 0;
+   <span class="k">case</span> <span class="s">'kgs'</span>: <span class="k">return</span> JOB.GW? h.GW/JOB.GW : 0;
+   <span class="k">case</span> <span class="s">'do'</span> : <span class="k">return</span> JOB.TOTDO? h.TOTDO/JOB.TOTDO : 0;
+  }
+}</pre>
+      </div></div>
+    </div>
+    <div class="strip info">
+      <b>ⓘ</b><span><b>FX ที่ใช้จริงคือ <span class="mono">SALERATE</span></b> ไม่ใช่ <span class="mono">ITEMRATE</span> —
+        บรรทัด <span class="mono">PROS</span> มี <span class="mono">ITEMRATE=1</span> แต่ <span class="mono">SALERATE=32.2314</span> →
+        <span class="mono">5 × 32.2314 = 161.16</span> ตรงกับ <span class="mono">THBAMT</span> ✓<br>
+        <span class="mono">SALETEXTRATE</span> เป็น <b>ข้อความ</b>สะท้อนค่าเดียวกัน ใช้เป็น marker 3 สถานะ —
+        คอมเมนต์ในรายงานเขียนไว้ว่า <i>"=0 คือไม่ให้ · ว่าง คือให้ตาม Price · มี ComPrice คือให้ตาม Com Price"</i></span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 03 RESULT ═══════════ -->
+<section>
+  <div class="wrap">
+    <div class="kick"><span class="n">03</span><h2>ผลลัพธ์ที่คำนวณได้ — Profit by House</h2></div>
+    <p class="sub">ตารางนี้สร้างจากโค้ดข้างบน + ข้อมูล §01 · <b>ตัดแถว <span class="mono">Allocated</span> ออกจากผู้รับส่วนเฉลี่ยแล้ว</b> — ผลการตรวจกับรายงานจริงอยู่ที่ §05</p>
+
+    <div class="lens">
+      <span class="lens-lbl">แบ่งฝั่งอัตโนมัติ</span>
+      <span class="mono" style="font-size:11.5px"><b>SFHBL.SALENO = SFHBL_M.SALENO</b> → Consol · ไม่ตรง → Sale</span>
+      <span class="lens-why">ไม่ใช่ค่าคงที่ — master ของใบนี้คือ <span class="mono">CONSOL</span>
+        ฝั่ง Sale จึงเป็น <span class="mono">APPLE</span> โดยอัตโนมัติ</span>
+    </div>
+
+    <div class="card">
+      <div class="card-hd">Profit by House <span class="note" id="hdrCalc"></span></div>
+      <div class="card-bd">
+        <div id="allocState"></div>
+        <div class="scroll" style="margin-top:10px"><table class="t" id="tblProfit"></table></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <div class="card-hd">ที่มาของ house <span class="mono" style="font-weight:400">BLE17050003</span> — ไล่ทีละบรรทัด</div>
+      <div class="card-bd"><div class="scroll"><table class="t" id="tblTrace"></table></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 04 BOOKING GATE ═══════════ -->
+<section>
+  <div class="wrap">
+    <div class="kick"><span class="n">04</span><h2>หน้า Booking Gate — Estimated ↔ Actual</h2></div>
+    <p class="sub">เทียบกับที่ Sales สัญญาไว้ตอน Confirm (D1/D3) — ต้องอยู่ใน lens เดียวกัน</p>
+    <div class="card">
+      <div class="card-hd">BSE17050004 · SE17050002 · SGSIN<span class="note">แท็บ Actual (D12)</span></div>
+      <div class="card-bd"><table class="vfy" id="tblGate"></table>
+        <div id="gateNote"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ 05 OPEN ═══════════ -->
+<section>
+  <div class="wrap">
+    <div class="kick"><span class="n">05</span><h2>ตรวจสอบ และประเด็นที่ยังต้องตัดสิน</h2></div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hd">ตรวจกับรายงานจริง<span class="note">regression — ย้อนสถานะแล้วคำนวณใหม่</span></div>
+      <div class="card-bd"><div id="vfyBox"></div></div>
+    </div>
+    <div id="openBox"></div>
+    <div class="anno">
+      <h4>สิ่งที่ FPI เพิ่มจากของเดิม</h4>
+      <p>ระบบเดิมคำนวณส่วนเฉลี่ย<b>ทิ้งทุกครั้งที่พิมพ์</b> (อยู่ใน Crystal) — ไม่มีร่องรอย ตรวจย้อนหลังไม่ได้
+        (อธิบายว่าทำไม <span class="mono">ALLOCAMT</span> ว่าง · ไม่มี proc · ฟอร์มไม่โชว์)<br>
+        ส่วน<b>บรรทัดโอน <span class="mono">DOCTYPE='N/A'</span> เป็นข้อมูลจริงที่กรอกไว้</b> → ตรวจได้อยู่แล้ว<br>
+        <b>FPI ควรทำให้ส่วนเฉลี่ยเป็นข้อมูลแบบเดียวกัน</b> — เก็บ rule + basis + เวลา แล้ว invariant
+        <span class="mono">Σ ส่วนแบ่ง = ยอด master</span> จะตรวจได้อัตโนมัติ</p>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap" id="foot"></div></footer>
+
+<script>
+/* ═════════ DATA — ดึงจาก smfdb (job SE17050002) ═════════ */
+const JOB = { JOBNO:'SE17050002', SUB_SYSNAME:'SF', CBM:150, REVTON:150, GW:0, TOTBL:5, TOTDO:null,
+              JOBRATE:33, ETD:'2017-05-23', ETA:'2017-05-27', LOADPORT:'THBKK', DISPORT:'SGSIN' };
+
+const HOUSES = [
+ {DOCNO:'SE17050002', DOCTYPE:'Allocated', BLNO:'SNSIN1705002',    SALENO:'CONSOL', SALENAME:'CONSOLE', CBM:150, REVTON:150, GW:0, TOTDO:1,    BOOKREF:'', SHIPPERNAME:'ROYALTAINER CO., LTD.'},
+ {DOCNO:'BLE17050003', DOCTYPE:'Direct',   BLNO:'SNSIN1705002/01', SALENO:'APPLE',  SALENAME:'APPLE',   CBM:10,  REVTON:10,  GW:0, TOTDO:1,    BOOKREF:'BSE17050004', SHIPPERNAME:'ABC FURNITURE CO.,LTD.'},
+ {DOCNO:'BLE17050004', DOCTYPE:'Direct',   BLNO:'SNSIN1705002/02', SALENO:'APPLE',  SALENAME:'APPLE',   CBM:20,  REVTON:20,  GW:0, TOTDO:1,    BOOKREF:'BSE17050004', SHIPPERNAME:'ABC FURNITURE CO.,LTD.'},
+ {DOCNO:'BLE17050005', DOCTYPE:'Direct',   BLNO:'SNSIN1705002/03', SALENO:'APPLE',  SALENAME:'APPLE',   CBM:30,  REVTON:30,  GW:0, TOTDO:1,    BOOKREF:'BSE17050004', SHIPPERNAME:'ABC FURNITURE CO.,LTD.'},
+ {DOCNO:'BLE17050006', DOCTYPE:'Direct',   BLNO:'SNSIN1705002/04', SALENO:'APPLE',  SALENAME:'APPLE',   CBM:40,  REVTON:40,  GW:0, TOTDO:1,    BOOKREF:'BSE17050004', SHIPPERNAME:'ABC FURNITURE CO.,LTD.'},
+ {DOCNO:'BLE17050007', DOCTYPE:'Direct',   BLNO:'SNSIN1705002/05', SALENO:'APPLE',  SALENAME:'APPLE',   CBM:50,  REVTON:50,  GW:0, TOTDO:1,    BOOKREF:'BSE17050004', SHIPPERNAME:'ABC FURNITURE CO.,LTD.'}
+];
+
+/* OPTRANSDETAIL — โหลดใหม่จาก smfdb 22/07/2026 (21 บรรทัด)
+   ต่างจากรอบก่อน: master ทั้ง 5 บรรทัด SALETEXTRATE → '0'  (ผู้ใช้ปิดการเฉลี่ย)
+                   + BLFEE ฝั่ง Cost ITEMTYPE='ADV' 1,200 (VISE26070002) เป็นบรรทัดใหม่ */
+const L = o => ({ ALLOCBY:'', SALETEXTRATE:'', ...o,
+  DOCBAL: o.TRANSTYPE==='Bill' ? (o.SRCTYPE==='AR'?1:-1) : (o.SRCTYPE==='AP'?1:-1) });
+
+const LINES = [
+ /* ── Allocated house · ทุกบรรทัด SALETEXTRATE='0' → ไม่นำไปเฉลี่ย ─────────── */
+ L({HBLREF:'SE17050002',EXPCODE:'FRT', EXPDESC1:'FREIGHT CHARGE',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'CBM',QTY:1,UNITPRICE:1500,SALEPRICE:1500,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:1500,CALTOT:1500,THBAMT:1500,THBTOT:1500,VATINOUT:0,REFINVDETID:'…1391',POSTENTRY:1,INVNO:'VISE26070001',SRCTYPE:'AP',NEW:true,PRINT2:{SALETEXTRATE:'0',SALERATE:0,SALEPRICE:0}}),
+ L({HBLREF:'SE17050002',EXPCODE:'AWB', EXPDESC1:'AWB FEE',       TRANSTYPE:'Bill',ITEMTYPE:'REV',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:5000,SALEPRICE:5000,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:5000,CALTOT:5350,THBAMT:5000,THBTOT:5350,VATINOUT:0,REFINVDETID:'…0113',POSTENTRY:2,INVNO:'INSE17060002',SRCTYPE:'AR',PRINT:{SALETEXTRATE:'1',SALERATE:1,SALEPRICE:5000},PRINT2:{SALETEXTRATE:'0',SALERATE:0,SALEPRICE:0}}),
+ L({HBLREF:'SE17050002',EXPCODE:'BACH',EXPDESC1:'BANK CHARGES',  TRANSTYPE:'Bill',ITEMTYPE:'REV',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:1000,SALEPRICE:934.58,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:934.58,CALTOT:1000,THBAMT:934.58,THBTOT:1000,VATINOUT:1,REFINVDETID:'…0112',POSTENTRY:2,INVNO:'INSE17050004',SRCTYPE:'AR',PRINT:{SALETEXTRATE:'1',SALERATE:1,SALEPRICE:934.58},PRINT2:{SALETEXTRATE:'0',SALERATE:0,SALEPRICE:0}}),
+ L({HBLREF:'SE17050002',EXPCODE:'BAFA',EXPDESC1:'BANKER ADJUSTMENT FACTOR',TRANSTYPE:'Bill',ITEMTYPE:'REV',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:3000,SALEPRICE:3000,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:3000,CALTOT:3210,THBAMT:3000,THBTOT:3210,VATINOUT:0,REFINVDETID:'…0114',POSTENTRY:2,INVNO:'INSE17060003',SRCTYPE:'AR',PRINT:{SALETEXTRATE:'1',SALERATE:1,SALEPRICE:3000},PRINT2:{SALETEXTRATE:'0',SALERATE:0,SALEPRICE:0}}),
+ L({HBLREF:'SE17050002',EXPCODE:'DGSU',EXPDESC1:'DG SUR CHARGES',TRANSTYPE:'Bill',ITEMTYPE:'REV',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:4000,SALEPRICE:4000,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:4000,CALTOT:4280,THBAMT:4000,THBTOT:4280,VATINOUT:0,REFINVDETID:'…0115',POSTENTRY:2,INVNO:'INSE17060004',SRCTYPE:'AR',PRINT:{SALETEXTRATE:'1',SALERATE:1,SALEPRICE:4000},PRINT2:{SALETEXTRATE:'0',SALERATE:0,SALEPRICE:0}}),
+ /* ── Direct house /01 · Bill ──────────────────────────────────────────────── */
+ L({HBLREF:'BLE17050003',EXPCODE:'FRT', EXPDESC1:'FREIGHT CHARGE',TRANSTYPE:'Bill',ITEMTYPE:'REV',DOCTYPE:'DN',UOM:'M3',QTY:1,UNITPRICE:10,SALEPRICE:10,ITEMCURR:'USD',ITEMRATE:33,SALETEXTRATE:'33',SALERATE:33,CALAMT:10,CALTOT:10,THBAMT:330,THBTOT:330,VATINOUT:0,REFINVDETID:'…0053',POSTENTRY:2,INVNO:'INSE17050002',SRCTYPE:'AR'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'THC2',EXPDESC1:"TERMINAL HANDLING CHARGE - 20 '",TRANSTYPE:'Bill',ITEMTYPE:'REV',DOCTYPE:'DN',UOM:"20'",QTY:1,UNITPRICE:2600,SALEPRICE:2600,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:2600,CALTOT:2782,THBAMT:2600,THBTOT:2782,VATINOUT:0,REFINVDETID:'…0054',POSTENTRY:2,INVNO:'INSE17050002',SRCTYPE:'AR'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'BLFEE',EXPDESC1:'BILL OF LADINGS',TRANSTYPE:'Bill',ITEMTYPE:'ADV',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:1200,SALEPRICE:1200,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:1200,CALTOT:1200,THBAMT:1200,THBTOT:1200,VATINOUT:0,REFINVDETID:'…0055',POSTENTRY:2,INVNO:'INSE17050002',SRCTYPE:'AR'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'PROS',EXPDESC1:'PROFIT SHARE 50/50',TRANSTYPE:'Bill',ITEMTYPE:'REV',DOCTYPE:'DN',UOM:'SHIP',QTY:1,UNITPRICE:5,SALEPRICE:5,ITEMCURR:'USD',ITEMRATE:1,SALETEXTRATE:'32.2314',SALERATE:32.2314,CALAMT:5,CALTOT:5,THBAMT:161.16,THBTOT:161.16,VATINOUT:0,REFINVDETID:'…0052',POSTENTRY:2,INVNO:'ODNSE17050001',SRCTYPE:'AR'}),
+ /* ── Direct house /01 · Cost ──────────────────────────────────────────────── */
+ L({HBLREF:'BLE17050003',EXPCODE:'FRT', EXPDESC1:'FREIGHT CHARGE',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'M3',QTY:1,UNITPRICE:3,SALEPRICE:3,ITEMCURR:'USD',ITEMRATE:33,SALETEXTRATE:'33',SALERATE:33,CALAMT:3,CALTOT:3,THBAMT:99,THBTOT:99,VATINOUT:0,REFINVDETID:'…0046',POSTENTRY:2,INVNO:'VISE17050002',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'THC2',EXPDESC1:"TERMINAL HANDLING CHARGE - 20 '",TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:"20'",QTY:1,UNITPRICE:2600,SALEPRICE:2600,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:2600,CALTOT:2782.01,THBAMT:2600,THBTOT:2782.01,VATINOUT:0,REFINVDETID:'…0047',POSTENTRY:2,INVNO:'VISE17050002',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'BLFEE',EXPDESC1:'BILL OF LADINGS',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:1200,SALEPRICE:1121.5,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:1121.5,CALTOT:1200,THBAMT:1121.5,THBTOT:1200,VATINOUT:1,REFINVDETID:'…0048',POSTENTRY:2,INVNO:'VISE17050002',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'FRT', EXPDESC1:'FREIGHT CHARGE',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'M3',QTY:1,UNITPRICE:3,SALEPRICE:3,ITEMCURR:'USD',ITEMRATE:33,SALETEXTRATE:'33',SALERATE:33,CALAMT:3,CALTOT:3,THBAMT:99,THBTOT:99,VATINOUT:0,REFINVDETID:'…0117',POSTENTRY:2,INVNO:'VISE17060002',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'THC2',EXPDESC1:"TERMINAL HANDLING CHARGE - 20 '",TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:"20'",QTY:1,UNITPRICE:2600,SALEPRICE:2600,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:2600,CALTOT:2782.01,THBAMT:2600,THBTOT:2782.01,VATINOUT:0,REFINVDETID:'…0118',POSTENTRY:2,INVNO:'VISE17060002',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'BLFEE',EXPDESC1:'BILL OF LADINGS',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:1200,SALEPRICE:1121.5,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:1121.5,CALTOT:1200,THBAMT:1121.5,THBTOT:1200,VATINOUT:1,REFINVDETID:'…0119',POSTENTRY:2,INVNO:'VISE17060002',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'FRT', EXPDESC1:'FREIGHT CHARGE',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'M3',QTY:1,UNITPRICE:3,SALEPRICE:3,ITEMCURR:'USD',ITEMRATE:33,SALETEXTRATE:'33',SALERATE:33,CALAMT:3,CALTOT:3,THBAMT:99,THBTOT:99,VATINOUT:0,REFINVDETID:'…0120',POSTENTRY:2,INVNO:'VISE17060003',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'THC2',EXPDESC1:"TERMINAL HANDLING CHARGE - 20 '",TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:"20'",QTY:1,UNITPRICE:200,SALEPRICE:200,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:200,CALTOT:214.01,THBAMT:200,THBTOT:214.01,VATINOUT:0,REFINVDETID:'…0121',POSTENTRY:2,INVNO:'VISE17060003',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'BLFEE',EXPDESC1:'BILL OF LADINGS',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:1200,SALEPRICE:1121.5,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:1121.5,CALTOT:1200,THBAMT:1121.5,THBTOT:1200,VATINOUT:1,REFINVDETID:'…0122',POSTENTRY:2,INVNO:'VISE17060003',SRCTYPE:'AP'}),
+ L({HBLREF:'BLE17050003',EXPCODE:'FRT', EXPDESC1:'FREIGHT CHARGE',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:2,SALEPRICE:2,ITEMCURR:'EUR',ITEMRATE:40,SALETEXTRATE:'40',SALERATE:40,CALAMT:2,CALTOT:2,THBAMT:80,THBTOT:80,VATINOUT:0,REFINVDETID:'…0127',POSTENTRY:2,INVNO:'VISE17100001',SRCTYPE:'AP'}),
+ /* ★ ใหม่ — BLFEE ฝั่ง Cost แต่ ITEMTYPE='ADV' · SALEPRICE 1,121.50 ≠ CALAMT 1,200 */
+ L({HBLREF:'BLE17050003',EXPCODE:'BLFEE',EXPDESC1:'BILL OF LADINGS',TRANSTYPE:'Cost',ITEMTYPE:'ADV',DOCTYPE:'DN',UOM:'SET',QTY:1,UNITPRICE:1200,SALEPRICE:1121.5,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:1200,CALTOT:1200,THBAMT:1200,THBTOT:1200,VATINOUT:0,REFINVDETID:'…1392',POSTENTRY:1,INVNO:'VISE26070002',SRCTYPE:'AP',NEW:true}),
+ /* ★ บรรทัดโอน Consol→Sale : DOCTYPE='N/A' และยังไม่ post */
+ L({HBLREF:'BLE17050003',EXPCODE:'COMINS',EXPDESC1:'COMMISSION INSURANCE',TRANSTYPE:'Cost',ITEMTYPE:'COS',DOCTYPE:'N/A',UOM:'SET',QTY:1,UNITPRICE:100,SALEPRICE:100,ITEMCURR:'THB',ITEMRATE:1,SALETEXTRATE:'1',SALERATE:1,CALAMT:100,CALTOT:100,THBAMT:null,THBTOT:null,VATINOUT:0,REFINVDETID:null,POSTENTRY:null,INVNO:null,SRCTYPE:null})
+];
+
+/* ประมาณการตอน Confirm — SFBOOKDETAIL ของ BSE17050004 */
+const EST = {
+  BOOKREF: 'BSE17050004',
+  lines: [                        /* SFBOOKDETAIL ของ BSE17050004 — มีบรรทัดเดียวต่อฝั่ง */
+    {TRANSTYPE:'Bill', EXPCODE:'AMFE', EXPDESC1:'AMS FEES', QTY:1, UNITPRICE:10, ITEMCURR:'THB', ITEMRATE:1, SRCAMT:10},
+    {TRANSTYPE:'Cost', EXPCODE:'AMFE', EXPDESC1:'AMS FEES', QTY:1, UNITPRICE:5,  ITEMCURR:'THB', ITEMRATE:1, SRCAMT:5}
+  ]
+};
+EST.sold = EST.lines.filter(l=>l.TRANSTYPE==='Bill').reduce((s,l)=>s+l.SRCAMT*l.ITEMRATE,0);
+EST.cost = EST.lines.filter(l=>l.TRANSTYPE==='Cost').reduce((s,l)=>s+l.SRCAMT*l.ITEMRATE,0);
+
+/* รายงานฉบับที่ 2 — พิมพ์หลังปิดการเฉลี่ย (มีเฉพาะแถวราย house ในภาพ) */
+const REPORT2 = { asof:'หลังปิดการเฉลี่ย', rows:{ 'SNSIN1705002/01':{rev:4291.16, cost:10441.50, profit:-6150.34} } };
+
+/* ตัวเลขในรายงานจริง (สำหรับ verify) */
+const REPORT = { saleRev:19812.68, saleCost:9241.50, saleProfit:10571.18,
+                 consolRev:13034.58, consolCost:0, consolProfit:13034.58, alloc:2586.92 };
+
+/* บรรทัดที่เพิ่มเข้ามา *หลัง* รายงานฉบับที่ใช้ verify ถูกพิมพ์
+   INCLUDE_NEW=false → ย้อนสถานะกลับไปวันพิมพ์ เพื่อให้ golden test ยังทำงาน */
+/*  A = รายงานฉบับ 22/07 · B = ฉบับหลังปิดการเฉลี่ย · NOW = สถานะปัจจุบันใน smfdb
+    แต่ละบรรทัดเก็บค่าเดิมไว้ที่ PRINT (สถานะ A) / PRINT2 (สถานะ B)              */
+const SNAPS = { A:'ฉบับ 22/07/2026', B:'ฉบับหลังปิดการเฉลี่ย', NOW:'ปัจจุบัน — เปิดเฉลี่ยกลับหมด' };
+let SNAP = 'NOW';
+
+/* 🔐 ชั้นสิทธิ์ — 'auth' = ผู้มีอำนาจ · 'plain' = ผู้ใช้ทั่วไป
+   คนทั่วไปเห็น "ธง" ว่ายอดอิงราคาโอนได้ แต่ไม่เห็นตัวเลขราคาโอน           */
+let ROLE = 'auth';
+
+/* 👤 แกนที่สอง — แผนกของผู้ดู `[ผู้ใช้กำหนด 2026-07-22]`
+   Sale   : เห็นเฉพาะตาราง House / Sale Dept — หน้าตาเหมือน Single Job
+   Consol : เห็นเพิ่ม Master Job / Consol Dept (และแถว Allocated)                */
+let DEPT = 'consol';
+const seesConsol = () => DEPT === 'consol';
+const canSeeCom = () => ROLE === 'auth';
+const mask = v => canSeeCom() ? v : '<span class="lock">🔒</span>';
+const LN = () => LINES
+  .filter(l => SNAP!=='A' || !l.NEW)
+  .map(l => {
+    if(SNAP==='NOW') return l;
+    const o = SNAP==='A' ? l.PRINT : l.PRINT2;
+    return o ? {...l, ...o} : l;
+  });
+
+/* ═════════ ENGINE — สูตรจาก Crystal ═════════ */
+
+/* พารามิเตอร์รายงานที่ D12 **ตรึงเป็นค่าคงที่** `[ตัดสิน 2026-07-22]`
+   D12 มองงานในมุมแผนกเสมอ → 2 ตัวนี้ไม่ใช่ตัวเลือกอีกต่อไป
+   ผลสำคัญ: ชั้น Saleperson (ด่านแบ่งแผนก) **ทำงานเสมอ ไม่มีทางปิด**
+   และ D12 บังคับใช้ด่านนี้ **กับทุกสูตรอย่างสม่ำเสมอ — รวมสาย ADV**
+   ต่างจาก .rpt ที่ {@n_vchradv_thb} ถูกบวกนอกด่าน (ดู §4 ข้อ 22) */
+const CHG_GROUP1 = 'Saleperson';      // {?chgGroup1}
+const CHG_GROUP2 = 'House B/L';       // {?chgGroup2}
+const R2 = v => Math.round((v+Number.EPSILON)*100)/100;
+const fmt = (v,d=2) => v==null ? '—' : (v===0 ? '—' :
+  Number(R2(v)).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}));
+
+/* {@nDetGross} / {@nDetTotal} — ⚠ อ่านจาก ARINVDETAIL.THBAMT/THBTOT ไม่ใช่ OPTRANSDETAIL
+   (ในใบนี้สองตารางเก็บค่าตรงกัน mockup จึงเก็บไว้ที่ record เดียว)
+   × {@nDocBal} = IIF(ARINVHEAD.SRCTYPE='AR'|'AP', 1, -1) → หัก CN ในตัว */
+function amtThb(l){
+  const b = l.ITEMTYPE==='ADV' ? l.THBTOT : l.THBAMT;
+  if(b!=null) return b*(l.DOCBAL||1);
+  const c = l.ITEMTYPE==='ADV' ? l.CALTOT : l.CALAMT;      // ยังไม่ post → คำนวณเอง
+  return c*(parseFloat(l.SALERATE)||0)*(l.DOCBAL||1);
+}
+/* {@nDocBalOP} — sign ฝั่ง OPTRANSDETAIL (ใช้กับ com price) */
+const balOP  = l => l.DOCTYPE==='CN' ? -1 : 1;
+const isNA   = l => l.DOCTYPE==='N/A';
+const posted = l => l.REFINVDETID!=null && l.POSTENTRY!==3;
+/* Trim(SALETEXTRATE)="0" = "ไม่ให้" — ธงกันออกที่ผู้ใช้ตั้งเอง ไม่ใช่ BadFx
+     Direct house  → ไม่เป็น Sell/Cost ของ house นั้น (ตกไปฝั่ง Consol)
+     Allocated     → ไม่ถูกนำไปเฉลี่ยลง Direct house ('ไม่ให้มี Real Allocate') */
+const excluded = l => String(l.SALETEXTRATE||'').trim()==='0';
+/* 3 สถานะของราคาโอน — ตกมาจากความหมายเดียวกัน ไม่ใช่กฎ 3 ข้อแยกกัน */
+function xferState(l){
+  const t = String(l.SALETEXTRATE ?? '').trim();
+  if(t==='')  return {k:'none', lbl:'ยังไม่ตั้ง', note:'ใช้ยอด invoice'};
+  if(t==='0') return {k:'zero', lbl:'ขายให้ 0',   note:'ไม่ไหลไปฝั่ง Sale'};
+  return            {k:'set',  lbl:'ตั้งราคาแล้ว', note:'ใช้ com price'};
+}
+
+/* {@cAllocBy} — ALLOCBY ที่ระบุไว้ ชนะเสมอ · ว่าง/null จึงค่อยเดาจาก UOM */
+function basisOf(l){
+  const a = String(l.ALLOCBY||'').trim().toUpperCase();
+  if(a) return {CBM:'cbm', KGS:'kgs', SHP:'shp', 'D/O':'do'}[a] || 'shp';
+  const u = String(l.UOM||'').toUpperCase();
+  if(u.slice(0,2)==='KG')  return 'kgs';
+  if(u.slice(0,3)==='CBM') return 'cbm';
+  if(u.slice(0,2)==='M3')  return 'cbm';
+  return 'shp';                          // Else → SHP (รวม SET / SHIP / 20' / 40')
+}
+/* {@isHideHBL} = SFHBL.JOBNO = SFHBL.DOCNO → "แถวนี้คือแถว master"
+   ⚠ ด่านนี้ถูกใส่ไว้ใน {@n_cbm_ratio} เท่านั้น — อีก 3 basis ไม่มี → ที่มาของ "แถวผี" */
+const isHideHBL = h => h.DOCTYPE==='Allocated';
+
+/* ═══ สวิตช์ระดับ job (ทดลอง) ═══
+   ทำงานแบบ **bulk-edit** — เขียน SALETEXTRATE ของบรรทัด master ทุกบรรทัด
+   ไม่ใช่ field ใหม่ · รายงานเดิมอ่านได้เหมือนเดิมโดยไม่ต้องแก้อะไร
+
+   3 ข้อบังคับที่ทำให้ปลอดภัย:
+   1) แตะเฉพาะบรรทัดที่ HBLREF = JOBNO — ห้ามแตะบรรทัดของ Direct house
+      (field เดียวกันแต่คนละความหมาย: บน Direct = "บรรทัดนี้เป็นของ Sale ไหม")
+   2) เก็บค่าเดิมไว้ที่ _prevCom ก่อนเขียน '0' และไม่แตะ SALEPRICE/SALERATE
+      → เปิดกลับได้ค่าเดิมเป๊ะ ไม่ทำ Com Price หาย
+   3) สถานะเป็น 3 ค่า ไม่ใช่ 2 — 'on' / 'off' / 'mixed'                        */
+/* ═══ หน้าที่ของ FPI: ตรวจเจอสถานะ "ผสม" แล้วเตือน ═══
+   ไม่เก็บ flag เอง ไม่เป็นแหล่งความจริงซ้อน — อ่าน SALETEXTRATE ตรง ๆ แล้วฟ้อง */
+function mixedWarn(){
+  if((JOB.TOTBL||0)<=1) return '';
+  const m = LN().filter(l => l.HBLREF===JOB.JOBNO && posted(l));
+  if(!m.length) return '';
+  const off = m.filter(excluded), on = m.filter(l=>!excluded(l));
+  if(!off.length || !on.length) return '';
+  const odd = off.length <= on.length ? off : on;      // ฝั่งข้างน้อย = ที่น่าสงสัย
+  const oddIsOff = odd === off;
+  return `<div class="strip risk"><b>⚠</b><span>
+    <b>งานนี้อยู่ในสถานะ "ผสม" — เฉลี่ยบางบรรทัด ไม่เฉลี่ยบางบรรทัด</b>
+    <br>บรรทัด master ${on.length} จาก ${m.length} ถูกนำไปเฉลี่ย ·
+    <b>ต้องยืนยันว่าตั้งใจ</b> เพราะระบบเดิมไม่เตือนอะไรเลย
+    <br>บรรทัดที่ต่างจากพวก (${oddIsOff?'<b>ไม่</b>เฉลี่ย':'เฉลี่ย'}):
+    ${odd.map(l=>`<span class="mono">${l.EXPCODE} ${fmt(amtThb(l))}</span>`).join(' · ')}
+    <br><span style="opacity:.8">สาเหตุที่พบบ่อย: ปิดการเฉลี่ยไว้ก่อน แล้วมีบรรทัดใหม่เข้ามาทีหลัง
+    — บรรทัดใหม่ไม่สืบทอดสถานะ จึงถูกเฉลี่ยเงียบ ๆ</span></span></div>`;
+}
+
+function jobAllocState(){
+  const m = LINES.filter(l => l.HBLREF === JOB.JOBNO);
+  if(!m.length) return 'none';
+  const off = m.filter(l => String(l.SALETEXTRATE||'').trim()==='0').length;
+  return off===0 ? 'on' : off===m.length ? 'off' : 'mixed';
+}
+function setJobAlloc(on){
+  LINES.filter(l => l.HBLREF === JOB.JOBNO).forEach(l => {
+    if(on){
+      if(l._prevCom !== undefined){ l.SALETEXTRATE = l._prevCom; delete l._prevCom; }
+    }else{
+      if(String(l.SALETEXTRATE||'').trim()!=='0'){ l._prevCom = l.SALETEXTRATE; l.SALETEXTRATE = '0'; }
+    }
+  });
+  render();
+}
+function ratio(l,h){
+  switch(basisOf(l)){
+    case 'shp': return JOB.TOTBL ? 1/JOB.TOTBL : 1;          // ← ไม่อ้าง house เลย
+    case 'cbm': return isHideHBL(h) ? 0                       // ← มีด่าน
+                     : (JOB.REVTON ? h.REVTON/JOB.REVTON : 0);
+    case 'kgs': return JOB.GW ? h.GW/JOB.GW : 1;             // GW=0 → คืนยอดเต็ม
+    case 'do' : return JOB.TOTDO ? (h.TOTDO||0)/JOB.TOTDO : 0;
+  }
+}
+
+/* {@n_bill_com} / {@n_cost_com} — ราคาที่ Consol ขาย Sale ("Com Price")
+   นี่คือจุดที่คนมองข้ามง่ายที่สุด: สูตรนี้ **ไม่มีด่าน post** */
+function com(l, want){
+  const t = String(l.SALETEXTRATE ?? '').trim();
+  if(t==='' || t==='0') return 0;                          // ไม่มี com price / สั่ง "ไม่ให้"
+  if(l.TRANSTYPE!==want) return 0;
+  if(l.ITEMTYPE==='ADV') return 0;                         // ADV ไปสาย n_billadv/n_vchradv
+  if(want==='Cost' && l.EXPCODE==='KB') return 0;          // KB ใช้ {@n_cost_com_na} แยก
+  if(l.VATINOUT===1)                                       // VAT in → ใช้ nDetGross/nDetTotal
+    return (l.ITEMTYPE==='ADV' ? l.THBTOT : l.THBAMT) * (l.DOCBAL||1);
+  return balOP(l) * l.QTY * l.SALEPRICE                    // ★ SALEPRICE ไม่ใช่ CALAMT
+       * (l.ITEMCURR==='THB' ? 1 : (parseFloat(l.SALERATE)||1));
+}
+
+let CONSOL_SALENO = null;   // {@SFHBL_M.SALENO} — ตั้งจาก master ไม่ใช่ค่าคงที่
+
+function compute(){
+  const master  = HOUSES.find(h=>h.DOCTYPE==='Allocated');
+  const directs = HOUSES.filter(h=>h.DOCTYPE!=='Allocated');
+  CONSOL_SALENO = master.SALENO;
+  const isConsolHouse = h => h.SALENO === CONSOL_SALENO;   // SFHBL.SALENO = SFHBL_M.SALENO
+
+  /* ① เฉลี่ยจาก master → Direct house (xBillRevThb_Alloc / xVchrThb_Alloc) */
+  /* [ผู้ใช้กำหนด] 1 House = 1 Book → ไม่เฉลี่ย · TOTBL นับเฉพาะ Direct */
+  const skipAlloc = JOB.SUB_SYSNAME==='CS' || JOB.SUB_SYSNAME==='TS' || (JOB.TOTBL||0)<=1;
+  const allocOf = h => {
+    if(skipAlloc || h.DOCTYPE==='Allocated') return {rev:0,cost:0};
+    let rev=0, cost=0;
+    allocPool().forEach(l=>{
+      const share = R2(amtThb(l)*ratio(l,h));
+      if(l.TRANSTYPE==='Bill') rev+=share; else cost+=share;
+    });
+    return {rev,cost};
+  };
+  /* บรรทัดของ master ที่ "ให้เฉลี่ย" — post แล้ว และไม่ติดธง "0" */
+  const allocPool = () => LN().filter(l =>
+    l.HBLREF===master.DOCNO && posted(l) && !excluded(l));
+
+  /* ── ฝั่ง Sale Dept ─────────────────────────────────────────────
+     {@n_billrev_thb_net} = {@n_billref_thb}+{@n_billrev_thb}+{@n_billadv_thb}
+     {@n_vchr_thb_tot}    = {@n_vchr_kb}+{@n_vchr_thb}
+     ทั้งคู่มีชั้น ?chgGroup1="Saleperson" ครอบท้าย: ธง "0" → 0 ·
+     house เป็นของ master → 0 · มี com price → **ใช้ com price แทน**            */
+  /* ⭐ ADV มีสายของตัวเอง — {@n_billadv_thb} / {@n_vchradv_thb}
+     ไม่มีชั้น Saleperson → **ไม่ผ่านราคาโอน** ใช้ nDetTotal ตรง ๆ
+     หลักฐาน: VISE26070002 (ADV, SALEPRICE 1,121.50) ขึ้นรายงานเป็น 1,200 = THBTOT   */
+  const advOf = (l,want) =>
+    (posted(l) && l.TRANSTYPE===want && l.ITEMTYPE==='ADV') ? l.THBTOT*(l.DOCBAL||1) : 0;
+
+  const billBase = l => {                                        // ≠ADV เท่านั้น
+    if(!posted(l) || l.TRANSTYPE!=='Bill' || l.ITEMTYPE==='ADV') return 0;
+    let f = amtThb(l);                                           // {@n_billrev_thb} (EXPCODE≠KB)
+    if(l.EXPCODE==='R/F') f += amtThb(l);                        // {@n_billref_thb} ⚠ ทับกัน
+    return f;
+  };
+  const vchrBase = l => {
+    if(!posted(l) || l.TRANSTYPE!=='Cost' || l.ITEMTYPE==='ADV') return 0;
+    return l.EXPCODE==='KB'
+      ? amtThb(l)*(l.DOCTYPE==='DN'?1:-1)                        // {@n_vchr_kb}
+      : amtThb(l);                                              // {@n_vchr_thb}
+  };
+  /* ⭐ ด่านแบ่งแผนก — ตรึงเป็น Saleperson · ใช้กับ **ทุกสาย** รวม ADV
+     .rpt ใส่ด่านนี้ไว้ใน n_billrev_thb_net / n_vchr_thb_tot แต่ **ไม่ได้ใส่ใน
+     n_vchradv_thb** (บวกนอกด่าน) → ถ้าแถว master มี Cost+ADV รายงานเดิมจะนับสองที่
+     D12 เลือกใช้ด่านให้สม่ำเสมอ = ไม่นับซ้ำ (§4 ข้อ 22) */
+  const mine = (l,h) => CHG_GROUP1==='Saleperson' && CHG_GROUP2==='House B/L'
+                        && !excluded(l) && !isConsolHouse(h);
+  const salePerson = (l,h,base,want) => {
+    if(!mine(l,h)) return 0;
+    const c = com(l,want);
+    return c!==0 ? c : base;                                    // com price ชนะยอด invoice
+  };
+  const n_billrev_thb_net = (l,h) =>
+    salePerson(l,h,billBase(l),'Bill') + (mine(l,h) ? advOf(l,'Bill') : 0);
+  const n_vchr_thb_tot    = (l,h) =>
+    salePerson(l,h,vchrBase(l),'Cost') + (mine(l,h) ? advOf(l,'Cost') : 0);
+
+  /* ── ฝั่ง Consol Dept ───────────────────────────────────────────
+     {@n_vchr_n_a_consol} อ้าง {@n_vchr_thb} *หลัง* ชั้น Saleperson
+     → บรรทัด N/A ที่ยังไม่ post จึงยังมีค่า เพราะ com price ไม่มีด่าน post   */
+  const n_vchr_n_a_consol = (l,h) => !isNA(l) ? 0
+    : (l.TRANSTYPE==='Bill' ? n_billrev_thb_net(l,h) : -1*n_vchr_thb_tot(l,h));
+
+  const consolBase = (l,h,want) =>
+    (posted(l) && (isConsolHouse(h) || excluded(l)) && l.TRANSTYPE===want) ? amtThb(l) : 0;
+
+  const n_billrev_thb_consol = (l,h) => {
+    const na = n_vchr_n_a_consol(l,h);
+    return consolBase(l,h,'Bill') + (na>0 ? 0 : Math.abs(na));
+  };
+  const n_vchr_thb_consol = (l,h) => {
+    const na = n_vchr_n_a_consol(l,h);
+    return consolBase(l,h,'Cost') + (na>0 ? na : 0);
+  };
+
+  const rows = HOUSES.map(h=>{
+    const mine = LN().filter(l=>l.HBLREF===h.DOCNO);
+    let saleRev=0, saleCost=0, consolRev=0, consolCost=0;
+
+    mine.forEach(l=>{
+      saleRev    += n_billrev_thb_net(l,h);
+      saleCost   += n_vchr_thb_tot(l,h);
+      consolRev  += n_billrev_thb_consol(l,h);
+      consolCost += n_vchr_thb_consol(l,h);
+    });
+
+    const a = allocOf(h);
+    /* [ผู้ใช้กำหนด 2026-07-22] แถว Allocated ไม่รับส่วนเฉลี่ย — ไม่ใช่ผู้รับ แต่เป็นต้นทาง */
+    let shareRev=0, shareCost=0;
+    if(!skipAlloc && h.DOCTYPE!=='Allocated') allocPool().forEach(l=>{
+      const v = R2(amtThb(l)*ratio(l,h));
+      if(l.TRANSTYPE==='Bill') shareRev+=v; else shareCost+=v;
+    });
+    return { h, saleRev:saleRev+a.rev, saleCost:saleCost+a.cost, consolRev, consolCost,
+             alloc:a.rev+a.cost, shareRev:R2(shareRev), shareCost:R2(shareCost),
+             isMasterRow:h.DOCTYPE==='Allocated' };
+  });
+
+  const sum = k => rows.reduce((s,r)=>s+r[k],0);
+  const tot = { saleRev:sum('saleRev'), saleCost:sum('saleCost'),
+                consolRev:sum('consolRev'), consolCost:sum('consolCost'),
+                alloc:sum('alloc') };
+  /* รายงานรวมแถว master (ที่แสดงประกอบ) เข้าไปด้วย */
+  /* ⛔ ไม่ใช่ผลลัพธ์ของ D12 — คำนวณไว้อย่างเดียวเพื่อ reconcile กับรายงานเดิม
+     รายงานเดิมให้ส่วนเฉลี่ยกับแถว Allocated ด้วย (ขาดด่าน isHideHBL ใน basis SHP)
+     D12 ตัดออก · เก็บตัวเลขไว้เพื่อพิสูจน์ว่าส่วนต่างอธิบายได้หมด ไม่มีเศษ */
+  let phantomRev=0, phantomCost=0;
+  if(!skipAlloc) allocPool().forEach(l=>{
+    const v = R2(amtThb(l)*ratio(l,master));      // ใช้ตัว master เองตามที่ Crystal ทำ
+    if(l.TRANSTYPE==='Bill') phantomRev+=v; else phantomCost+=v;
+  });
+  phantomRev=R2(phantomRev); phantomCost=R2(phantomCost);
+  const masterShare = phantomRev, masterShareCost = phantomCost;
+  tot.legacyRev    = tot.saleRev  + phantomRev;      // = ตัวเลขในรายงานเดิม
+  tot.legacyCost   = tot.saleCost + phantomCost;
+  tot.legacyProfit = tot.legacyRev - tot.legacyCost;
+  tot.saleRevReport=tot.legacyRev; tot.saleCostReport=tot.legacyCost;
+  tot.saleProfitReport=tot.legacyProfit;
+  tot.saleProfit = tot.saleRev - tot.saleCost;
+  tot.consolProfit = tot.consolRev - tot.consolCost;
+  return { rows, tot, master, masterShare, masterShareCost, phantomRev, phantomCost, skipAlloc };
+}
+
+/* ═════════ RENDER ═════════ */
+const $ = s => document.querySelector(s);
+
+function renderHouses(){
+  $('#hdrJob').textContent = `TOTBL=${JOB.TOTBL} · CBM=${JOB.CBM} · REVTON=${JOB.REVTON} · GW=${JOB.GW} · TOTDO=${JOB.TOTDO??'null'} · JOBRATE=${JOB.JOBRATE}`;
+  $('#tblHouses').innerHTML =
+    '<thead><tr class="sub"><th>DOCNO</th><th>DOCTYPE</th><th>B/L No.</th><th>SALENO</th><th class="num">CBM</th><th class="num">REVTON</th><th class="num">GW</th><th class="num">TOTDO</th><th>BOOKREF</th><th>Shipper</th></tr></thead><tbody>'
+    + HOUSES.map(h=>`<tr class="${h.DOCTYPE==='Allocated'?'master':''}">
+      <td class="mono">${h.DOCNO}</td>
+      <td><span class="pill ${h.DOCTYPE==='Allocated'?'p-alloc':'p-direct'}">${h.DOCTYPE}</span></td>
+      <td class="mono">${h.BLNO}</td><td class="mono"><b>${h.SALENO}</b></td>
+      <td class="num">${h.CBM}</td><td class="num">${h.REVTON}</td><td class="num">${h.GW}</td>
+      <td class="num">${h.TOTDO??'—'}</td><td class="mono">${h.BOOKREF}</td><td>${h.SHIPPERNAME}</td></tr>`).join('')
+    + '</tbody>';
+}
+
+function renderRole(){
+  $('#deptBtns').innerHTML = [['sale','แผนก Sale'],['consol','แผนก Consol']]
+    .map(([k,t])=>`<span class="rb ${DEPT===k?'on':''}" data-d="${k}">${t}</span>`).join(' ');
+  document.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{ DEPT=b.dataset.d; render(); });
+  $('#roleBtns').innerHTML = [['auth','ผู้มีอำนาจ'],['plain','ผู้ใช้ทั่วไป']]
+    .map(([k,t])=>`<span class="rb ${ROLE===k?'on':''}" data-r="${k}">${t}</span>`).join(' ');
+  document.querySelectorAll('[data-ja]').forEach(b=>b.onclick=()=>setJobAlloc(b.dataset.ja==='1'));
+  document.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{ ROLE=b.dataset.r; render(); });
+  const dNote = seesConsol()
+    ? `<div class="strip info"><b>👤</b><span><b>แผนก Consol</b> — เห็นทั้ง
+       <span class="mono">House / Sale Dept</span> และ <span class="mono">Master Job / Consol Dept</span>
+       รวมถึงแถว <span class="mono">Allocated</span></span></div>`
+    : `<div class="strip info"><b>👤</b><span><b>แผนก Sale</b> — เห็นเฉพาะ
+       <span class="mono">House / Sale Dept</span> · <b>หน้าตาเหมือน Single Job</b>
+       <br>ไม่เห็นคอลัมน์ Consol และไม่เห็นแถว <span class="mono">Allocated</span>
+       — ส่วนเฉลี่ยมาถึงในฐานะ "ส่วนที่ได้รับ" โดยไม่ต้องรู้ว่ามาจากบรรทัดไหนของ master</span></div>`;
+  $('#roleNote').innerHTML = dNote + (canSeeCom()
+    ? `<div class="strip risk"><b>🔐</b><span><b>กำลังมองด้วยสิทธิ์ผู้มีอำนาจ</b> —
+       <span class="mono">Com Exc. Rate</span> / <span class="mono">Com Unit Price</span> แสดงเต็ม
+       · ในระบบจริงมีแค่ผู้มีอำนาจที่เห็นหน้าจอแบบนี้</span></div>`
+    : `<div class="strip ok"><b>✓</b><span><b>กำลังมองด้วยสิทธิ์ผู้ใช้ทั่วไป</b> — ตัวเลขราคาโอนถูกปิด
+       เหลือแค่ <b>ธงสถานะ</b> ว่ายอดบรรทัดนั้นอิงราคาโอนหรือไม่
+       <br>ยอดรวม Sale/Consol ยังเห็นได้ครบ — <b>อธิบายได้ว่า "อิงราคาโอนภายใน" โดยไม่เปิดตัวเลข</b></span></div>`);
+}
+
+function renderLines(){
+  const na = LN().filter(isNA).length, unp = LN().filter(l=>!posted(l)).length;
+  const c = k => LN().filter(l=>xferState(l).k===k).length;
+  $('#hdrLines').textContent =
+    `${LINES.length} บรรทัด · N/A ${na} · ยังไม่ post ${unp} · ราคาโอน: ตั้งแล้ว ${c('set')} / ขายให้ 0 ${c('zero')} / ยังไม่ตั้ง ${c('none')}`;
+  $('#tblLines').innerHTML =
+    '<thead><tr class="sub"><th>HBLREF</th><th>Charge</th><th>Trans</th><th>Item</th><th>DOCTYPE</th><th>UOM</th><th>Cur</th><th class="num">CALAMT</th><th class="num">SALEPRICE</th><th class="num">SALETEXTRATE</th><th>ราคาโอน</th><th class="num">THBAMT</th><th class="num">→ THB</th><th>Post</th></tr></thead><tbody>'
+    + LINES.map(l=>`<tr class="${isNA(l)?'master':''} ${!posted(l)&&!isNA(l)?'dim':''}">
+      <td class="mono">${l.HBLREF}</td><td class="mono">${l.EXPCODE}</td>
+      <td>${l.TRANSTYPE}</td><td>${l.ITEMTYPE}</td>
+      <td>${isNA(l)?'<span class="pill p-na">N/A</span>':'<span class="mono">DN</span>'}</td>
+      <td class="mono">${l.UOM}</td><td class="mono">${l.ITEMCURR}</td>
+      <td class="num">${fmt(l.CALAMT)}</td><td class="num mono">${mask(fmt(l.SALEPRICE))}</td>
+      <td class="num mono">${!canSeeCom() ? mask('') :
+        (l.SALETEXTRATE===''?'<span style="color:var(--faint)">(ว่าง)</span>':l.SALETEXTRATE)}</td>
+      <td><span class="pill p-x-${xferState(l).k}">${xferState(l).lbl}</span></td>
+      <td class="num">${l.THBAMT==null?'<span class="pill p-un">null</span>':fmt(l.THBAMT)}</td>
+      <td class="num"><b>${fmt(amtThb(l))}</b></td>
+      <td>${posted(l)?'<span class="mono" style="color:var(--good)">✓</span>':'<span class="pill p-un">ยังไม่ post</span>'}</td></tr>`).join('')
+    + '</tbody>';
+}
+
+function renderProfit(C){
+  const {rows,tot} = C;
+  const SALE_NAMES = [...new Set(rows.filter(r=>!r.isMasterRow).map(r=>r.h.SALENO))].join('/');
+  /* สถานะการเฉลี่ย — ดูจากบรรทัดของ Allocated ทีละบรรทัด ไม่มีสวิตช์ระดับ job */
+  const nDirect = rows.filter(r=>!r.isMasterRow).length;
+  const mLines = LN().filter(l=>l.HBLREF===C.master.DOCNO && posted(l));
+  const off = mLines.filter(excluded).length, on = mLines.length - off;
+  const state = off===0 ? ['ok','เฉลี่ยครบทุกบรรทัด']
+              : on===0  ? ['warn','ปิดการเฉลี่ยทั้งหมด']
+                        : ['risk','เฉลี่ยบางส่วน — ต้องตรวจ'];
+  $('#hdrCalc').textContent = `Consol = ${CONSOL_SALENO} · Sale = ${SALE_NAMES} · เฉลี่ย ${on}/${mLines.length} บรรทัด`;
+  const onCnt = mLines.filter(l=>!excluded(l)).length;
+  const kase = nDirect===0 ? ['1','ไม่มี House','Sale = Consol (โครงสร้างบังคับ)']
+             : nDirect===1 ? ['2','มี 1 House · 1 Book','Sale = Consol (SALENO ตรงกับ master)']
+             : onCnt>0     ? ['3.1','> 1 House · เฉลี่ย','Sale แยก Consol · ตัดแถว Allocated ออกจากผู้รับ']
+                           : ['3.2','> 1 House · ไม่เฉลี่ย','Sale แยก Consol'];
+  $('#allocState').innerHTML = `<div class="strip info"><b>▣</b><span>
+    <b>ใบนี้คือกรณี ${kase[0]} — ${kase[1]}</b> ·
+    <span class="mono">Direct ${nDirect} · TOTBL ${JOB.TOTBL}</span>
+    <br>${kase[2]} · Booking อ่านจาก <span class="mono">${nDirect===0?'SFHBL_M':'SFHBL'}.BOOKREF</span>
+    </span></div>
+    ${(JOB.TOTBL||0)<=1 ? '' : `<div class="strip ${jobAllocState()==='mixed'?'risk':'ok'}">
+      <b>⇄</b><span><b>สวิตช์ระดับ job</b> <span style="opacity:.7">— จำลองการกรอกฝั่ง VB6 ไม่ใช่ฟีเจอร์ของ FPI</span><br>
+      <span class="jb ${jobAllocState()==='on'?'on':''}" data-ja="1">เฉลี่ยทั้งหมด</span>
+      <span class="jb ${jobAllocState()==='off'?'on':''}" data-ja="0">ไม่เฉลี่ยเลย</span>
+      <span class="mono" style="margin-left:8px">สถานะ: <b>${
+        {on:'เปิดครบ', off:'ปิดครบ', mixed:'⚠ ผสม'}[jobAllocState()]}</b></span>
+      <br>เขียน <span class="mono">SALETEXTRATE</span> ของบรรทัด master เท่านั้น ·
+      <b>เก็บ Com Price เดิมไว้</b> (ไม่ล้าง <span class="mono">SALEPRICE</span>) → เปิดกลับได้ค่าเดิม
+      <br><b>เป็นคำสั่ง ไม่ใช่สถานะ</b> — บรรทัด master ที่เพิ่มมาทีหลังจะ<b>ไม่สืบทอด</b> ค่านี้
+      </span></div>`}
+    ${mixedWarn()}
+    <div class="strip ${state[0]}"><b>${off===0?'✓':(on===0?'⏻':'⚠')}</b><span>
+    <b>สถานะการเฉลี่ย: ${state[1]}</b> — <span class="mono">${on}/${mLines.length}</span>
+    บรรทัดของ Allocated ถูกนำไปเฉลี่ย · <span class="mono">TOTBL=${JOB.TOTBL}</span> Direct house
+    ${(JOB.TOTBL||0)<=1 ? '<b>→ 1 House = 1 Book · ไม่เฉลี่ยเลย</b>' : ''}
+    <br>ควบคุมด้วย <span class="mono">SALETEXTRATE</span> ของ<b>แต่ละบรรทัด</b> —
+    <b>ไม่มีสวิตช์ระดับ job หรือระดับ house</b> · ปิดบางบรรทัดได้และระบบเดิมไม่เตือน
+    ${on&&off?'<br><b>ตอนนี้ปิดบางบรรทัด</b> — ต้องยืนยันว่าตั้งใจ':''}</span></div>`;
+  $('#tblProfit').innerHTML = `
+   <thead>
+    <tr class="grp"><th class="sp" colspan="5"></th>
+      <th class="g-alloc divl" colspan="2">ส่วนเฉลี่ยที่ได้รับ</th>
+      <th class="g-sale divl" colspan="3">House / Sale Dept (${SALE_NAMES})</th>
+      ${seesConsol()?`<th class="g-consol divl" colspan="3">Master Job / Consol Dept (${CONSOL_SALENO})</th>`:''}</tr>
+    <tr class="sub"><th>B/L No.</th><th>Shipper</th><th class="num">CBM</th><th>Sale Person</th><th>Booking</th>
+      <th class="num divl">Rev</th><th class="num">Cost</th>
+      <th class="num divl">Revenue</th><th class="num">Cost</th><th class="num">Profit</th>
+      ${seesConsol()?'<th class="num divl">Revenue</th><th class="num">Cost</th><th class="num">Profit</th>':''}</tr>
+   </thead><tbody>` +
+   rows.filter(r=>seesConsol() || !r.isMasterRow).map(r=>{
+     const sp = r.saleRev - r.saleCost, cp = r.consolRev - r.consolCost;
+     return `<tr class="${r.isMasterRow?'master':''}">
+      <td class="mono">${r.h.BLNO} <span class="pill ${r.isMasterRow?'p-alloc':'p-direct'}">${r.h.DOCTYPE}</span></td>
+      <td>${r.h.SHIPPERNAME}</td><td class="num">${r.isMasterRow?'—':r.h.CBM.toFixed(3)}</td>
+      <td class="mono">${r.h.SALENAME}</td><td class="mono">${r.h.BOOKREF}</td>
+      <td class="num a divl">${r.isMasterRow?'<span style="color:var(--faint);font-size:10px">ไม่รับเฉลี่ย</span>':fmt(r.shareRev)}</td>
+      <td class="num a">${r.isMasterRow?'—':fmt(r.shareCost)}</td>
+      <td class="num s divl">${fmt(r.saleRev)}</td><td class="num s">${fmt(r.saleCost)}</td>
+      <td class="num s ${sp<0?'neg':''}">${sp<0?'−'+fmt(-sp):fmt(sp)}</td>
+      ${!seesConsol()?'':`<td class="num c divl">${fmt(r.consolRev)}</td><td class="num c">${fmt(r.consolCost)}</td>
+      <td class="num c ${cp<0?'neg':''}">${cp<0?'−'+fmt(-cp):fmt(cp)}</td>`}</tr>`;
+   }).join('') +
+   `</tbody><tfoot>
+     <tr><td colspan="4" style="text-align:right;color:var(--muted)">รวม <span style="font-weight:400">(${rows.length-1} Direct house)${seesConsol()?'':' · มุมมองแผนก Sale'}</span></td><td></td>
+       <td class="num a divl">${fmt(rows.reduce((s,r)=>s+r.shareRev,0))}</td><td class="num a">${fmt(rows.reduce((s,r)=>s+r.shareCost,0))}</td>
+       <td class="num s divl">${fmt(tot.saleRev)}</td><td class="num s">${fmt(tot.saleCost)}</td><td class="num s">${fmt(tot.saleProfit)}</td>
+       ${!seesConsol()?'':`<td class="num c divl">${fmt(tot.consolRev)}</td><td class="num c">${fmt(tot.consolCost)}</td><td class="num c">${fmt(tot.consolProfit)}</td>`}</tr>
+
+   </tfoot>`;
+}
+
+const NEWLINES = LINES.filter(l=>l.NEW);
+const CHANGED = LINES.filter(l=>l.PRINT||l.PRINT2);
+function renderVerify(C){
+  /* golden test: ย้อนสถานะกลับไปวันที่รายงานถูกพิมพ์ แล้วต้องยังตรง 6/6 */
+  SNAP='A'; const P = compute(); SNAP='NOW';
+  const tot = P.tot;
+  const rows = [
+    ['Sale · Revenue',   tot.saleRev,    tot.legacyRev,    REPORT.saleRev],
+    ['Sale · Cost',      tot.saleCost,   tot.legacyCost,   REPORT.saleCost],
+    ['Sale · Profit',    tot.saleProfit, tot.legacyProfit, REPORT.saleProfit],
+    ['Consol · Revenue', tot.consolRev,    tot.consolRev,    REPORT.consolRev],
+    ['Consol · Cost',    tot.consolCost,   tot.consolCost,   REPORT.consolCost],
+    ['Consol · Profit',  tot.consolProfit, tot.consolProfit, REPORT.consolProfit]
+  ];
+  const N = C.tot, DELTA = NEWLINES.length ? [
+      ['Sale · Revenue',   N.saleRev,   tot.legacyRev],
+      ['Sale · Cost',      N.saleCost,  tot.legacyCost],
+      ['Sale · Profit',    N.saleProfit,tot.legacyProfit],
+      ['Consol · Cost',    N.consolCost,       tot.consolCost],
+      ['Consol · Profit',  N.consolProfit,     tot.consolProfit]
+    ].filter(([,a,b])=>Math.abs(a-b)>=0.005)
+     .map(([k,a,b])=>`<span class="mono">${k}: ${fmt(b)} → <b>${fmt(a)}</b></span>`).join(' · ') : '';
+  /* ตรวจกับรายงานฉบับที่ 2 — ราย house (สถานะปัจจุบัน) */
+  let p2=0, n2=0;
+  SNAP='B'; const B = compute(); SNAP='NOW';
+  const body2 = Object.entries(REPORT2.rows).map(([bl,exp])=>{
+    const r = B.rows.find(x=>x.h.BLNO===bl); if(!r) return '';
+    return [['Revenue',r.saleRev,exp.rev],['Cost',r.saleCost,exp.cost],
+            ['Profit',r.saleRev-r.saleCost,exp.profit]].map(([k,c,e])=>{
+      const ok = Math.abs(R2(c)-e)<0.02; n2++; if(ok) p2++;
+      return `<tr><td>${bl} · ${k}</td><td class="num mono"><b>${fmt(c)}</b></td>
+        <td class="num mono">${fmt(e)}</td>
+        <td class="${ok?'ok-b':'bad-b'}">${ok?'ตรง ✓':'ต่าง '+fmt(R2(c)-e)}</td></tr>`;
+    }).join('');
+  }).join('');
+  const VFY2 = !body2 ? '' : `<div style="margin-top:14px">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:3px">
+      สถานะ B — ${REPORT2.asof}</div>
+    <table class="vfy"><thead><tr><th>รายการ</th><th class="num">D12</th><th class="num">ในรายงาน</th><th>ผล</th></tr></thead>
+    <tbody>${body2}</tbody></table>
+    <div class="strip ${p2===n2?'ok':'risk'}"><b>${p2===n2?'✓':'■'}</b><span>
+      <b>${p2}/${n2} ตรงกับรายงานฉบับที่ 2</b>${p2===n2
+        ? ' — ยืนยันว่า ADV ไม่ผ่านราคาโอน และปิดการเฉลี่ยทำงานถูก' : ''}</span></div></div>`;
+
+  let pass = 0;
+  const body = rows.map(([k,d12,legacy,exp])=>{
+    /* ตรวจว่า "ส่วนต่างจากรายงาน" อธิบายได้หมดด้วยแถวผี — ไม่มีเศษเหลือ */
+    const ok = Math.abs(R2(legacy)-exp) < 0.02; if(ok) pass++;
+    const gap = R2(d12-exp);
+    return `<tr><td>${k}</td><td class="num mono"><b>${fmt(d12)}</b></td>
+      <td class="num mono">${fmt(exp)}</td>
+      <td class="num mono" style="color:var(--faint)">${gap?fmt(gap):'—'}</td>
+      <td class="${ok?'ok-b':'bad-b'}">${ok?'อธิบายได้ ✓':'เหลือเศษ '+fmt(R2(legacy)-exp)}</td></tr>`;
+  }).join('');
+  $('#vfyBox').innerHTML = `
+    <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin-bottom:3px">
+      สถานะ A — Profit Summary ฉบับ 22/07/2026</div>
+    <table class="vfy"><thead><tr><th>รายการ</th><th class="num">D12</th>
+      <th class="num">ที่พิมพ์จริง</th><th class="num">ส่วนต่าง</th><th>ผล</th></tr></thead>
+    <tbody>${body}</tbody></table>
+    <div class="strip ${pass===rows.length?'ok':'risk'}"><b>${pass===rows.length?'✓':'■'}</b><span>
+      <b>${pass}/${rows.length} ตรงกับรายงาน</b>${pass===rows.length?' — สูตรที่แกะมาถูกต้อง'
+      :' — ยังมีส่วนที่ต่าง ต้องตรวจสูตรเพิ่ม'}</span></div>
+    <div class="strip info"><b>ⓘ</b><span><b>ส่วนต่างจากรายงานเดิม = ส่วนเฉลี่ยที่แถว <span class="mono">Allocated</span> ได้รับเกินมา</b>
+      · เกิดเพราะด่าน <span class="mono">{@isHideHBL}</span> ถูกใส่ไว้เฉพาะใน <span class="mono">{@n_cbm_ratio}</span>
+      basis <span class="mono">SHP</span> จึงไม่รู้ตัวว่ากำลังพิมพ์แถว master
+      <br><b>D12 ตัดออกแล้ว</b> (ผู้ใช้ยืนยันตัวเลข 2026-07-22) — Allocated เป็น<b>ต้นทางของการเฉลี่ย ไม่ใช่ผู้รับ</b>
+      <br>ทุกช่องต้อง <b>"อธิบายได้"</b> = ส่วนต่างเท่ากับส่วนเฉลี่ยชุดที่เกินพอดี <b>ไม่มีเศษเหลือ</b></span></div>
+    ${VFY2}
+    <div class="strip info"><b>ⓘ</b><span><b>ข้อมูลเดินมา 3 สถานะ</b> — engine ย้อนกลับได้ทุกสถานะ
+      (แต่ละบรรทัดเก็บค่าเดิมไว้ที่ <span class="mono">PRINT</span>/<span class="mono">PRINT2</span>)
+      <table class="vfy" style="margin-top:6px"><tbody>
+        <tr><td><b>A</b> · ${SNAPS.A}</td><td>สถานะตั้งต้น</td><td class="ok-b">เทียบรายงาน 6/6</td></tr>
+        <tr><td><b>B</b> · ${SNAPS.B}</td><td>+ ${NEWLINES.length} บรรทัดใหม่ · master ${LINES.filter(l=>l.HBLREF==='SE17050002').length} บรรทัด → <span class="mono">'0'</span></td><td class="ok-b">เทียบรายงาน 3/3</td></tr>
+        <tr><td><b>NOW</b> · ${SNAPS.NOW}</td><td>+ <span class="mono">PROS</span> → <span class="mono">'0'</span> (ปิด Com Rate)</td><td style="color:var(--warn)">ยังไม่มีรายงานยืนยัน</td></tr>
+      </tbody></table>
+      ตาราง Profit by House ด้านบน = <b>สถานะ NOW</b></span></div></div>`;
+  $('#chipVfy').innerHTML = pass===rows.length
+    ? '✓ verify <b>'+pass+'/'+rows.length+'</b> ตรงรายงาน' : '■ verify <b>'+pass+'/'+rows.length+'</b>';
+  $('#chipVfy').className = 'chip' + (pass===rows.length ? ' live' : '');
+}
+
+function renderTrace(C){
+  const h = HOUSES.find(x=>x.DOCNO==='BLE17050003');
+  const master = C.master;
+  const mine = LN().filter(l=>l.HBLREF===h.DOCNO);
+  const groups = [
+    ['Bill ปกติ (DN, post แล้ว)', mine.filter(l=>l.TRANSTYPE==='Bill'&&!isNA(l)&&posted(l)), 'sale-rev'],
+    ['ส่วนเฉลี่ยจาก master — กลไก ①', null, 'alloc'],
+    ['Cost ปกติ (DN, post แล้ว)', mine.filter(l=>l.TRANSTYPE==='Cost'&&!isNA(l)&&posted(l)), 'sale-cost'],
+    ['บรรทัดโอน DOCTYPE=N/A — กลไก ②', mine.filter(isNA), 'na']
+  ];
+  const pool = LN().filter(l=>l.HBLREF===master.DOCNO && posted(l) && !excluded(l));
+  let allocRev=0, allocCost=0;
+  pool.forEach(l=>{ const v=R2(amtThb(l)*ratio(l,h)); if(l.TRANSTYPE==='Bill') allocRev+=v; else allocCost+=v; });
+  let html = '<thead><tr class="sub"><th>ที่มา</th><th>รายละเอียด</th><th class="num">ยอด THB</th><th class="num">→ Sale</th><th class="num">→ Consol</th></tr></thead><tbody>';
+  groups.forEach(([label,ls,kind])=>{
+    if(kind==='alloc'){
+      const detail = pool.map(l=>`${l.EXPCODE}(${l.UOM}→${basisOf(l)})`).join(' · ');
+      html += `<tr><td>${label}</td><td class="mono" style="font-size:10px">${detail}</td>
+        <td class="num a">${fmt(allocRev+allocCost)}</td>
+        <td class="num s">Rev +${fmt(allocRev)}${allocCost?'<br>Cost +'+fmt(allocCost):''}</td>
+        <td class="num c">—</td></tr>`;
+      return;
+    }
+    const t = ls.reduce((s,l)=>s+amtThb(l),0);
+    if(!ls.length) return;
+    const isNa = kind==='na';
+    html += `<tr class="${isNa?'master':''}"><td>${isNa?'<b>'+label+'</b>':label}</td>
+      <td class="mono" style="font-size:10px">${ls.map(l=>l.EXPCODE).join(' · ')}</td>
+      <td class="num ${isNa?'a':''}">${fmt(t)}</td>
+      <td class="num s">${kind==='sale-rev'?'Rev +':'Cost +'}${fmt(t)}</td>
+      <td class="num c">${isNa?'Rev +'+fmt(t):'—'}</td></tr>`;
+  });
+  const r = C.rows.find(x=>x.h.DOCNO===h.DOCNO);
+  const sp = r.saleRev-r.saleCost;
+  html += `</tbody><tfoot><tr><td colspan="3" style="text-align:right;color:var(--muted)">รวม</td>
+    <td class="num s">Rev ${fmt(r.saleRev)}<br>Cost ${fmt(r.saleCost)}<br><span class="${sp<0?'neg':''}">Profit ${sp<0?'−'+fmt(-sp):fmt(sp)}</span></td>
+    <td class="num c">Rev ${fmt(r.consolRev)}<br>Cost ${fmt(r.consolCost)}<br>Profit ${fmt(r.consolRev-r.consolCost)}</td></tr></tfoot>`;
+  $('#tblTrace').innerHTML = html;
+}
+
+function renderGate(C){
+  /* roll-up ตามกฎ §5: booking = Σ house ที่ SFHBL.BOOKREF ตรงกัน
+     ไม่มี Direct (กรณี 1) → อ่านจากแถว master                                */
+  const inBook = C.rows.filter(r => r.h.BOOKREF === EST.BOOKREF);
+  const book   = inBook.length ? inBook : C.rows.filter(r=>r.isMasterRow && r.h.BOOKREF===EST.BOOKREF);
+  const aRev  = book.reduce((s,r)=>s+r.saleRev,0);      /* D12 — ไม่มีแถวผี */
+  const aCost = book.reduce((s,r)=>s+r.saleCost,0);
+  const aMar  = aRev-aCost;
+  const ePct = EST.sold? (EST.sold-EST.cost)*100/EST.sold : 0;
+  const aPct = aRev? aMar*100/aRev : 0;
+  const row = (k,e,a,inv) => {
+    const d = a-e;
+    return `<tr><td>${k}</td><td class="num" style="color:var(--est)">${fmt(e)}</td>
+      <td class="num"><b>${fmt(a)}</b></td>
+      <td class="num" style="color:var(--${inv?(d>0?'risk':'good'):(d>0?'good':'risk')})">${d>=0?'+':'−'}${fmt(Math.abs(d))}</td></tr>`;
+  };
+  $('#gateNote').innerHTML = `
+   <div class="strip info"><b>▣</b><span><b>Roll-up ตามกฎ §5</b> —
+     booking <span class="mono">${EST.BOOKREF}</span> = Σ ของ <b>${book.length} house</b>
+     ที่ <span class="mono">SFHBL.BOOKREF</span> ตรงกัน
+     (แถว <span class="mono">Allocated</span> มี <span class="mono">BOOKREF</span> ว่าง จึงไม่เข้า)
+     <br>ฝั่ง Actual ใช้ตัวเลข <b>D12 มุม Sale Dept</b> — <b>ตัดแถวผีออกแล้ว</b>
+     ตรงกับตาราง §03 ทุกช่อง</span></div>
+   <div class="strip warn"><b>⚠</b><span><b>ข้อมูล estimated ของ job สาธิตนี้ไม่ครบ</b> —
+     <span class="mono">SFBOOKDETAIL</span> มีแค่ <span class="mono">AMFE</span> บรรทัดเดียวต่อฝั่ง
+     (ขาย ${fmt(EST.sold)} / ทุน ${fmt(EST.cost)}) ขณะที่ actual มี ${LN().length} บรรทัด
+     <br><b>ส่วนต่างมหาศาลจึงไม่ได้แปลว่า margin พัง</b> — แปลว่า<b>ตอน Confirm ไม่ได้กรอกประมาณการไว้</b>
+     · เป็นข้อจำกัดของข้อมูล seed ไม่ใช่ผลการวิเคราะห์</span></div>`;
+  $('#tblGate').innerHTML =
+   `<thead><tr><th>&nbsp;</th><th class="num" style="color:var(--est)">Estimated<br><span style="font-weight:400;text-transform:none">ตอน Confirm (D3)</span></th>
+     <th class="num" style="color:var(--sale)">Actual · Sale Dept<br><span style="font-weight:400;text-transform:none">D12 · roll-up ${book.length} house</span></th><th class="num">ส่วนต่าง</th></tr></thead>
+    <tbody>${row('ขาย (Sold)',EST.sold,aRev)}${row('ทุน (Cost)',EST.cost,aCost,true)}${row('Margin',EST.sold-EST.cost,aMar)}
+    <tr><td style="color:var(--faint)">Margin %</td><td class="num" style="color:var(--est)">${ePct.toFixed(2)}%</td>
+      <td class="num"><b>${aPct.toFixed(2)}%</b></td>
+      <td class="num" style="color:var(--${aPct>=ePct?'good':'risk'})">${(aPct-ePct>=0?'+':'−')}${Math.abs(aPct-ePct).toFixed(2)} จุด</td></tr></tbody>`;
+}
+
+function renderOpen(C){
+  const master = C.master;
+  const masterTotal = LN().filter(l=>l.HBLREF===master.DOCNO).reduce((s,l)=>s+amtThb(l),0);
+  const distributed = C.tot.alloc;
+  const diff = R2(distributed - masterTotal);
+  $('#openBox').innerHTML = `
+   ${C.tot.alloc===0 ? `<div class="strip info"><b>ⓘ</b><span>
+     <b>Invariant Σ ส่วนแบ่ง = ยอด master — ไม่ใช้ในสถานะนี้</b>
+     เพราะปิดการเฉลี่ยทั้งหมด · จะกลับมาตรวจเมื่อมีบรรทัด master ที่ให้เฉลี่ย</span></div>` : `
+   <div class="strip ${Math.abs(diff)<=0.01*HOUSES.length?'ok':'risk'}"><b>${Math.abs(diff)<=0.01*HOUSES.length?'✓':'✗'}</b><span>
+     <b>Invariant: |Σ ส่วนแบ่ง − ยอด master| ≤ 0.01 × จำนวน house</b> — แจกจริง
+     <span class="mono">${fmt(distributed)}</span> vs master <span class="mono">${fmt(masterTotal)}</span>
+     → ต่าง <b>${fmt(diff)}</b> · ขอบ <span class="mono">${(0.01*HOUSES.length).toFixed(2)}</span>
+     <br><b>ตัดสินแล้ว: ปล่อยต่าง</b> — ทำตาม <span class="mono">Round(share,2)</span> ของรายงาน
+     ไม่บิดตัวเลขให้ลงตัว · เกินขอบนี้เมื่อไหร่ = ผิดจริง ไม่ใช่เศษ</span></div>`}
+   <div class="strip ok"><b>✓</b><span><b>ตัดสินแล้ว: D12 กรอง post ตามรายงาน</b>
+     (<span class="mono">DETID IS NOT NULL AND POSTENTRY &lt;&gt; 3</span>) ยกเว้นบรรทัด
+     <span class="mono">N/A</span> ที่นับเสมอ — ใช้กับกองที่นำไปเฉลี่ยด้วย
+     <br>แลกมาด้วย 3 อย่าง: ① ต้อง join <span class="mono">ARINVDETAIL</span> (อ่านสถานะอย่างเดียว ไม่เอายอดเงิน)
+     ② actual ขยับตามเวลา → ต้องโชว์ as-of เสมอ ③ ต้องมีธง “มี n บรรทัดรอ post”</span></div>
+   <div class="strip ok"><b>✓</b><span><b>ปิดแล้ว — basis มาจากคอลัมน์ <span class="mono">OPTRANSDETAIL.ALLOCBY</span></b>
+     ไม่ได้เดาจาก UOM · UOM เป็นแค่ <i>fallback</i> เมื่อ ALLOCBY ว่าง และ
+     <span class="mono">{@cAllocBy}</span> มี <span class="mono">Else → "SHP"</span> ชัดเจน
+     → <span class="mono">20'</span>/<span class="mono">40'</span> ตกเป็น SHP <b>โดยตั้งใจ</b> ไม่ใช่ช่องโหว่
+     · หมายเหตุ: <span class="mono">D/O</span> มาจาก ALLOCBY เท่านั้น เดาจาก UOM ไม่ได้</span></div>
+   <div class="strip ok"><b>✓</b><span><b>ตัดสินแล้ว: explainability แบ่งชั้นตามสิทธิ์</b>
+     — <span class="mono">Com Rate</span>/<span class="mono">Com Price</span> จำกัดสิทธิ์
+     จึงอธิบายที่มาแบบเปิดตัวเลขให้ทุกคนไม่ได้
+     <br><b>ผู้ใช้ทั่วไป</b> เห็นยอดครบ + <b>ธง</b>ว่า “ยอดนี้อิงราคาโอนภายใน” ·
+     <b>ผู้มีอำนาจ</b> เห็นตัวเลขเต็ม
+     <br>ทดลองได้ที่ <b>§01 → แถบ “มองด้วยสิทธิ์”</b> — สลับเป็นผู้ใช้ทั่วไปแล้วดูตาราง ledger</span></div>
+   <div class="strip ok"><b>✓</b><span><b>ปิดแล้ว — <span class="mono">Trim(SALETEXTRATE)="0"</span> คือธง “ไม่ให้” ที่ผู้ใช้ตั้งเอง</b>
+     ไม่ใช่ BadFx (FX จริงอยู่ที่ <span class="mono">SALERATE</span>) · ความหมายต่างกันตามชนิด house —
+     <b>Direct</b>: ไม่ให้เป็น Sell/Cost ของ house นั้น (ตกไปฝั่ง Consol) ·
+     <b>Allocated</b>: ไม่ให้นำไปเฉลี่ยลง Direct house
+     (คอมเมนต์ในรายงานเขียนตรง ๆ ว่า <span class="mono">'ไม่ให้มี Real Allocate</span>)
+     → เครื่องคำนวณหน้านี้บังคับทั้งสองทางแล้ว · <b>ใบนี้ไม่มีบรรทัดติดธง</b> ผลจึงยังตรง 6/6</span></div>
+   <div class="strip warn"><b>⚠</b><span><b>ยังพิสูจน์เฉพาะ basis <span class="mono">SHP</span></b> —
+     master ของใบนี้ UOM=<span class="mono">SET</span> ทั้ง 4 บรรทัด
+     · path <span class="mono">CBM</span>/<span class="mono">KGS</span>/<span class="mono">D/O</span>
+     เขียนตามสูตรแล้วแต่ยังไม่มีใบตัวอย่างมาเทียบรายงาน</span></div>`;
+}
+
+function render(){
+  const C = compute();
+  renderRole(); renderHouses(); renderLines();
+  renderProfit(C); renderVerify(C); renderTrace(C); renderGate(C); renderOpen(C);
+  $('#foot').innerHTML = `D12 · Margin Actualization — computed mockup · data: smfdb job
+    <span class="mono">SE17050002</span> · formulas: <span class="mono">SFDPFJOB01_CONSOL.rpt</span>
+    · ตัวเลขทุกตัวคำนวณในหน้านี้`;
+}
+render();
+</script>
