@@ -1,2 +1,3 @@
 bin/
 *.log
+tests/golden.txt
