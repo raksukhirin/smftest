@@ -1,0 +1,204 @@
+{
+  "root": "../../..",
+  "tests": [
+    {
+      "name": "Vision Line  P/SINBKKSE41483-05 (ตรงกับ DB SI17110002/005)",
+      "template": "vision-line",
+      "file": "mockup/BL_OCR/@sfexhbl01_vision2.pdf",
+      "page": 1,
+      "expect": {
+        "BLNO": "P/SINBKKSE41483-05",
+        "SHIPPERNAME": "LESCHACO PTE. LTD.",
+        "CONSIGNEENAME": "LESCHACO (THAILAND) LTD.",
+        "NOTIFYNAME": "LESCHACO (THAILAND) LTD.",
+        "FEEDER": "ST. JOHN",
+        "F_VOY": "17006S",
+        "VESSEL": "XETHA BHUM-TPT",
+        "V_VOY": "1076E",
+        "RECPORTNAME": "SINGAPORE",
+        "LOADPORTNAME": "SINGAPORE",
+        "DISPORTNAME": "BANGKOK",
+        "DELPORTNAME": "BANGKOK",
+        "FINALPORTNAME": "BANGKOK",
+        "BLCOPY": "3",
+        "CHGTERM": "PP",
+        "CYTERM": "CY/CY",
+        "ETD": "2016-11-29",
+        "ISSUPLACE": "BANGKOK, THAILAND",
+        "ISSUDATE": "2016-11-29",
+        "PKGQTY": "7",
+        "PKGUNIT": "PACKAGES",
+        "GW": "7184.05",
+        "CBM": "9.029"
+      }
+    },
+    {
+      "name": "DF-Sailing  DFSL2604347 (หน้า 29)",
+      "template": "df-sailing",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p29.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "DFSL2604347",
+        "SHIPPERNAME": "GUANGZHOU CITY BEILEIMAO TRADE CO. LTD.",
+        "CONSIGNEENAME": "VST ECS (THAILAND) CO., LTD.",
+        "NOTIFYNAME": "SAME AS CONSIGNEE",
+        "VESSEL": "WAN HAI 177",
+        "V_VOY": "S057",
+        "LOADPORTNAME": "SHENZHEN, CHINA",
+        "DISPORTNAME": "BANGKOK, THAILAND",
+        "DELPORTNAME": "BANGKOK, THAILAND",
+        "FINALPORTNAME": "BANGKOK, THAILAND",
+        "PKGQTY": "1",
+        "PKGUNIT": "PALLET",
+        "GW": "128.00",
+        "CBM": "1.516",
+        "CHGTERM": "PP",
+        "CYTERM": "CFS/CFS",
+        "BLCOPY": "3",
+        "ETD": "2026-05-01",
+        "ISSUPLACE": "SHENZHEN, CHINA"
+      }
+    },
+    {
+      "name": "Lucky  LDGBKK2642404SZ (หน้า 10)",
+      "template": "lucky-logistics",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p10.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "LDGBKK2642404SZ",
+        "SHIPPERNAME": "SHENZHEN XIN GANG YANG ELECTRONIC TECHNOLOGY",
+        "NOTIFYNAME": "CAL-COMP ELECTRONICS (THAILAND) PUBLIC COMPANY",
+        "VESSEL": "TS XIAMEN",
+        "V_VOY": "2609S",
+        "RECPORTNAME": "JIANGMEN",
+        "DISPORTNAME": "BANGKOK (PAT)",
+        "DELPORTNAME": "BANGKOK (PAT)",
+        "PKGQTY": "1",
+        "GW": "469.000",
+        "CBM": "4.069",
+        "CHGTERM": "PP",
+        "CYTERM": "CFS/CFS",
+        "BLCOPY": "3",
+        "ETD": "2026-05-03",
+        "ISSUPLACE": "SHENZHEN, CHINA",
+        "ISSUDATE": "2026-05-03"
+      }
+    },
+    {
+      "name": "Lucky  LLLBKK26421330 (หน้า 11) — ตัวเลขตามแมนิเฟสต์",
+      "template": "lucky-logistics",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p11.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "LLLBKK26421330",
+        "PKGQTY": "66",
+        "GW": "802.100",
+        "CBM": "2.018"
+      }
+    },
+    {
+      "name": "Lucky  LLLBKK26421393 (หน้า 12) — ตัวเลขตามแมนิเฟสต์",
+      "template": "lucky-logistics",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p12.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "LLLBKK26421393",
+        "PKGQTY": "1",
+        "GW": "705.500",
+        "CBM": "1.244"
+      }
+    },
+    {
+      "name": "Lucky  LLLBKK26421426 (หน้า 13) — ตัวเลขตามแมนิเฟสต์",
+      "template": "lucky-logistics",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p13.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "LLLBKK26421426",
+        "PKGQTY": "7",
+        "GW": "980.000",
+        "CBM": "5.859"
+      }
+    },
+    {
+      "name": "Lucky  LLLBKK26421484SZ (หน้า 15) — ตัวเลขตามแมนิเฟสต์",
+      "template": "lucky-logistics",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p15.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "LLLBKK26421484SZ",
+        "PKGQTY": "39",
+        "GW": "585.600",
+        "CBM": "1.408"
+      }
+    },
+    {
+      "name": "Shine Logistics  SL26040862BKK (หน้า 28)",
+      "template": "shine-logistics",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p28.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "SL26040862BKK",
+        "SHIPPERNAME": "JIANGXI SUGO ADVANCED MATERIALS CO., LTD.",
+        "CONSIGNEENAME": "AVIENT (THAILAND) CO. LTD.",
+        "NOTIFYNAME": "SAME AS CONSIGNEE",
+        "RECPORTNAME": "SHENZHEN",
+        "LOADPORTNAME": "SHENZHEN",
+        "DELPORTNAME": "BANGKOK",
+        "FINALPORTNAME": "BANGKOK",
+        "PKGQTY": "3",
+        "PKGUNIT": "PALLETS",
+        "GW": "3075",
+        "CBM": "5.471",
+        "CHGTERM": "PP",
+        "CYTERM": "CY/CY",
+        "BLCOPY": "3",
+        "ISSUPLACE": "SHENZHEN",
+        "PKGWORD": "SAY THREE PALLETS ONLY.",
+        "MARKDESC": "SUGO ESD PLASTICS",
+        "AGENTNAME": ""
+      }
+    },
+    {
+      "name": "New Slik Road (NSR)  NSRBKK2642714 (หน้า 30) — วันที่พิมพ์ผิดเป็น 27-ARP",
+      "template": "nsr-new-slik-road",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p30.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "NSRBKK2642714",
+        "BLCOPY": "1",
+        "CHGTERM": "PP",
+        "CYTERM": "CFS/CFS",
+        "ETD": "2026-04-27",
+        "ISSUPLACE": "DONGGUAN",
+        "ISSUDATE": "2026-04-27",
+        "SHIPPERNAME": "SHENZHEN XIN GANG YANG ELECTRONIC TECHNOLOGY",
+        "CONSIGNEENAME": "CAL-COMP ELECTRONICS (THAILAND) PUBLIC COMPANY",
+        "NOTIFYNAME": "SAME AS CNEE",
+        "RECPORTNAME": "SHEKOU,SHENZHEN",
+        "LOADPORTNAME": "SHEKOU,SHENZHEN",
+        "DISPORTNAME": "BANGKOK",
+        "DELPORTNAME": "BANGKOK",
+        "PKGQTY": "1",
+        "PKGUNIT": "PKGS",
+        "GW": "469.00",
+        "CBM": "4.069"
+      }
+    },
+    {
+      "name": "Lucky Logistics หน้ารายการต่อท้าย  LLLBKK26423117 (หน้า 21)",
+      "template": "lucky-listing",
+      "file": "mockup/BL_OCR/XIAMEN-2609S_pages/XIAMEN-2609S_p21.png",
+      "page": 1,
+      "expect": {
+        "BLNO": "LLLBKK26423117",
+        "VESSEL": "TS XIAMEN",
+        "V_VOY": "2609S",
+        "PKGQTY": "1",
+        "PKGUNIT": "PALLET",
+        "GW": "128.000",
+        "CBM": "1.516"
+      }
+    }
+  ]
+}

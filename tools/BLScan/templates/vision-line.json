@@ -1,0 +1,12 @@
+{
+  "id": "vision-line",
+  "name": "Vision Line (Ocean B/L)",
+  "version": 1,
+  "note": "ฟอร์ม Ocean Bill of Lading ของ Vision Line (Vision Logistics) — ตัวอย่าง mockup/BL_OCR/@sfexhbl01_vision2.pdf",
+  "identify": { "keywords": ["VISION LINE", "visionbkk"], "minScore": 1 },
+  "labels": {},
+  "zones": {},
+  "strip": [],
+  "terms": {},
+  "dateFormats": []
+}

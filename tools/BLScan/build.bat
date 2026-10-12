@@ -11,8 +11,11 @@ if not exist "%CSC%" (
 if not exist bin mkdir bin
 "%CSC%" -nologo -codepage:65001 -target:winexe -platform:anycpu -optimize+ ^
   -out:bin\BLScan.exe ^
-  -r:System.dll -r:System.Core.dll -r:System.Data.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:System.Security.dll ^
+  -r:System.dll -r:System.Core.dll -r:System.Data.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:System.Security.dll -r:System.Web.Extensions.dll ^
   src\*.cs
 if errorlevel 1 exit /b 1
 if not exist bin\BLScan.ini copy BLScan.ini bin\BLScan.ini >nul
+rem Template เริ่มต้นไปไว้ข้าง exe (ถ้าตั้งโฟลเดอร์กลางใน ini [Templates] Path ก็ไม่ใช้ชุดนี้)
+if not exist bin\templates mkdir bin\templates
+xcopy /y /q templates\*.json bin\templates\ >nul
 echo OK: bin\BLScan.exe

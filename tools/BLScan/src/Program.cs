@@ -39,6 +39,14 @@ namespace BLScan
                 catch { return 1; }
             }
 
+            // BLScan.exe /testgolden <tests.json> [/out <dir>] — รันชุดเฉลย (golden) ของทุก Template เทียบค่าที่อ่านได้กับค่าที่ถูกต้อง
+            if (Arg(args, "/testgolden") != null)
+            {
+                int grc = RunGolden(args, ini);
+                WinRtOcr.ExitSafely(grc);
+                return grc;
+            }
+
             if (args.Any(a => a.Equals("/scan", StringComparison.OrdinalIgnoreCase)))
             {
                 int rc = RunCli(args, ini);
@@ -71,6 +79,77 @@ namespace BLScan
 
         static bool Flag(string[] args, string name) { return args.Any(a => a.Equals(name, StringComparison.OrdinalIgnoreCase)); }
 
+        /// <summary>โฟลเดอร์ Template: /templates &lt;dir&gt; &gt; [Templates] Path ใน ini &gt; templates ข้าง exe</summary>
+        static List<Template> LoadTemplatesCli(Ini ini, string[] args, List<string> errors)
+        {
+            string explicitDir = Arg(args, "/templates");
+            if (explicitDir != null) return TemplateStore.LoadAll(explicitDir, errors);
+            var info = TemplateStore.Load(TemplateDir(ini, null), DefaultTemplateDir(), CacheTemplateDir());
+            errors.AddRange(info.Errors);
+            return info.Templates;
+        }
+
+        public static string DefaultTemplateDir()
+        {
+            return Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "templates");
+        }
+
+        public static string CacheTemplateDir() { return Path.Combine(DefaultTemplateDir(), "_cache"); }
+
+        public static string TemplateDir(Ini ini, string[] args)
+        {
+            string p = (args != null ? Arg(args, "/templates") : null) ?? ini.Get("Templates", "Path");
+            if (string.IsNullOrWhiteSpace(p)) p = DefaultTemplateDir();
+            return p;
+        }
+
+        /// <summary>ชุดเฉลย: ทุกไฟล์ตัวอย่างต้องอ่านค่าได้ตรงกับที่ระบุ — ผลลง golden.txt, exit 0 = ผ่านทั้งหมด</summary>
+        static int RunGolden(string[] args, Ini ini)
+        {
+            string testFile = Path.GetFullPath(Arg(args, "/testgolden"));
+            string outDir = Arg(args, "/out") ?? Path.GetDirectoryName(testFile);
+            Directory.CreateDirectory(outDir);
+            var sb = new StringBuilder();
+            int pass = 0, fail = 0;
+            try
+            {
+                var root = new System.Web.Script.Serialization.JavaScriptSerializer().DeserializeObject(File.ReadAllText(testFile, Encoding.UTF8)) as Dictionary<string, object>;
+                string baseDir = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(testFile), root.ContainsKey("root") ? Convert.ToString(root["root"]) : "."));
+                var errs = new List<string>();
+                var list = LoadTemplatesCli(ini, args, errs);
+                foreach (var e in errs) sb.AppendLine("Template: " + e);
+                var cache = new Dictionary<string, OcrPage>();
+                int width = ini.GetInt("OCR", "RenderWidth", 2000);
+                string lang = ini.Get("OCR", "Language", "en-US");
+                foreach (var item in (System.Collections.IEnumerable)root["tests"])
+                {
+                    var t = (Dictionary<string, object>)item;
+                    string name = Convert.ToString(t["name"]), tid = Convert.ToString(t["template"]);
+                    string file = Path.GetFullPath(Path.Combine(baseDir, Convert.ToString(t["file"])));
+                    int pg = t.ContainsKey("page") ? Convert.ToInt32(t["page"]) : 1;
+                    var tpl = TemplateStore.Find(list, tid);
+                    if (tpl == null) { sb.AppendLine("== " + name + ": ไม่พบ Template " + tid); fail++; continue; }
+                    string key = file + "#" + pg;
+                    OcrPage ocr;
+                    if (!cache.TryGetValue(key, out ocr)) { ocr = Task.Run(() => WinRtOcr.ScanFused(file, pg - 1, width, lang, ini.GetInt("OCR", "SecondScale", 3000))).Result; cache[key] = ocr; }
+                    var vals = Fields.FromParse(BLParser.Parse(ocr, tpl));
+                    sb.AppendLine("== " + name + "  [template " + tpl.Id + (tpl.Matches(ocr.RawText) ? ", ผู้ออกตรง" : ", ⚠ ผู้ออกไม่ตรง") + "]");
+                    foreach (var kv in (Dictionary<string, object>)t["expect"])
+                    {
+                        string got = Golden.Flat(Fields.Val(vals, kv.Key)), exp = Convert.ToString(kv.Value);
+                        bool ok = Golden.Same(kv.Key, exp, got);
+                        if (ok) pass++; else fail++;
+                        sb.AppendLine((ok ? "  PASS " : "  FAIL ") + kv.Key.PadRight(15) + (ok ? "= " + got : "คาดว่า [" + exp + "]  ได้ [" + got + "]"));
+                    }
+                }
+            }
+            catch (Exception ex) { sb.AppendLine("ERROR " + ex.GetBaseException().Message); fail++; }
+            sb.AppendLine();
+            sb.AppendLine("สรุป: ผ่าน " + pass + " · ไม่ผ่าน " + fail);
+            File.WriteAllText(Path.Combine(outDir, "golden.txt"), sb.ToString(), new UTF8Encoding(true));
+            return fail == 0 ? 0 : 1;
+        }
+
         static string OneLine(string s) { return (s ?? "").TrimEnd('\r', '\n').Replace("\r\n", " | ").Replace("\n", " | "); }
 
         static int RunCli(string[] args, Ini ini)
@@ -84,16 +163,32 @@ namespace BLScan
             int rc = 0;
             try
             {
+                // Template: /template <id> (ค่าเริ่มต้น generic) จากโฟลเดอร์ [Templates] Path ใน ini หรือ /templates <dir>
+                var tplErrors = new List<string>();
+                var tplList = LoadTemplatesCli(ini, args, tplErrors);
+                string tplId = Arg(args, "/template") ?? "generic";
+                var tpl = TemplateStore.Find(tplList, tplId);
+                if (tpl == null) throw new InvalidOperationException("ไม่พบ Template \"" + tplId + "\" (มี: " + string.Join(", ", tplList.Select(t => t.Id)) + ")");
+                foreach (var e in tplErrors) log.AppendLine("Template: " + e);
+
                 // OCR บน MTA thread
                 var r = Task.Run(() =>
                 {
-                    var page = WinRtOcr.Scan(file, Math.Max(1, ini.GetInt("OCR", "Page", 1)) - 1, ini.GetInt("OCR", "RenderWidth", 2000), ini.Get("OCR", "Language", "en-US"));
-                    return Tuple.Create(page, BLParser.Parse(page));
+                    var page = WinRtOcr.ScanFused(file, Math.Max(1, ini.GetInt("OCR", "Page", 1)) - 1, ini.GetInt("OCR", "RenderWidth", 2000), ini.Get("OCR", "Language", "en-US"), ini.GetInt("OCR", "SecondScale", 3000));
+                    return Tuple.Create(page, BLParser.Parse(page, tpl));
                 }).Result;
                 var v = Fields.FromParse(r.Item2);
                 v["DOCNO"] = doc;
                 var notes = new List<string>(r.Item2.Notes);
                 string status = doc == "" ? "PREVIEW — ยังไม่ระบุ DOCNO" : "PREVIEW — ยังไม่ได้บันทึก";
+                if (!tpl.Matches(r.Item1.RawText))
+                {
+                    string better = tplList.Where(t => !t.IsGeneric).OrderByDescending(t => t.Score(r.Item1.RawText)).Select(t => new { t, s = t.Score(r.Item1.RawText) }).Where(x => x.s > 0).Select(x => x.t.Name).FirstOrDefault();
+                    notes.Insert(0, "⚠ ไม่พบคำระบุผู้ออกของ Template \"" + tpl.Name + "\" ในไฟล์นี้" + (better != null ? " — ดูเหมือน \"" + better + "\"" : ""));
+                    log.AppendLine("Template ไม่ตรงกับไฟล์ — ไม่ update");
+                    dry = false; real = false; rc = 4;
+                }
+                foreach (var wn in Fields.Warnings(v)) { notes.Add("⚠ " + wn); log.AppendLine("เตือน: " + wn); }
 
                 var db = new Db(ini);
                 var chg = new StringBuilder();
@@ -145,8 +240,9 @@ namespace BLScan
             }
             catch (Exception ex)
             {
-                log.AppendLine("ERROR " + ex.GetBaseException().Message);
-                log.AppendLine(ex.ToString());
+                var dbForLog = new Db(ini);       // กรอง server/port/db/user ออกจาก log
+                log.AppendLine("ERROR " + dbForLog.Sanitize(ex.GetBaseException().Message));
+                log.AppendLine(dbForLog.Sanitize(ex.ToString()));
                 rc = 1;
             }
             File.WriteAllText(Path.Combine(outDir, "log.txt"), log.ToString(), new UTF8Encoding(true));

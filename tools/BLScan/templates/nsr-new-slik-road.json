@@ -1,0 +1,22 @@
+{
+  "id": "nsr-new-slik-road",
+  "name": "New Slik Road (NSR) Bill of Lading",
+  "version": 1,
+  "note": "Bill of Lading ของ New Slik Road Global Ltd. (NSR) — ตัวอย่างหน้า 30 ของ 1_Agent Pre-AlertTS XIAMEN-2609S.pdf (NSRBKK2642714) ใช้ Port of receipt แทน Place of Receipt และวันที่ลงเรือพิมพ์เดือนผิด (ARP)",
+  "identify": { "keywords": ["NEW SLIK ROAD", "NSRBKK"], "minScore": 1 },
+  "labels": {
+    "RECEIPT": ["Port of receipt"],
+    "PKGS": ["Number of containers or packages"],
+    "DESC": ["Kind of Packages; Description of goods"],
+    "FINALDEST": ["Final destination (for the Merchant"],
+    "NOTIFY": ["Notify party(carrier not to be responsible for failure to notify)"]
+  },
+  "zones": {},
+  "strip": ["reference)", "SHIPPER'S LOAD STOW COUNT AND SEAL"],
+  "inline": [],
+  "stop": [],
+  "terms": {
+    "CFS-CFS": "CFS/CFS"
+  },
+  "dateFormats": []
+}

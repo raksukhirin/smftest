@@ -32,6 +32,7 @@ namespace BLScan
         public string RawText = "";
         public int PixelWidth, PixelHeight;
         public Bitmap Image;
+        public int Repaired;          // จำนวนคำที่ซ่อมจาก OCR ความละเอียดที่สอง
     }
 
     public static class WinRtOcr
@@ -236,6 +237,68 @@ namespace BLScan
             {
                 try { File.Delete(tmp); } catch { }
             }
+        }
+
+        /// <summary>
+        /// OCR 2 ความละเอียด แล้วซ่อมเฉพาะ "คำที่ถูกตัดท้าย" ของรอบหลัก (เช่น CHINA → CHI) ด้วยคำที่ยาวกว่าจากรอบที่สอง ณ ตำแหน่งเดียวกัน
+        /// (รอบที่สองมีข้อผิดของตัวเองด้วย เช่น SHENZHEN → SHEh,ZHEN จึงไม่ใช้แทนทั้งหมด)
+        /// </summary>
+        public static OcrPage ScanFused(string path, int pageIndex, int renderWidth, string language, int secondWidth)
+        {
+            var main = Scan(path, pageIndex, renderWidth, language);
+            if (secondWidth <= renderWidth) return main;
+            try
+            {
+                var second = Scan(path, pageIndex, secondWidth, language);
+                main.Repaired = RepairTruncated(main, second);
+                if (second.Image != null) second.Image.Dispose();
+            }
+            catch { /* รอบที่สองไม่สำเร็จ = ใช้รอบหลักตามเดิม */ }
+            return main;
+        }
+
+        static int RepairTruncated(OcrPage main, OcrPage second)
+        {
+            int fixedCount = 0;
+            var sLines = second.Words.GroupBy(w => w.LineNo).Select(g => g.OrderBy(w => w.X).ToList()).ToList();
+            var mainLines = main.Words.GroupBy(w => w.LineNo).ToDictionary(g => g.Key, g => g.ToList());
+            foreach (var w in main.Words)
+            {
+                if (w.Text.Length < 2 || !System.Text.RegularExpressions.Regex.IsMatch(w.Text, "^[A-Za-z][A-Za-z0-9]*$")) continue;
+                // รอบที่สอง: คำที่เริ่มตรงตำแหน่งเดียวกัน (±0.4% ของความกว้างหน้า) บนแถวเดียวกัน
+                OcrWord start = null; List<OcrWord> sline = null;
+                foreach (var l in sLines)
+                {
+                    var c = l.FirstOrDefault(x => Math.Abs(x.X - w.X) < 0.004 && Math.Abs(x.CY - w.CY) < Math.Max(w.H, x.H) * 0.6);
+                    if (c != null) { start = c; sline = l; break; }
+                }
+                if (start == null) continue;
+                // ต่อเศษของคำเดียวกันที่รอบที่สองแตกเป็นหลายคำ (เช่น CH + INA) — เฉพาะเศษที่เป็นตัวอักษรล้วนและติดกันมาก
+                var merged = new System.Text.StringBuilder(start.Text);
+                double right = start.R, cw = start.W / Math.Max(1, start.Text.Length);
+                for (int i = sline.IndexOf(start) + 1; i < sline.Count; i++)
+                {
+                    var nx = sline[i];
+                    if (nx.X - right > cw * 0.8 || merged.Length >= w.Text.Length + 3) break;
+                    merged.Append(nx.Text); right = nx.R;
+                    cw = nx.W / Math.Max(1, nx.Text.Length);
+                }
+                string m = merged.ToString();
+                int extra = m.Length - w.Text.Length;
+                // ซ่อมเมื่อเป็นการ "ตัดท้าย" จริง: ยาวกว่า 1-3 ตัว, ขึ้นต้นเหมือนเดิม, ตัวอักษร/ตัวเลขล้วน, ยื่นไปทางขวาจริง
+                // และ "ไม่มีคำอื่นของรอบหลักอยู่ในช่วงที่คำจะขยายไป" (ถ้ามี แปลว่าส่วนที่เกินคือคำถัดไป ไม่ใช่ส่วนที่หาย)
+                if (extra < 1 || extra > 3 || right <= w.R + 0.005) continue;
+                if (!m.StartsWith(w.Text, StringComparison.OrdinalIgnoreCase) || !System.Text.RegularExpressions.Regex.IsMatch(m, "^[A-Za-z0-9]+$")) continue;
+                List<OcrWord> sameLine;
+                bool blocked = mainLines.TryGetValue(w.LineNo, out sameLine) &&
+                               sameLine.Any(o => !ReferenceEquals(o, w) && o.X > w.R - 0.004 && o.X < right + 0.004 && Math.Abs(o.CY - w.CY) < w.H);
+                if (blocked) continue;
+                w.Text = m; w.W = right - w.X; fixedCount++;
+            }
+            if (fixedCount > 0)
+                main.RawText = string.Join("\r\n", main.Words.GroupBy(w => w.LineNo).OrderBy(g => g.Key)
+                    .Select(g => string.Join(" ", g.OrderBy(w => w.X).Select(w => w.Text))));
+            return fixedCount;
         }
 
         public static OcrPage Scan(string path, int pageIndex, int renderWidth, string language)

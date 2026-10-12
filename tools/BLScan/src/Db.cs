@@ -89,6 +89,49 @@ namespace BLScan
 
         public Ini Ini { get { return _ini; } }
 
+        /// <summary>ชื่อ server อย่างเดียว (ไม่มี port / database / user) — ใช้ใน log</summary>
+        public string ServerName
+        {
+            get
+            {
+                try
+                {
+                    string s = new SqlConnectionStringBuilder(ConnectionString).DataSource ?? "";
+                    if (s.StartsWith("tcp:", StringComparison.OrdinalIgnoreCase)) s = s.Substring(4);
+                    int c = s.IndexOf(',');
+                    if (c > 0) s = s.Substring(0, c);
+                    int bs = s.IndexOf('\\');            // host\instance → host
+                    if (bs > 0) s = s.Substring(0, bs);
+                    return s == "" ? "(ไม่ระบุ)" : s;
+                }
+                catch { return "(ไม่ทราบ)"; }
+            }
+        }
+
+        /// <summary>
+        /// กรองรายละเอียดการตั้งค่าออกจากข้อความที่จะลง log/หน้าจอ: server:port → ชื่อ server, user/password/database → ซ่อน
+        /// (ข้อความ error ของ SQL Server มักมี database และ user ติดมา)
+        /// </summary>
+        public string Sanitize(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return text ?? "";
+            try
+            {
+                var b = new SqlConnectionStringBuilder(ConnectionString);
+                string host = ServerName;
+                Func<string, string, string> rep = (src, find) =>
+                    string.IsNullOrEmpty(find) ? src : System.Text.RegularExpressions.Regex.Replace(src, System.Text.RegularExpressions.Regex.Escape(find), "***", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                string t = text;
+                if (!string.IsNullOrEmpty(b.DataSource))
+                    t = System.Text.RegularExpressions.Regex.Replace(t, System.Text.RegularExpressions.Regex.Escape(b.DataSource), host, System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                t = System.Text.RegularExpressions.Regex.Replace(t, "(" + System.Text.RegularExpressions.Regex.Escape(host) + @")[,:]\d+", "$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (!b.IntegratedSecurity) { t = rep(t, b.Password); t = rep(t, b.UserID); }
+                t = rep(t, b.InitialCatalog);
+                return t;
+            }
+            catch { return text; }
+        }
+
         /// <summary>ถอดรหัสผ่านใน ini ไม่ได้ (ไฟล์ถูกเข้ารหัสโดยผู้ใช้/เครื่องอื่น)</summary>
         public string SecretProblem
         {

@@ -25,20 +25,26 @@ namespace BLScan
         readonly Db _db;
 
         TextBox txtFile, txtDocNo, txtRaw, txtLog;
-        Button btnBrowse, btnScan, btnDryRun, btnUpdate, btnSaveHtml, btnOpenBrowser;
+        Button btnBrowse, btnScan, btnDryRun, btnUpdate, btnSaveHtml, btnOpenBrowser, btnClear;
         Label lblDocState;
         WebBrowser web;
         TabControl tabs;
         TabPage tabFields, tabCompare, tabRaw, tabImage, tabLog;
         ListView lvCompare;
         PictureBox pic;
-        ToolStripStatusLabel stDb, stMsg;
+        ToolStripStatusLabel stDb, stMsg, stTpl;
         readonly Dictionary<string, TextBox> boxes = new Dictionary<string, TextBox>();
         readonly Timer previewTimer = new Timer();
         readonly Timer docTimer = new Timer { Interval = 600 };
 
         string sourceFile = "";
         bool scanned, updated, busy, loadingValues;
+        ComboBox cmbTemplate;
+        Label lblTplState;
+        List<Template> templates = new List<Template>();
+        Template currentTemplate = Template.Generic();
+        OcrPage lastOcr;                 // ผล OCR ล่าสุด — เปลี่ยน Template แล้วอ่านซ้ำได้ทันทีโดยไม่ต้อง OCR ใหม่
+        bool templateMismatch, dirty, loadingTemplates;
         ExistingDoc existing;           // record เดิมใน DB (null = ไม่พบ DOCNO)
         bool isReference;               // DOCNO อ้างอิง (ใช้เทียบเท่านั้น ห้ามเขียน)
         List<string> notes = new List<string>();
@@ -53,6 +59,7 @@ namespace BLScan
             _ini = ini;
             _db = new Db(ini);
             BuildUi();
+            LoadTemplates();
             previewTimer.Interval = 400;
             previewTimer.Tick += (s, e) => { previewTimer.Stop(); RenderPreview(); };
             docTimer.Tick += (s, e) => { docTimer.Stop(); CheckDocNoAsync(); };
@@ -106,15 +113,24 @@ namespace BLScan
             btnSaveHtml.Click += (s, e) => SaveHtml();
             btnOpenBrowser = new Button { Text = "เปิดใน Browser", Width = 110, Height = 28, Enabled = false };
             btnOpenBrowser.Click += (s, e) => OpenInBrowser();
+            btnClear = new Button { Text = "ล้าง / BL ใหม่", Width = 110, Height = 28, Margin = new Padding(24, 3, 3, 3) };
+            btnClear.Click += (s, e) => ClearAll();
             var btnSettings = new Button { Text = "ตั้งค่า DB…", Width = 100, Height = 28, Margin = new Padding(24, 3, 3, 3) };
             btnSettings.Click += (s, e) => OpenSettings();
-            row2.Controls.AddRange(new Control[] { btnScan, btnDryRun, btnUpdate, btnSaveHtml, btnOpenBrowser, btnSettings });
+            var lblTpl = new Label { Text = "Template:", AutoSize = true, Margin = new Padding(0, 8, 4, 0), Font = new Font(Font, FontStyle.Bold) };
+            cmbTemplate = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 300, Margin = new Padding(0, 4, 4, 0), DropDownWidth = 460 };
+            cmbTemplate.SelectedIndexChanged += (s, e) => OnTemplateChanged();
+            lblTplState = new Label { AutoSize = true, Margin = new Padding(0, 8, 14, 0), ForeColor = Color.DimGray };
+            row2.Controls.Add(lblTpl);
+            row2.Controls.Add(cmbTemplate);
+            row2.Controls.Add(lblTplState);
+            var btnDesigner = new Button { Text = "Template Designer…", Width = 150, Height = 28 };
+            btnDesigner.Click += (s, e) => OpenDesigner();
+            row2.Controls.AddRange(new Control[] { btnScan, btnDryRun, btnUpdate, btnSaveHtml, btnOpenBrowser, btnClear, btnSettings, btnDesigner });
 
             var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
             web = new WebBrowser { Dock = DockStyle.Fill, ScriptErrorsSuppressed = true, AllowWebBrowserDrop = false, ObjectForScripting = new ScriptBridge(this) };
-            web.DocumentText = "<html><body style=\"font-family:Tahoma;color:#666;padding:30px\"><h3>House B/L preview</h3>" +
-                               "1) เลือกไฟล์ B/L (PDF / JPG / PNG / TIF)<br>2) ใส่ SFHBL.DOCNO ของ record ที่สร้างรอไว้<br>" +
-                               "3) กด ▶ Scan — ดูแท็บ \"สิ่งที่จะเปลี่ยนใน DB\" ตรวจ/แก้ค่า แล้วกด Update DB</body></html>";
+            web.DocumentText = StartHtml();
             split.Panel1.Controls.Add(web);
 
             tabs = new TabControl { Dock = DockStyle.Fill };
@@ -147,7 +163,8 @@ namespace BLScan
             var status = new StatusStrip();
             stDb = new ToolStripStatusLabel("DB: กำลังตรวจ…") { Spring = false, BorderSides = ToolStripStatusLabelBorderSides.Right };
             stMsg = new ToolStripStatusLabel("พร้อม") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
-            status.Items.Add(stDb); status.Items.Add(stMsg);
+            stTpl = new ToolStripStatusLabel("Template: -") { BorderSides = ToolStripStatusLabelBorderSides.Right };
+            status.Items.Add(stDb); status.Items.Add(stTpl); status.Items.Add(stMsg);
 
             Controls.Add(split);
             Controls.Add(top);
@@ -203,6 +220,7 @@ namespace BLScan
         {
             MarkEmpty(tb);
             if (loadingValues) return;
+            dirty = true;
             previewTimer.Stop();
             previewTimer.Start();
         }
@@ -225,8 +243,10 @@ namespace BLScan
 
         void Log(string msg)
         {
-            txtLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  " + msg + Environment.NewLine);
+            txtLog.AppendText(DateTime.Now.ToString("HH:mm:ss") + "  " + _db.Sanitize(msg) + Environment.NewLine);   // กรอง server/port/db/user ออกจาก log
         }
+
+        string Safe(string text) { return _db.Sanitize(text); }
 
         void SetBusy(bool b, string msg)
         {
@@ -239,7 +259,7 @@ namespace BLScan
 
         void UpdateButtons()
         {
-            bool ready = scanned && !busy && existing != null && _db.Configured && txtDocNo.Text.Trim() != "";
+            bool ready = scanned && !busy && !templateMismatch && existing != null && _db.Configured && txtDocNo.Text.Trim() != "";
             btnDryRun.Enabled = ready;
             btnUpdate.Enabled = ready && !isReference;
             btnSaveHtml.Enabled = btnOpenBrowser.Enabled = scanned;
@@ -263,28 +283,98 @@ namespace BLScan
             if (!_db.Configured) { stDb.Text = "DB: ยังไม่ได้ตั้งค่า — กด \"ตั้งค่า DB…\""; stDb.ForeColor = Color.Firebrick; return; }
             string secretProblem = _db.SecretProblem;
             if (secretProblem != "") { stDb.Text = "DB: ถอดรหัสผ่านใน ini ไม่ได้ — กด \"ตั้งค่า DB…\""; stDb.ForeColor = Color.Firebrick; Log(secretProblem); return; }
-            stDb.Text = "DB: " + _db.Target + " — กำลังเชื่อมต่อ…";
+            stDb.Text = "DB: กำลังเชื่อมต่อ…";
+            stDb.ForeColor = Color.DimGray;
             try
             {
-                string r = await Task.Run(() => _db.TestConnection());
-                stDb.Text = "DB: " + _db.Target + " ✓";
+                await Task.Run(() => _db.TestConnection());
+                stDb.Text = "DB: เชื่อมต่อแล้ว ✓";            // ไม่แสดง server/database/user บนหน้าจอ
                 stDb.ForeColor = Color.DarkGreen;
-                Log(r + " → " + _db.Target);
+                Log("เชื่อมต่อ DB สำเร็จ");
             }
             catch (Exception ex)
             {
-                stDb.Text = "DB: " + _db.Target + " ✗ เชื่อมต่อไม่ได้";
+                stDb.Text = "DB: เชื่อมต่อไม่ได้ ✗";
                 stDb.ForeColor = Color.Firebrick;
                 Log("เชื่อมต่อ DB ไม่ได้: " + ex.Message);
             }
             UpdateButtons();
         }
 
+        static string StartHtml()
+        {
+            return "<html><body style=\"font-family:Tahoma;color:#666;padding:30px\"><h3>House B/L preview</h3>" +
+                   "1) เลือกไฟล์ B/L (PDF / JPG / PNG / TIF)<br>2) ใส่ SFHBL.DOCNO ของ record ที่สร้างรอไว้<br>" +
+                   "3) กด ▶ Scan — ดูแท็บ \"สิ่งที่จะเปลี่ยนใน DB\" ตรวจ/แก้ค่า แล้วกด Update DB</body></html>";
+        }
+
+        /// <summary>ล้างทุกอย่างเพื่อเริ่ม B/L ใบใหม่ (ไม่แตะ DB)</summary>
+        void ClearAll()
+        {
+            if (busy) return;
+            if (scanned && !updated &&
+                MessageBox.Show(this, "ข้อมูลที่ scan/แก้ไขไว้ยังไม่ได้บันทึกเข้า DB\r\nต้องการล้างและเริ่ม B/L ใหม่หรือไม่?", "ล้าง / BL ใหม่",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
+
+            docTimer.Stop(); previewTimer.Stop();
+            scanned = false; updated = false; existing = null; isReference = false;
+            lastOcr = null; templateMismatch = false; dirty = false;
+            sourceFile = ""; txtFile.Text = "";
+            notes = new List<string>(); lastHtml = "";
+            txtDocNo.Text = "";                      // TextChanged จะรีเซ็ตสถานะ DOCNO และปิดปุ่ม Update ให้
+            lastCheckedDoc = null;
+
+            loadingValues = true;
+            foreach (var kv in boxes)
+            {
+                kv.Value.Text = "";
+                kv.Value.BackColor = Fields.Get(kv.Key).System ? SysBack : Color.White;
+            }
+            loadingValues = false;
+
+            lvCompare.Items.Clear();
+            tabCompare.Text = "สิ่งที่จะเปลี่ยนใน DB";
+            txtRaw.Text = "";
+            if (pic.Image != null) { var old = pic.Image; pic.Image = null; old.Dispose(); }
+            web.DocumentText = StartHtml();
+            tabs.SelectedTab = tabFields;
+            UpdateButtons();
+            ShowTemplateState();
+            stMsg.Text = "พร้อม — เริ่ม B/L ใหม่";
+            txtDocNo.Focus();
+            Log("ล้างข้อมูล เริ่ม B/L ใหม่");
+        }
+
+        /// <summary>Template Designer (เฉพาะ admin): ต้องเป็นโฟลเดอร์ Template ที่เปิดได้และเขียนได้ แล้วเข้าสู่ระบบ admin ก่อน</summary>
+        void OpenDesigner()
+        {
+            string folder = Program.TemplateDir(_ini, null);
+            if (!Directory.Exists(folder))
+            {
+                MessageBox.Show(this, "โฟลเดอร์ Template เปิดไม่ได้ตอนนี้ (กำลังใช้สำเนาสำรอง) — แก้ Template ไม่ได้\r\n" + folder, "Template Designer", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (!SettingsForm.CanWrite(folder))
+            {
+                MessageBox.Show(this, "โฟลเดอร์ Template เป็นอ่านอย่างเดียวสำหรับคุณ — Designer ใช้ได้เฉพาะ admin ที่มีสิทธิ์เขียนโฟลเดอร์\r\n" + folder, "Template Designer", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (!AdminUi.EnsureLogin(this, folder)) return;
+            try
+            {
+                using (var d = new DesignerForm(_ini, folder)) d.ShowDialog(this);
+            }
+            finally { AdminAuth.Logout(); }
+            LoadTemplates();
+        }
+
         void OpenSettings()
         {
             using (var f = new SettingsForm(_ini))
             {
-                if (f.ShowDialog(this) != DialogResult.OK || !f.Saved) return;
+                f.ShowDialog(this);
+                if (f.TemplatesChanged || f.Saved) LoadTemplates();        // เปลี่ยนโฟลเดอร์ Template หรือ admin นำเข้า/ลบ Template
+                if (!f.Saved) return;
                 Log("บันทึกการตั้งค่า DB ลง " + _ini.Path + " (รหัสผ่านเข้ารหัส)");
                 existing = null; lastCheckedDoc = null;
                 CheckDbAsync();
@@ -338,7 +428,7 @@ namespace BLScan
             }
             catch (Exception ex)
             {
-                lblDocState.Text = "ตรวจไม่ได้: " + ex.Message;
+                lblDocState.Text = "ตรวจไม่ได้: " + Safe(ex.Message);
                 lblDocState.ForeColor = Color.Firebrick;
                 Log("ตรวจ DOCNO ผิดพลาด: " + ex);
                 lastCheckedDoc = null;
@@ -411,9 +501,32 @@ namespace BLScan
                 txtFile.Text = dlg.FileName;
                 sourceFile = dlg.FileName;
             }
+            ShowSourceAsync(sourceFile);
         }
 
-        public void SetSourceFile(string path) { txtFile.Text = path; sourceFile = path; }
+        public void SetSourceFile(string path) { txtFile.Text = path; sourceFile = path; ShowSourceAsync(path); }
+
+        int showSeq;
+
+        /// <summary>แสดงภาพต้นฉบับทันทีที่เลือกไฟล์ (ก่อน Scan) — ถ้าเลือกไฟล์ใหม่ระหว่างโหลด ผลเก่าจะถูกทิ้ง</summary>
+        async void ShowSourceAsync(string file)
+        {
+            int seq = ++showSeq;
+            if (busy || string.IsNullOrEmpty(file) || !File.Exists(file)) return;
+            int width = _ini.GetInt("OCR", "RenderWidth", 2000);
+            int pageNo = Math.Max(1, _ini.GetInt("OCR", "Page", 1));
+            try
+            {
+                var bmp = await Task.Run(() => WinRtOcr.LoadPageImage(file, pageNo - 1, width));
+                if (seq != showSeq || busy || IsDisposed) { bmp.Dispose(); return; }
+                if (pic.Image != null) pic.Image.Dispose();
+                pic.Image = bmp;
+                FitPicture((Panel)pic.Parent);
+                tabs.SelectedTab = tabImage;
+                stMsg.Text = "เลือกไฟล์แล้ว — ตรวจภาพต้นฉบับ แล้วกด Scan";
+            }
+            catch (Exception ex) { Log("แสดงภาพต้นฉบับไม่ได้: " + ex.Message); }
+        }
         public void SetDocNo(string doc) { txtDocNo.Text = doc; }
 
         public async void ScanAsync()
@@ -429,38 +542,17 @@ namespace BLScan
             {
                 CheckDocNoAsync();
                 // OCR บน thread pool (MTA) — WinRT ทำงานได้และไม่ค้างตอนปิดโปรแกรม
-                var res = await Task.Run(() =>
-                {
-                    var page = WinRtOcr.Scan(file, pageNo - 1, width, lang);
-                    return Tuple.Create(page, BLParser.Parse(page));
-                });
-                var ocr = res.Item1;
-                var parsed = res.Item2;
-                var vals = Fields.FromParse(parsed);
-
-                loadingValues = true;
-                scanned = true;
-                updated = false;
-                foreach (var f in Fields.All.Where(x => !x.System)) SetValue(f.Key, Fields.Val(vals, f.Key));
-                loadingValues = false;
-                foreach (var tb in boxes.Values) MarkEmpty(tb);
-
-                notes = new List<string>(parsed.Notes);
-                txtRaw.Text = ocr.RawText;
+                int second = _ini.GetInt("OCR", "SecondScale", 3000);
+                var ocr = await Task.Run(() => WinRtOcr.ScanFused(file, pageNo - 1, width, lang, second));
+                lastOcr = ocr;
                 if (pic.Image != null) pic.Image.Dispose();
                 pic.Image = ocr.Image;
                 FitPicture((Panel)pic.Parent);
+                txtRaw.Text = ocr.RawText;
+                Log(string.Format("OCR {0}: {1} คำ, ซ่อมคำที่ถูกตัด {2} คำ ({3:0.0} วินาที)", Path.GetFileName(file), ocr.Words.Count, ocr.Repaired, sw.Elapsed.TotalSeconds));
 
-                int filled = Fields.All.Count(f => !f.System && Fields.Val(vals, f.Key).Trim() != "");
-                Log(string.Format("Scan {0}: {1} คำ, พบหัวช่อง {2}, ได้ค่า {3} ช่อง ({4:0.0} วินาที)",
-                    Path.GetFileName(file), ocr.Words.Count, parsed.Labels.Count, filled, sw.Elapsed.TotalSeconds));
-                foreach (var n in notes) Log("  " + n);
-
-                await EnrichAsync();
-                FillCompare();
-                RenderPreview();
-                tabs.SelectedTab = tabCompare;
-                SetBusy(false, "Scan เสร็จ — ดูแท็บ \"สิ่งที่จะเปลี่ยนใน DB\" แล้วกด Update DB");
+                await ApplyParseAsync(ocr);
+                SetBusy(false, templateMismatch ? "⚠ Template ไม่ตรงกับไฟล์ — เลือก Template ใหม่ (อ่านซ้ำทันที)" : "Scan เสร็จ — ดูแท็บ \"สิ่งที่จะเปลี่ยนใน DB\" แล้วกด Update DB");
             }
             catch (Exception ex)
             {
@@ -468,8 +560,96 @@ namespace BLScan
                 SetBusy(false, "Scan ไม่สำเร็จ");
                 Log("Scan ผิดพลาด: " + ex);
                 var inner = ex is AggregateException ? ex.GetBaseException() : ex;
-                MessageBox.Show(this, "อ่านไฟล์ไม่สำเร็จ:\r\n" + inner.Message, "BLScan", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "อ่านไฟล์ไม่สำเร็จ:\r\n" + Safe(inner.Message), "BLScan", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        // ------------------------------------------------------------ Template
+        void LoadTemplates()
+        {
+            string keepId = currentTemplate != null && cmbTemplate.Items.Count > 0 ? currentTemplate.Id : _ini.Get("App", "LastTemplate");
+            var info = TemplateStore.Load(Program.TemplateDir(_ini, null), Program.DefaultTemplateDir(), Program.CacheTemplateDir());
+            templates = info.Templates;
+            loadingTemplates = true;
+            cmbTemplate.Items.Clear();
+            foreach (var t in templates) cmbTemplate.Items.Add(t);
+            currentTemplate = TemplateStore.Find(templates, keepId) ?? templates[0];
+            cmbTemplate.SelectedItem = currentTemplate;
+            loadingTemplates = false;
+            string where = info.Source == "shared" ? "โฟลเดอร์กลาง" : info.Source == "cache" ? "สำเนาสำรองในเครื่อง ⚠" : "ข้าง exe";
+            stTpl.Text = "Template " + (templates.Count - 1) + " ฉบับ · " + where;
+            stTpl.ForeColor = info.Source == "cache" ? Color.Firebrick : Color.DimGray;
+            Log("โหลด Template " + (templates.Count - 1) + " ฉบับ จาก" + where);
+            foreach (var e in info.Errors) Log("Template: " + e);
+            ShowTemplateState();
+        }
+
+        void ShowTemplateState()
+        {
+            if (currentTemplate.IsGeneric) { lblTplState.Text = "(ไม่ได้จูน)"; lblTplState.ForeColor = Color.DarkOrange; }
+            else if (!scanned) { lblTplState.Text = ""; }
+            else if (templateMismatch) { lblTplState.Text = "⚠ ไม่ตรงกับไฟล์"; lblTplState.ForeColor = Color.Firebrick; }
+            else { lblTplState.Text = "✓ ผู้ออกตรง"; lblTplState.ForeColor = Color.DarkGreen; }
+        }
+
+        async void OnTemplateChanged()
+        {
+            if (loadingTemplates) return;
+            var picked = cmbTemplate.SelectedItem as Template;
+            if (picked == null || ReferenceEquals(picked, currentTemplate)) return;
+            if (lastOcr != null && scanned && !updated && dirty &&
+                MessageBox.Show(this, "คุณแก้ค่าในช่องไว้แล้ว — เปลี่ยน Template จะอ่านจาก OCR เดิมใหม่และ **ทับค่าที่แก้ไว้**\r\nต้องการเปลี่ยนหรือไม่?", "เปลี่ยน Template",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            {
+                loadingTemplates = true; cmbTemplate.SelectedItem = currentTemplate; loadingTemplates = false;
+                return;
+            }
+            currentTemplate = picked;
+            try { _ini.Set("App", "LastTemplate", picked.Id); } catch { }
+            Log("เลือก Template: " + picked.Name);
+            if (lastOcr != null && scanned && !updated)
+            {
+                SetBusy(true, "อ่านซ้ำด้วย Template " + picked.Name + " …");
+                try { await ApplyParseAsync(lastOcr); }
+                finally { SetBusy(false, templateMismatch ? "⚠ Template ไม่ตรงกับไฟล์" : "อ่านซ้ำเสร็จ"); }
+            }
+            else ShowTemplateState();
+        }
+
+        /// <summary>อ่านค่าจากผล OCR ด้วย Template ปัจจุบัน แล้วใส่ช่อง/ตารางเทียบ/preview (ใช้ทั้งตอน Scan และตอนเปลี่ยน Template)</summary>
+        async Task ApplyParseAsync(OcrPage ocr)
+        {
+            var tpl = currentTemplate;
+            var parsed = BLParser.Parse(ocr, tpl);
+            var vals = Fields.FromParse(parsed);
+
+            loadingValues = true;
+            scanned = true; updated = false; dirty = false;
+            foreach (var f in Fields.All.Where(x => !x.System)) SetValue(f.Key, Fields.Val(vals, f.Key));
+            loadingValues = false;
+            foreach (var tb in boxes.Values) MarkEmpty(tb);
+
+            notes = new List<string>(parsed.Notes);
+            templateMismatch = !tpl.Matches(ocr.RawText);
+            if (templateMismatch)
+            {
+                var better = templates.Where(t => !t.IsGeneric).Select(t => new { t, s = t.Score(ocr.RawText) }).Where(x => x.s > 0)
+                                      .OrderByDescending(x => x.s).Select(x => x.t).FirstOrDefault();
+                string msg = "⚠ ไม่พบคำระบุผู้ออกของ Template \"" + tpl.Name + "\" ในไฟล์นี้" + (better != null ? " — ดูเหมือนฟอร์มของ \"" + better.Name + "\"" : " — ลองเลือก \"ทั่วไป\" หรือสร้าง Template ใหม่");
+                notes.Insert(0, msg);
+                Log(msg);
+            }
+            int filled = Fields.All.Count(f => !f.System && Fields.Val(vals, f.Key).Trim() != "");
+            Log(string.Format("อ่านด้วย Template [{0}]: พบหัวช่อง {1}, ได้ค่า {2} ช่อง", tpl.Id, parsed.Labels.Count, filled));
+            foreach (var n in notes) Log("  " + n);
+
+            await EnrichAsync();
+            foreach (var w in Fields.Warnings(CurrentValues())) { notes.Add("⚠ " + w); Log("  ⚠ " + w); }
+            ShowTemplateState();
+            UpdateButtons();
+            FillCompare();
+            RenderPreview();
+            tabs.SelectedTab = tabCompare;
         }
 
         // ------------------------------------------------------------ Preview
@@ -532,7 +712,7 @@ namespace BLScan
             {
                 SetBusy(false, "ตรวจ DOCNO ไม่ได้");
                 Log("ตรวจ DOCNO ก่อน update ผิดพลาด: " + ex);
-                MessageBox.Show(this, "ตรวจ DOCNO ใน DB ไม่ได้ — ไม่ได้ update:\r\n" + ex.GetBaseException().Message, "BLScan", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "ตรวจ DOCNO ใน DB ไม่ได้ — ไม่ได้ update:\r\n" + Safe(ex.GetBaseException().Message), "BLScan", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
             SetBusy(false, null);
@@ -564,10 +744,11 @@ namespace BLScan
             if (!dryRun)
             {
                 var warn = new List<string>();
+                foreach (var w in Fields.Warnings(v)) warn.Add("⚠ ค่าผิดปกติ: " + w);
                 if (Fields.Val(v, "BLNO").Trim() == "") warn.Add("⚠ ยังไม่มี B/L No.");
                 foreach (var k in new[] { "RECPORT", "LOADPORT", "DISPORT", "DELPORT" })
                     if (Fields.Val(v, k).Trim() == "" && Fields.Val(v, k + "NAME").Trim() != "") warn.Add("⚠ ยังไม่มีรหัส " + k + " (" + Fields.Val(v, k + "NAME") + ") — จะไม่ถูกเขียน");
-                string msg = "แก้ข้อมูลใน " + _db.Target + "\r\n\r\n" +
+                string msg = "แก้ข้อมูลใน SMF DB\r\n\r\n" +
                              "SFHBL.DOCNO = " + doc + "  (งาน " + existing.JobNo + ")\r\n" +
                              "SFHBL: UPDATE " + chg + " ช่อง\r\n" + act + "\r\n\r\n" +
                              "ช่องที่ scan ได้ค่าว่างจะไม่ถูกแตะ · ไม่มี DELETE" +
@@ -600,7 +781,7 @@ namespace BLScan
                 var inner = ex is AggregateException ? ex.GetBaseException() : ex;
                 SetBusy(false, "ไม่สำเร็จ");
                 Log("ผิดพลาด: " + inner);
-                MessageBox.Show(this, "ไม่สำเร็จ (ไม่มีข้อมูลถูกเขียน):\r\n" + inner.Message, "BLScan", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(this, "ไม่สำเร็จ (ไม่มีข้อมูลถูกเขียน):\r\n" + Safe(inner.Message), "BLScan", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -610,7 +791,7 @@ namespace BLScan
             {
                 string p = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "BLScan.log");
                 var sb = new StringBuilder();
-                sb.AppendFormat("{0:yyyy-MM-dd HH:mm:ss}\t{1}\tDOCNO={2}\tFILE={3}\tUSER={4}\t{5}\r\n", DateTime.Now, _db.Target, Fields.Val(v, "DOCNO"), sourceFile, Environment.UserName, r.MarkAction);
+                sb.AppendFormat("{0:yyyy-MM-dd HH:mm:ss}\t{1}\tDOCNO={2}\tFILE={3}\tUSER={4}\t{5}\r\n", DateTime.Now, _db.ServerName, Fields.Val(v, "DOCNO"), sourceFile, Environment.UserName, r.MarkAction);
                 foreach (var c in r.HblChanges) sb.Append("    SFHBL ").AppendLine(c);
                 foreach (var c in r.MarkChanges) sb.Append("    SFMARK ").AppendLine(c);
                 File.AppendAllText(p, sb.ToString(), Encoding.UTF8);

@@ -143,7 +143,7 @@ table.bl td{border:1px solid #495057;vertical-align:top;padding:3px 6px 6px}
                       "<div class=\"stamp\" style=\"margin-top:14px;border-top:1px solid #adb5bd;padding-top:2px\">As Carrier / As Agent for the Carrier</div></td></tr>");
             sb.Append("</table>");
 
-            sb.Append("<div class=\"foot\">ต้นฉบับ: " + H(sourceFile) + " &nbsp;·&nbsp; สร้าง " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") +
+            sb.Append("<div class=\"foot\">สร้าง " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") +
                       " &nbsp;·&nbsp; คลิกที่ค่าใดๆ เพื่อแก้ไขในช่องด้านขวา &nbsp;·&nbsp; ช่องสีแดง = ยังไม่มีค่า</div>");
             sb.Append("</div>");
 

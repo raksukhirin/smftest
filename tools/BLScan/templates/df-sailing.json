@@ -1,0 +1,18 @@
+{
+  "id": "df-sailing",
+  "name": "DF-Sailing (Shenzhen Defond Sailing Logistics)",
+  "version": 1,
+  "note": "Bill of Lading ของ Shenzhen Defond Sailing Logistics — หน้า 29 ของ 1_Agent Pre-AlertTS XIAMEN-2609S.pdf หัวช่อง Notify Party ถูกอีเมลของ Consignee ทับ OCR อ่านไม่ออก จึงใช้โซนสำรอง",
+  "identify": { "keywords": ["DF-SAILING", "DEFOND SAILING"], "minScore": 1 },
+  "labels": {
+    "ONBOARD": ["On Board Date"]
+  },
+  "zones": {
+    "NOTIFY": { "x": 0.06, "y": 0.233, "w": 0.4, "h": 0.07 }
+  },
+  "strip": ["SHIPPER'S LOAD, COUNT & SEAL SAID TO CONTAIN"],
+  "terms": {
+    "CFS-CFS": "CFS/CFS"
+  },
+  "dateFormats": ["yyyy/MM/dd"]
+}

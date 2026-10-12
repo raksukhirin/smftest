@@ -184,6 +184,34 @@ namespace BLScan
             return list;
         }
 
+        /// <summary>
+        /// ค่าที่ "น่าสงสัย" — ไม่ใช่ error (ยังบันทึกได้) แต่ต้องให้ผู้ใช้เห็นและยืนยันก่อน Update
+        /// จุดที่เคยพลาดจริง: วันที่ผิดปี, ทศนิยมหาย (1.516 → 516), หัวช่องหลุดเป็นค่า, ข้อความยาวผิดปกติปนเข้ามา
+        /// </summary>
+        public static List<string> Warnings(Dictionary<string, string> v)
+        {
+            var w = new List<string>();
+            Func<string, string> g = k => Val(v, k).Trim();
+            if (g("PKGWORD").Length > 100) w.Add("PKGWORD ยาว " + g("PKGWORD").Length + " ตัวอักษร — อาจมีข้อความอื่นปนมา");
+            if (g("ISSUPLACE").Length > 60 || System.Text.RegularExpressions.Regex.IsMatch(g("ISSUPLACE"), @"\b(FOR|AS CARRIER)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                w.Add("Place of issue ดูผิดปกติ: \"" + g("ISSUPLACE") + "\"");
+            foreach (var k in new[] { "FEEDER", "VESSEL" })
+                if (System.Text.RegularExpressions.Regex.IsMatch(g(k), @"^(No\.?|Voy\.? ?No\.?|Voyage|Vessel|Port|Place)\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+                    w.Add(Get(k).Caption + " เป็นคำของหัวช่อง: \"" + g(k) + "\"");
+            foreach (var k in new[] { "ETD", "ISSUDATE" })
+            {
+                DateTime dt;
+                if (g(k) != "" && TryDate(g(k), out dt) && (dt.Year < 2000 || dt.Year > DateTime.Today.Year + 1))
+                    w.Add(Get(k).Caption + " ปี " + dt.Year + " ผิดปกติ (" + g(k) + ")");
+            }
+            decimal cbm, gw;
+            if (g("CBM") != "" && TryDec(g("CBM"), out cbm) && !g("CBM").Contains(".") && cbm >= 100)
+                w.Add("CBM = " + g("CBM") + " ไม่มีทศนิยม — อาจตกจุดทศนิยม (เช่น 1.516 เป็น 516)");
+            if (g("GW") != "" && TryDec(g("GW"), out gw) && gw <= 0) w.Add("GW เป็นศูนย์/ติดลบ");
+            if (g("BLNO") != "" && g("BLNO").Length < 6) w.Add("B/L No. สั้นผิดปกติ: \"" + g("BLNO") + "\"");
+            return w;
+        }
+
         public static string Val(Dictionary<string, string> v, string key)
         {
             string s;

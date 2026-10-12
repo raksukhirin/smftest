@@ -1,0 +1,20 @@
+{
+  "id": "lucky-listing",
+  "name": "Lucky Logistics (หน้ารายการสินค้าต่อท้าย / Listing sheet)",
+  "version": 1,
+  "note": "หน้าต่อท้ายของ House B/L ของ Lucky Logistics (END OF LISTING) — ตัวอย่างหน้า 21 ของ 1_Agent Pre-AlertTS XIAMEN-2609S.pdf ไม่มีชื่อบริษัท ใช้ข้อความ END OF LISTING ระบุฟอร์ม มีเฉพาะ B/L No., เรือ/voyage, marks, จำนวนห่อ, รายละเอียดสินค้า, น้ำหนัก, ปริมาตร",
+  "identify": { "keywords": ["END OF LISTING"], "minScore": 1 },
+  "labels": {
+    "MARKS": ["MARKS NOS"],
+    "PKGS": ["PKGS TYPE"],
+    "DESC": ["GOODS DESCRIPTION"],
+    "GW": ["WEIGHT (KGS)"],
+    "MEAS": ["Meas 'mt (CBM)"]
+  },
+  "zones": {},
+  "strip": ["SAID TO CONTAIN", "END OF LISTING"],
+  "inline": [],
+  "stop": [],
+  "terms": {},
+  "dateFormats": []
+}

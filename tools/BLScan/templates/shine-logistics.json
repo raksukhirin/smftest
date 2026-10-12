@@ -1,0 +1,22 @@
+{
+  "id": "shine-logistics",
+  "name": "Shine Logistics (Bill of Lading)",
+  "version": 1,
+  "note": "Bill of Lading ของ Shine Logistics Co., Ltd. — ตัวอย่างหน้า 28 ของ 1_Agent Pre-AlertTS XIAMEN-2609S.pdf (SL26040862BKK) หัวข้อ B/L No. อยู่บนขวา ค่าอยู่ขวามือหัวช่อง",
+  "identify": { "keywords": ["SHINE LOGISTICS"], "minScore": 1 },
+  "replaceLabels": false,
+  "labels": {
+    "VESSEL": ["Ocean VesslNoyage No."],
+    "DELIVERY": ["Port of Delivery"],
+    "FINALDEST": ["Final destination(for"],
+    "MARKS": ["Container No.&Marks and Numbers"],
+    "PKGS": ["No.of Containers or"],
+    "DESC": ["Kinds of Packages:Description of goods"]
+  },
+  "zones": {},
+  "strip": ["the Merchant'", "s reference)"],
+  "inline": ["BLNO"],
+  "stop": ["Revenus Tons", "Rate per", "Prepaid Collect"],
+  "terms": {},
+  "dateFormats": []
+}
