@@ -121,6 +121,29 @@ namespace BLScan
             return bad;
         }
 
+        /// <summary>แปลงข้อความ "ปลายทาง = ต้นทาง" (บรรทัดละคู่, รหัสช่องผลลัพธ์ เช่น FINALPORTNAME = DELPORTNAME) เป็นกติกาคัดลอก; คืนบรรทัดที่ใช้ไม่ได้</summary>
+        public static List<string> SetCopy(Template t, string multiline)
+        {
+            var bad = new List<string>();
+            var d = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var raw in (multiline ?? "").Replace("\r\n", "\n").Split('\n'))
+            {
+                string line = raw.Trim();
+                if (line == "") continue;
+                var p = line.Split(new[] { '=' }, 2);
+                string k = p.Length == 2 ? p[0].Trim().ToUpperInvariant() : "", v = p.Length == 2 ? p[1].Trim().Trim('>').Trim().ToUpperInvariant() : "";
+                if (k == "" || v == "" || k == v || !Fields.All.Any(f => f.Key == k) || !Fields.All.Any(f => f.Key == v)) { bad.Add(line); continue; }
+                d[k] = v;
+            }
+            t.Copy = d;
+            return bad;
+        }
+
+        public static string CopyText(Template t)
+        {
+            return string.Join("\r\n", t.Copy.Select(kv => kv.Key + " = " + kv.Value));
+        }
+
         public static string TermsText(Template t)
         {
             return string.Join("\r\n", t.Terms.Select(kv => kv.Key + " => " + kv.Value));

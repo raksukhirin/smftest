@@ -917,6 +917,9 @@ namespace BLScan
             if (sg.Count > 0) v["SIGNEDBY"] = Regex.Replace(sg[0], @"^.*\bcarrier\s*:?\s*", "", RegexOptions.IgnoreCase).Trim('"', ' ', ':');
 
             foreach (var k in v.Keys.ToList()) if (v[k] == null) v[k] = "";
+            // กติกา "คัดลอก" ของ Template: ช่องปลายทางที่อ่านไม่ได้ ใช้ค่าของช่องต้นทาง (เช่น Final destination = Place of delivery)
+            foreach (var kv in tpl.Copy)
+                if (Fields.Val(v, kv.Key).Trim() == "" && Fields.Val(v, kv.Value).Trim() != "") v[kv.Key] = v[kv.Value];
             foreach (var lab in defs)
                 if (!r.Labels.Any(l => l.Key == lab.Key) && !OptionalLabels.Contains(lab.Key) && !lab.Key.StartsWith("_"))
                     r.Notes.Add("ไม่พบหัวช่อง: " + lab.Phrases[0]);

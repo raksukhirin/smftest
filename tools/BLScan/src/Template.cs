@@ -34,6 +34,7 @@ namespace BLScan
         public string[] Stop = new string[0];        // หัวตาราง/ข้อความที่ไม่ใช่ช่องของเรา แต่ต้องกั้นไม่ให้ข้อความใต้มันถูกดึงไปเป็นค่าของช่องอื่น
         public Dictionary<string, string> Terms = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         public string[] DateFormats = new string[0];
+        public Dictionary<string, string> Copy = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);   // ช่องปลายทาง -> ช่องต้นทาง: ถ้าปลายทางอ่านไม่ได้ (ว่าง) ให้คัดลอกค่าจากต้นทาง เช่น FINALPORTNAME -> DELPORTNAME
         public string SourceFile = "";
 
         public bool IsGeneric { get { return string.Equals(Id, "generic", StringComparison.OrdinalIgnoreCase); } }
@@ -107,6 +108,8 @@ namespace BLScan
             var terms = g("terms") as Dictionary<string, object>;
             if (terms != null) foreach (var kv in terms) t.Terms[kv.Key] = Convert.ToString(kv.Value);
             t.DateFormats = Strs(g("dateFormats"));
+            var copy = g("copy") as Dictionary<string, object>;
+            if (copy != null) foreach (var kv in copy) t.Copy[kv.Key] = Convert.ToString(kv.Value);
             return t;
         }
 
@@ -147,6 +150,7 @@ namespace BLScan
             sb.Append("  \"inline\": " + Arr(Inline) + ",\n");
             sb.Append("  \"stop\": " + Arr(Stop) + ",\n");
             sb.Append("  \"terms\": {" + (Terms.Count == 0 ? "" : "\n" + string.Join(",\n", Terms.Select(kv => "    " + Q(kv.Key) + ": " + Q(kv.Value))) + "\n  ") + "},\n");
+            if (Copy.Count > 0) sb.Append("  \"copy\": {\n" + string.Join(",\n", Copy.Select(kv => "    " + Q(kv.Key) + ": " + Q(kv.Value))) + "\n  },\n");
             sb.Append("  \"dateFormats\": " + Arr(DateFormats) + "\n}\n");
             return sb.ToString();
         }

@@ -13,5 +13,8 @@
   "terms": {
     "CFS-CFS": "CFS/CFS"
   },
+  "copy": {
+    "FINALPORTNAME": "DELPORTNAME"
+  },
   "dateFormats": ["dd-MMM-yyyy"]
 }

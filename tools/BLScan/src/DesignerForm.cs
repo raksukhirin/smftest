@@ -49,7 +49,7 @@ namespace BLScan
         TextBox txtSyn, txtCaptured;
         DataGridView dgv;
         Label lblSummary;
-        TextBox txtId, txtName, txtNote, txtIdentify, txtStrip, txtTerms, txtDateFmt, txtStop, txtInline;
+        TextBox txtId, txtName, txtNote, txtIdentify, txtStrip, txtTerms, txtDateFmt, txtStop, txtInline, txtCopy;
         Label lblIdentifyState;
         ListView lvSamples;
         TextBox txtTest;
@@ -64,6 +64,17 @@ namespace BLScan
             { "TOTALPKG", "Total packages (in words)" }, { "PAYABLEAT", "Freight payable at" }, { "FREIGHT", "Freight & charges" },
             { "AGENT", "Delivery Agent" }, { "ISSUE", "Place & date of issue" }, { "EXCESS", "Excess value declaration" },
             { "SIGNED", "Signed for the carrier" }, { "ASAGENT", "As agent for the carrier" },
+        };
+
+        // รหัสหัวช่อง -> รหัสช่องผลลัพธ์ที่ลงฐานข้อมูล (ใช้เขียนกติกา "คัดลอกค่าเมื่อช่องว่าง" ในแท็บทั่วไป)
+        static readonly Dictionary<string, string> OutKeys = new Dictionary<string, string>
+        {
+            { "BLNO", "BLNO" }, { "SHIPPER", "SHIPPERNAME, S_ADD" }, { "CONSIGNEE", "CONSIGNEENAME, C_ADD" }, { "NOTIFY", "NOTIFYNAME, N_ADD" },
+            { "FEEDER", "FEEDER, F_VOY" }, { "RECEIPT", "RECPORTNAME" }, { "VESSEL", "VESSEL, V_VOY" }, { "VOYAGE", "V_VOY" },
+            { "LOADPORT", "LOADPORTNAME" }, { "DISPORT", "DISPORTNAME" }, { "DELIVERY", "DELPORTNAME" }, { "FINALDEST", "FINALPORTNAME" },
+            { "NOOFORIG", "BLCOPY" }, { "MARKS", "MARKDESC" }, { "PKGS", "PKGQTY, PKGUNIT" }, { "DESC", "GOODS" },
+            { "GW", "GW" }, { "MEAS", "CBM" }, { "ONBOARD", "ETD" }, { "TOTALPKG", "PKGWORD" }, { "PAYABLEAT", "PAYABLEAT" },
+            { "FREIGHT", "BILLDESC" }, { "AGENT", "AGENTNAME, A_ADD" }, { "ISSUE", "ISSUPLACE, ISSUDATE" }, { "SIGNED", "SIGNEDBY" },
         };
 
         static readonly Color[] Palette =
@@ -102,12 +113,14 @@ namespace BLScan
             cmbTemplate.SelectedIndexChanged += (s, e) => { if (!loadingUi) OnTemplatePicked(); };
             btnNew = new Button { Text = "สร้างใหม่…", Width = 100, Height = 26 };
             btnNew.Click += (s, e) => NewTemplate();
+            var btnCopyTpl = new Button { Text = "ทำสำเนา…", Width = 100, Height = 26 };
+            btnCopyTpl.Click += (s, e) => DuplicateTemplate();
             btnSave = new Button { Text = "บันทึก Template", Width = 150, Height = 26, BackColor = Color.FromArgb(211, 249, 216) };
             btnSave.Click += (s, e) => SaveTemplate();
             var btnClose = new Button { Text = "ปิด", Width = 80, Height = 26, Margin = new Padding(20, 3, 3, 3) };
             btnClose.Click += (s, e) => Close();
             lblStatus = new Label { AutoSize = true, Margin = new Padding(16, 7, 0, 0), ForeColor = Color.DimGray, MaximumSize = new Size(700, 20) };
-            row1.Controls.AddRange(new Control[] { cmbTemplate, btnNew, btnSave, btnClose, lblStatus });
+            row1.Controls.AddRange(new Control[] { cmbTemplate, btnNew, btnCopyTpl, btnSave, btnClose, lblStatus });
 
             btnOpenSample = new Button { Text = "เปิดใบตัวอย่าง…", Width = 120, Height = 26 };
             btnOpenSample.Click += (s, e) => OpenSampleDialog();
@@ -136,7 +149,7 @@ namespace BLScan
             row2.Controls.AddRange(new Control[] { rbWords, rbZone, chkWordBoxes, chkMatches, bMinus, bPlus, bFit, lblZoom });
 
             var split = new SplitContainer { Dock = DockStyle.Fill, Orientation = Orientation.Vertical };
-            host = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.FromArgb(222, 226, 230) };
+            host = new CanvasHost { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.FromArgb(222, 226, 230) };
             canvas = new ImageCanvas { Location = new Point(0, 0) };
             canvas.MouseEnter += (s, e) => canvas.Focus();
             canvas.SelectionChanged += (s, e) => OnSelectionChanged();
@@ -156,6 +169,8 @@ namespace BLScan
             BuildResultsTab(tabResults);
             BuildGeneralTab(tabGeneral);
             BuildSamplesTab(tabSamples);
+            // ออกจากแท็บ "ทั่วไป" = ใช้ค่าที่พิมพ์ไว้ทันทีและอ่านใหม่ (ไม่ต้องกด "ใช้การแก้ไขในหน้านี้" ก่อน แล้วไปดูผลที่แท็บอื่น)
+            tabs.Deselecting += (s, e) => { if (e.TabPage == tabGeneral && working != null && !loadingUi) { ApplyGeneralEdits(false); Reparse(); } };
 
             Controls.Add(split);
             Controls.Add(top);
@@ -165,7 +180,7 @@ namespace BLScan
         void BuildLabelsTab(TabPage tab)
         {
             lvLabels = new ListView { Dock = DockStyle.Top, Height = 330, View = View.Details, FullRowSelect = true, GridLines = true, HideSelection = false, MultiSelect = false };
-            lvLabels.Columns.Add("ช่อง", 190); lvLabels.Columns.Add("หัวช่อง", 110); lvLabels.Columns.Add("ข้อความที่จับได้", 250);
+            lvLabels.Columns.Add("ช่อง", 190); lvLabels.Columns.Add("หัวช่อง", 110); lvLabels.Columns.Add("ข้อความที่จับได้", 250); lvLabels.Columns.Add("ตัวแปรผลลัพธ์", 150);
             lvLabels.SelectedIndexChanged += (s, e) => ShowLabelDetail();
             var detail = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
             int y = 8;
@@ -252,6 +267,7 @@ namespace BLScan
             p.Controls.Add(bStop);
             y += 30;
             txtInline = field("ช่องที่ค่าอยู่ \"ขวามือ\" หัวช่อง (รหัสช่อง บรรทัดละ 1 ช่อง เช่น BLNO)", 40);
+            txtCopy = field("คัดลอกค่าเมื่อช่องว่าง (รูปแบบ  ปลายทาง = ต้นทาง  รหัสช่องผลลัพธ์ เช่น  FINALPORTNAME = DELPORTNAME  คือ ถ้าไม่มี Final destination ให้ใช้ Place of delivery)", 48);
             txtTerms = field("คำแปลง CY term  (รูปแบบ  ข้อความ => ค่า  เช่น  CFS-CFS => CFS/CFS)", 48);
             txtDateFmt = field("รูปแบบวันที่เฉพาะฟอร์ม (บรรทัดละ 1 แบบ เช่น yyyy/MM/dd, dd-MMM-yyyy)", 40);
             var bApply = new Button { Text = "ใช้การแก้ไขในหน้านี้", Left = 6, Top = y, Width = 170, Height = 30 };
@@ -356,6 +372,25 @@ namespace BLScan
             RefreshSamples();
             Reparse();
             SetStatus("Template ใหม่ \"" + name + "\" — เปิดใบตัวอย่าง แล้วเพิ่มคำระบุผู้ออกและหัวช่องที่ขาด");
+        }
+
+        /// <summary>ทำสำเนาจาก Template ที่เปิดอยู่เป็น Template ใหม่ (เช่น ผู้ออกเดิมแต่ฟอร์มพิเศษ) — คงหัวช่อง/โซน/กติกาทั้งหมดไว้ให้ปรับต่อ</summary>
+        void DuplicateTemplate()
+        {
+            if (working == null) { SetStatus("เลือก Template ที่จะทำสำเนาก่อน", true); return; }
+            ApplyGeneralEdits(false);
+            string id, name;
+            if (!AskIdName(out id, out name)) return;
+            var copy = TemplateEditor.Clone(working);
+            copy.Id = id; copy.Name = name; copy.Version = 0; copy.SourceFile = "";
+            working = copy;
+            loadedVersion = 0; isNew = true; dirty = true;
+            expect = new Dictionary<string, string>();
+            loadingUi = true; cmbTemplate.SelectedIndex = -1; loadingUi = false;
+            ShowGeneral();
+            RefreshSamples();
+            Reparse();
+            SetStatus("สำเนา \"" + name + "\" — ปรับแต่งแล้วกด บันทึก Template");
         }
 
         bool AskIdName(out string id, out string name)
@@ -530,7 +565,8 @@ namespace BLScan
                 if (parse != null && parse.ByLabel.TryGetValue(d.Key, out cs))
                     captured = string.Join(" | ", cs.OrderBy(c => c.Y).ThenBy(c => c.X).Select(c => c.Text));
                 if (captured.Length > 90) captured = captured.Substring(0, 90) + "…";
-                var it = new ListViewItem(new[] { d.Key + "  " + cap, state, captured }) { Tag = d.Key };
+                string outKey; if (!OutKeys.TryGetValue(d.Key, out outKey)) outKey = "-";
+                var it = new ListViewItem(new[] { d.Key + "  " + cap, state, captured, outKey }) { Tag = d.Key };
                 if (parse != null && !found && !synth && !zoned) it.ForeColor = Color.Firebrick;
                 else if (parse != null && !found && (synth || zoned)) it.ForeColor = Color.DarkOrange;
                 if (d.Key == keep) it.Selected = true;
@@ -678,10 +714,11 @@ namespace BLScan
             txtStrip.Text = string.Join("\r\n", working.Strip);
             txtStop.Text = string.Join("\r\n", working.Stop);
             txtInline.Text = string.Join("\r\n", working.Inline);
+            txtCopy.Text = TemplateEditor.CopyText(working);
             txtTerms.Text = TemplateEditor.TermsText(working);
             txtDateFmt.Text = string.Join("\r\n", working.DateFormats);
             loadingUi = false;
-            foreach (var tb in new[] { txtName, txtNote, txtIdentify, txtStrip, txtStop, txtInline, txtTerms, txtDateFmt })
+            foreach (var tb in new[] { txtName, txtNote, txtIdentify, txtStrip, txtStop, txtInline, txtCopy, txtTerms, txtDateFmt })
             {
                 tb.TextChanged -= GeneralChanged;
                 tb.TextChanged += GeneralChanged;
@@ -700,6 +737,8 @@ namespace BLScan
             TemplateEditor.SetLines(working, "stop", txtStop.Text);
             TemplateEditor.SetLines(working, "inline", txtInline.Text);
             TemplateEditor.SetLines(working, "dateFormats", txtDateFmt.Text);
+            var badCopy = TemplateEditor.SetCopy(working, txtCopy.Text);
+            if (report && badCopy.Count > 0) MessageBox.Show(this, "บรรทัดคัดลอกที่ใช้ไม่ได้ (ต้องเป็น  ปลายทาง = ต้นทาง  และเป็นรหัสช่องผลลัพธ์ที่มีอยู่จริง เช่น FINALPORTNAME = DELPORTNAME):\r\n• " + string.Join("\r\n• ", badCopy), "คัดลอกค่า", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             var bad = TemplateEditor.SetTerms(working, txtTerms.Text);
             if (report && bad.Count > 0) MessageBox.Show(this, "บรรทัดคำแปลงที่อ่านไม่ได้ (ต้องเป็น  ข้อความ => ค่า):\r\n• " + string.Join("\r\n• ", bad), "คำแปลง", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }

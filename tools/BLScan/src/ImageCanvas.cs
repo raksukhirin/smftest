@@ -19,12 +19,22 @@ namespace BLScan
 
     public enum CanvasMode { Words, Zone }
 
+    /// <summary>
+    /// Panel เลื่อนได้สำหรับวาง ImageCanvas — ปิดการ "เลื่อนให้ control ที่ได้โฟกัสอยู่ในจอ" ของ WinForms
+    /// (ภาพสูงกว่าจอ เมื่อ canvas ได้โฟกัสตอนเมาส์กลับเข้ามา WinForms จะเลื่อนกลับไปบนสุดเสมอ)
+    /// </summary>
+    public class CanvasHost : Panel
+    {
+        protected override Point ScrollToControl(Control activeControl) { return DisplayRectangle.Location; }
+    }
+
     public class ImageCanvas : Control
     {
         Bitmap image;
         double zoom = 1.0;
         Point dragStart, dragNow;
-        bool dragging, panning;
+        bool dragging, panning, panByCtrl, panMoved;
+        Point panDownLoc;
         Point panStartMouse, panStartScroll;
 
         public List<OcrWord> Words = new List<OcrWord>();
@@ -129,11 +139,12 @@ namespace BLScan
         {
             base.OnMouseDown(e);
             Focus();
-            if (e.Button == MouseButtons.Middle || e.Button == MouseButtons.Right)
+            bool ctrlDrag = e.Button == MouseButtons.Left && (ModifierKeys & Keys.Control) == Keys.Control;    // Ctrl + ลาก = เลื่อนภาพ
+            if (e.Button == MouseButtons.Middle || e.Button == MouseButtons.Right || ctrlDrag)
             {
                 var sc = Parent as ScrollableControl;
                 if (sc == null) return;
-                panning = true; panStartMouse = Cursor.Position;
+                panning = true; panByCtrl = ctrlDrag; panMoved = false; panDownLoc = e.Location; panStartMouse = Cursor.Position;
                 panStartScroll = new Point(-sc.AutoScrollPosition.X, -sc.AutoScrollPosition.Y);
                 Cursor = Cursors.SizeAll;
                 return;
@@ -149,6 +160,7 @@ namespace BLScan
             {
                 var sc = (ScrollableControl)Parent;
                 var d = new Point(Cursor.Position.X - panStartMouse.X, Cursor.Position.Y - panStartMouse.Y);
+                if (Math.Abs(d.X) > 3 || Math.Abs(d.Y) > 3) panMoved = true;
                 sc.AutoScrollPosition = new Point(panStartScroll.X - d.X, panStartScroll.Y - d.Y);
                 return;
             }
@@ -158,22 +170,19 @@ namespace BLScan
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
-            if (panning) { panning = false; Cursor = Cursors.Cross; return; }
+            if (panning)
+            {
+                bool wasCtrlClick = panByCtrl && !panMoved && e.Button == MouseButtons.Left;
+                panning = false; panByCtrl = false; Cursor = Cursors.Cross;
+                if (wasCtrlClick) ClickSelect(e.Location, true);       // Ctrl + คลิกเฉยๆ (ไม่ลาก) = เพิ่ม/เอาคำออกจากที่เลือก
+                return;
+            }
             if (!dragging) return;
             dragging = false;
             dragNow = e.Location;
             var rb = Norm(dragStart, dragNow);
             bool ctrl = (ModifierKeys & Keys.Control) == Keys.Control;
-            if (rb.Width < 4 && rb.Height < 4)
-            {
-                // คลิกเฉยๆ: เลือกคำที่อยู่ใต้เมาส์ (คำเล็กสุดที่ครอบจุดนั้น) — คลิกที่ว่างล้างการเลือก
-                var hit = Words.Where(w => ToPx(w).Contains(e.Location)).OrderBy(w => w.W * w.H).FirstOrDefault();
-                if (!ctrl) Selected.Clear();
-                if (hit != null) { if (ctrl && Selected.Contains(hit)) Selected.Remove(hit); else Selected.Add(hit); }
-                Invalidate();
-                if (SelectionChanged != null) SelectionChanged(this, EventArgs.Empty);
-                return;
-            }
+            if (rb.Width < 4 && rb.Height < 4) { ClickSelect(e.Location, ctrl); return; }
             if (Mode == CanvasMode.Zone)
             {
                 Invalidate();
@@ -183,6 +192,16 @@ namespace BLScan
             }
             if (!ctrl) Selected.Clear();
             foreach (var w in Words.Where(w => ToPx(w).IntersectsWith(rb))) Selected.Add(w);
+            Invalidate();
+            if (SelectionChanged != null) SelectionChanged(this, EventArgs.Empty);
+        }
+
+        void ClickSelect(Point p, bool ctrl)
+        {
+            // คลิกเฉยๆ: เลือกคำที่อยู่ใต้เมาส์ (คำเล็กสุดที่ครอบจุดนั้น) — คลิกที่ว่างล้างการเลือก
+            var hit = Words.Where(w => ToPx(w).Contains(p)).OrderBy(w => w.W * w.H).FirstOrDefault();
+            if (!ctrl) Selected.Clear();
+            if (hit != null) { if (ctrl && Selected.Contains(hit)) Selected.Remove(hit); else Selected.Add(hit); }
             Invalidate();
             if (SelectionChanged != null) SelectionChanged(this, EventArgs.Empty);
         }

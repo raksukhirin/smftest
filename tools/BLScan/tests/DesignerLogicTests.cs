@@ -43,6 +43,12 @@ class DesignerLogicTests
         Check("SetLabels: ว่างหมด = ลบคีย์", !t.Labels.ContainsKey("VOYAGE"));
         Check("AddIdentify: สั้นเกินไปถูกปฏิเสธ", !TemplateEditor.AddIdentify(t, "ab"));
         Check("AddIdentify: เพิ่มได้ ซ้ำไม่ได้", TemplateEditor.AddIdentify(t, "DEFOND SAILING") && !TemplateEditor.AddIdentify(t, "defond  sailing"));
+        var badCopy = TemplateEditor.SetCopy(t, "finalportname = DELPORTNAME\r\nไม่มีเครื่องหมาย\r\nNOSUCH = DELPORTNAME\r\nGW = GW");
+        Check("SetCopy: รับคู่ที่ถูกต้อง (ตัวพิมพ์เล็กก็ได้) ปฏิเสธ 3 บรรทัดที่ใช้ไม่ได้", badCopy.Count == 3 && t.Copy.Count == 1 && t.Copy["FINALPORTNAME"] == "DELPORTNAME", string.Join("|", badCopy));
+        var rtCopy = Template.FromJson(t.ToJson());
+        Check("Copy: เขียน/อ่าน JSON แล้วคงเดิม", rtCopy.Copy.Count == 1 && rtCopy.Copy["FINALPORTNAME"] == "DELPORTNAME" && TemplateEditor.CopyText(rtCopy) == "FINALPORTNAME = DELPORTNAME");
+        TemplateEditor.SetCopy(t, "");
+        Check("SetCopy: ว่าง = ล้างกติกา และไม่เขียน copy ลง JSON", t.Copy.Count == 0 && !t.ToJson().Contains("\"copy\""));
         var bad = TemplateEditor.SetTerms(t, "CFS-CFS => CFS/CFS\r\nไม่มีลูกศร\r\n => x");
         Check("SetTerms: อ่านได้ 1 คู่ รายงานบรรทัดเสีย 2", t.Terms.Count == 1 && bad.Count == 2, bad.Count + "");
         TemplateEditor.SetZone(t, "NOTIFY", 1.4, -0.2, 0.123456, 0.07);
