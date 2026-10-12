@@ -29,6 +29,7 @@ namespace BLScan
         public bool ReplaceLabels;
         public Dictionary<string, string[]> Labels = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, Zone> Zones = new Dictionary<string, Zone>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, Zone> Areas = new Dictionary<string, Zone>(StringComparer.OrdinalIgnoreCase);   // กรอบดึงค่า: ค่าของช่อง = เฉพาะคำ OCR ที่อยู่ในกรอบ (ต่างจาก Zones ที่เป็นแค่ตำแหน่งหัวช่องสำรอง)
         public string[] Strip = new string[0];
         public string[] Inline = new string[0];      // ช่องที่ค่าอยู่ "ขวามือ" หัวช่อง (แทนที่จะอยู่ใต้หัวช่อง) เช่น B/L No. ของ Shine
         public string[] Stop = new string[0];        // หัวตาราง/ข้อความที่ไม่ใช่ช่องของเรา แต่ต้องกั้นไม่ให้ข้อความใต้มันถูกดึงไปเป็นค่าของช่องอื่น
@@ -93,15 +94,18 @@ namespace BLScan
             var labels = g("labels") as Dictionary<string, object>;
             if (labels != null) foreach (var kv in labels) t.Labels[kv.Key] = Strs(kv.Value);
             t.ReplaceLabels = g("replaceLabels") != null && Convert.ToBoolean(g("replaceLabels"));
-            var zones = g("zones") as Dictionary<string, object>;
-            if (zones != null)
+            foreach (var pair in new[] { new KeyValuePair<string, Dictionary<string, Zone>>("zones", t.Zones), new KeyValuePair<string, Dictionary<string, Zone>>("areas", t.Areas) })
+            {
+                var zones = g(pair.Key) as Dictionary<string, object>;
+                if (zones == null) continue;
                 foreach (var kv in zones)
                 {
                     var z = kv.Value as Dictionary<string, object>;
                     if (z == null) continue;
-                    t.Zones[kv.Key] = new Zone { X = Dbl(z.ContainsKey("x") ? z["x"] : null), Y = Dbl(z.ContainsKey("y") ? z["y"] : null),
-                                                 W = Dbl(z.ContainsKey("w") ? z["w"] : null), H = Dbl(z.ContainsKey("h") ? z["h"] : null) };
+                    pair.Value[kv.Key] = new Zone { X = Dbl(z.ContainsKey("x") ? z["x"] : null), Y = Dbl(z.ContainsKey("y") ? z["y"] : null),
+                                                    W = Dbl(z.ContainsKey("w") ? z["w"] : null), H = Dbl(z.ContainsKey("h") ? z["h"] : null) };
                 }
+            }
             t.Strip = Strs(g("strip"));
             t.Inline = Strs(g("inline"));
             t.Stop = Strs(g("stop"));
@@ -143,9 +147,11 @@ namespace BLScan
             sb.Append("  \"identify\": { \"keywords\": " + Arr(Identify) + ", \"minScore\": " + MinScore + " },\n");
             if (ReplaceLabels) sb.Append("  \"replaceLabels\": true,\n");
             sb.Append("  \"labels\": {" + (Labels.Count == 0 ? "" : "\n" + string.Join(",\n", Labels.Select(kv => "    " + Q(kv.Key) + ": " + Arr(kv.Value))) + "\n  ") + "},\n");
-            sb.Append("  \"zones\": {" + (Zones.Count == 0 ? "" : "\n" + string.Join(",\n", Zones.Select(kv =>
+            Func<Dictionary<string, Zone>, string> zj = zs => "{" + (zs.Count == 0 ? "" : "\n" + string.Join(",\n", zs.Select(kv =>
                 "    " + Q(kv.Key) + ": { \"x\": " + kv.Value.X.ToString("0.###", ci) + ", \"y\": " + kv.Value.Y.ToString("0.###", ci) +
-                ", \"w\": " + kv.Value.W.ToString("0.###", ci) + ", \"h\": " + kv.Value.H.ToString("0.###", ci) + " }")) + "\n  ") + "},\n");
+                ", \"w\": " + kv.Value.W.ToString("0.###", ci) + ", \"h\": " + kv.Value.H.ToString("0.###", ci) + " }")) + "\n  ") + "}";
+            sb.Append("  \"zones\": " + zj(Zones) + ",\n");
+            if (Areas.Count > 0) sb.Append("  \"areas\": " + zj(Areas) + ",\n");
             sb.Append("  \"strip\": " + Arr(Strip) + ",\n");
             sb.Append("  \"inline\": " + Arr(Inline) + ",\n");
             sb.Append("  \"stop\": " + Arr(Stop) + ",\n");

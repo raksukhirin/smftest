@@ -197,8 +197,8 @@ namespace BLScan
                     var existing = db.LoadExisting(doc);
                     if (existing == null)
                     {
-                        status = "ไม่พบ DOCNO ใน SFHBL";
-                        log.AppendLine("ไม่พบ DOCNO " + doc + " ใน SFHBL — ต้องสร้าง record รอไว้ก่อน");
+                        status = "ไม่พบ HB/L Ref ในระบบ";
+                        log.AppendLine("ไม่พบ HB/L Ref " + doc + " ในระบบ — ต้องสร้าง record รอไว้ก่อน");
                         rc = 3;
                     }
                     else
@@ -207,7 +207,7 @@ namespace BLScan
                         foreach (var n in db.Enrich(v, existing.JobNo, existing.V)) notes.Add("[DB] " + n);
 
                         chg.AppendLine("DOCNO " + doc + "  JOBNO " + existing.JobNo + "  JOBCLASS " + existing.JobClass);
-                        chg.AppendLine(existing.MarkRows == 0 ? "SFMARK: ยังไม่มี → INSERT" : "SFMARK: " + existing.MarkRows + " แถว → UPDATE DETID " + existing.MarkDetId);
+                        chg.AppendLine(existing.MarkRows == 0 ? "รายการสินค้า: ยังไม่มี → สร้างใหม่" : "รายการสินค้า: " + existing.MarkRows + " รายการ → แก้ไขรายการแรก");
                         foreach (var c in Fields.Plan(v, existing.V))
                             chg.AppendLine(string.Format("{0,-6} {1,-22} db=[{2}]  scan=[{3}]", c.Skip ? "SKIP" : c.Differs ? "CHANGE" : "SAME", c.F.DbName, OneLine(c.Old), OneLine(c.New)));
 
@@ -221,9 +221,9 @@ namespace BLScan
                             {
                                 var res = db.Update(v, doc, ini.Get("App", "UserID", "BLSCAN"), !real);
                                 log.AppendLine(res.Message);
-                                foreach (var c in res.HblChanges) log.AppendLine("  SFHBL " + c);
+                                foreach (var c in res.HblChanges) log.AppendLine("  " + c);
                                 log.AppendLine("  " + res.MarkAction);
-                                foreach (var c in res.MarkChanges) log.AppendLine("  SFMARK " + c);
+                                foreach (var c in res.MarkChanges) log.AppendLine("  " + c);
                                 if (real) status = "บันทึกแล้ว " + DateTime.Now.ToString("HH:mm");
                             }
                         }

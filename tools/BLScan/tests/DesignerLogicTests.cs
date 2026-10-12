@@ -43,6 +43,27 @@ class DesignerLogicTests
         Check("SetLabels: ว่างหมด = ลบคีย์", !t.Labels.ContainsKey("VOYAGE"));
         Check("AddIdentify: สั้นเกินไปถูกปฏิเสธ", !TemplateEditor.AddIdentify(t, "ab"));
         Check("AddIdentify: เพิ่มได้ ซ้ำไม่ได้", TemplateEditor.AddIdentify(t, "DEFOND SAILING") && !TemplateEditor.AddIdentify(t, "defond  sailing"));
+        Func<int, double, string, double, OcrWord> wd = (ln, x, tx, h) => new OcrWord { LineNo = ln, X = x, Y = ln * 0.05, W = 0.05, H = h, Text = tx };
+        var gw = new List<OcrWord> {
+            wd(1, 0.1, "BILL", 0.03), wd(1, 0.2, "OF", 0.03), wd(1, 0.3, "LADING", 0.03),
+            wd(2, 0.1, "ACME", 0.02), wd(2, 0.2, "LOGISTICS", 0.02), wd(2, 0.3, "CO.,LTD", 0.02),
+            wd(3, 0.1, "the", 0.008), wd(3, 0.2, "shipping", 0.008), wd(3, 0.3, "company", 0.008),
+            wd(4, 0.1, "NORTH", 0.012), wd(4, 0.2, "SEA", 0.012), wd(4, 0.3, "SHIPPING", 0.012), wd(4, 0.4, "LINE", 0.012)
+        };
+        var gi = TemplateEditor.GuessIssuers(gw, 3);
+        Check("GuessIssuers: เรียงตามขนาดตัวอักษร ตัดข้อความตัวพิมพ์เล็ก/ไม่ใช่ชื่อบริษัท", gi.Count == 2 && gi[0] == "ACME LOGISTICS CO.,LTD" && gi[1] == "NORTH SEA SHIPPING LINE", string.Join("|", gi));
+        var apage = new OcrPage { PixelWidth = 1000, PixelHeight = 1414 };
+        Func<int, double, double, string, OcrWord> aw = (ln, x, y, tx) => new OcrWord { LineNo = ln, X = x, Y = y, W = 0.08, H = 0.012, Text = tx };
+        apage.Words.AddRange(new[] { aw(1, 0.05, 0.43, "CAAU8035430"), aw(1, 0.15, 0.43, "/"), aw(1, 0.2, 0.43, "40'HQ"), aw(2, 0.05, 0.46, "111"), aw(2, 0.15, 0.46, "SHUNHO") });
+        var at = TemplateEditor.NewEmpty("area-test", "Area");
+        TemplateEditor.SetArea(at, "CTNNO", 0.045, 0.425, 0.09, 0.02);
+        var ap = BLParser.Parse(apage, at);
+        Check("Area: ได้เฉพาะคำในกรอบ (ไม่ติดทั้งบรรทัด/บรรทัดอื่น)", ap.ByLabel.ContainsKey("CTNNO") && ap.ByLabel["CTNNO"].Count == 1 && ap.ByLabel["CTNNO"][0].Text == "CAAU8035430",
+              ap.ByLabel.ContainsKey("CTNNO") ? string.Join("|", ap.ByLabel["CTNNO"].Select(c => c.Text)) : "ไม่มีช่อง");
+        TemplateEditor.SetArea(at, "CTNNO", 0.045, 0.425, 0.3, 0.06);
+        var ap2 = BLParser.Parse(apage, at);
+        Check("Area: กรอบใหญ่ขึ้นได้ทั้งสองบรรทัด", ap2.ByLabel["CTNNO"].Count == 2 && ap2.ByLabel["CTNNO"].Sum(c => c.Words.Count) == 5);
+        Check("Area: เขียน/อ่าน JSON แล้วคงเดิม", Template.FromJson(at.ToJson()).Areas["CTNNO"].W == 0.3 && TemplateEditor.RemoveArea(at, "CTNNO") && !at.ToJson().Contains("\"areas\""));
         var badCopy = TemplateEditor.SetCopy(t, "finalportname = DELPORTNAME\r\nไม่มีเครื่องหมาย\r\nNOSUCH = DELPORTNAME\r\nGW = GW");
         Check("SetCopy: รับคู่ที่ถูกต้อง (ตัวพิมพ์เล็กก็ได้) ปฏิเสธ 3 บรรทัดที่ใช้ไม่ได้", badCopy.Count == 3 && t.Copy.Count == 1 && t.Copy["FINALPORTNAME"] == "DELPORTNAME", string.Join("|", badCopy));
         var rtCopy = Template.FromJson(t.ToJson());

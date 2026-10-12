@@ -245,20 +245,37 @@ namespace BLScan
                 {
                     string name = Fields.Val(v, p + "NAME").Trim();
                     if (Fields.Val(v, p).Trim() != "" || name == "") continue;
-                    string code;
-                    if (!jobPorts.TryGetValue(name, out code))
+                    string code = "";
+                    // ค้น OPPORT ก่อน (ตารางรหัสท่ากลาง) — HBL อื่นในงานเดียวกันอาจมีชื่อ/รหัสท่าไม่ตรงกัน (เคยค้างจากการ scan ที่หารหัสไม่เจอ) จึงใช้เป็นตัวสำรองเท่านั้น
                     {
                         var cands = new List<string>();
-                        // ชื่อบนใบ B/L มักสั้นกว่าใน OPPORT ("BANGKOK" vs "BANGKOK, THAILAND") → ตรงเป๊ะ หรือขึ้นต้นด้วยชื่อ + ","
-                        using (var c = Cmd(cn, "SELECT DISTINCT PORTCODE FROM OPPORT WHERE PORTTYPE='SF' AND (UPPER(LTRIM(RTRIM(PORTNAME)))=UPPER(@n) OR PORTNAME LIKE @like ESCAPE '\\') ORDER BY PORTCODE"))
+                        // ค้นเป็นขั้น (PORTTYPE='SF' เสมอ) — ขั้นแรกที่เจอเท่านั้นที่ใช้ ถ้าขั้นนั้นมีหลายรหัสก็ไม่เดา ไม่ตกไปขั้นถัดไป
+                        //   1) ตรงกันเมื่อไม่นับเครื่องหมายวรรคตอน/ช่องว่าง ("SHEKOU, CHINA" = "SHEKOU CHINA" = "Shekou-China")
+                        //   2) ชื่อบนใบ B/L สั้นกว่าใน OPPORT โดยใน OPPORT คั่นด้วย "," ("BANGKOK" vs "BANGKOK, THAILAND")
+                        //   3) ชื่อบนใบ B/L เป็นคำนำของชื่อใน OPPORT เมื่อไม่นับวรรคตอน ("SHEKOU" vs "SHEKOU CHINA")
+                        string sq = System.Text.RegularExpressions.Regex.Replace(name.ToUpperInvariant(), "[^A-Z0-9]", "");
+                        const string SqCol = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(UPPER(PORTNAME),',',''),'.',''),'-',''),' ',''),'(',''),')',''),'/','')";
+                        var tiers = new List<string[]>();
+                        if (sq.Length >= 3) tiers.Add(new[] { SqCol + "=@sq", "" });
+                        tiers.Add(new[] { "PORTNAME LIKE @like ESCAPE '\\'", "" });
+                        if (sq.Length >= 4) tiers.Add(new[] { SqCol + " LIKE @sqlike", "" });
+                        foreach (var tier in tiers)
                         {
-                            c.Parameters.Add("@n", SqlDbType.VarChar, 150).Value = name;
-                            c.Parameters.Add("@like", SqlDbType.VarChar, 160).Value =
-                                name.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_").Replace("[", "\\[") + ",%";
-                            using (var r = c.ExecuteReader()) while (r.Read()) cands.Add(S(r, 0));
+                            using (var c = Cmd(cn, "SELECT DISTINCT PORTCODE FROM OPPORT WHERE PORTTYPE='SF' AND (" + tier[0] + ") ORDER BY PORTCODE"))
+                            {
+                                if (tier[0].Contains("@sq")) c.Parameters.Add("@sq", SqlDbType.VarChar, 150).Value = sq;
+                                if (tier[0].Contains("@like")) c.Parameters.Add("@like", SqlDbType.VarChar, 160).Value =
+                                    name.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_").Replace("[", "\\[") + ",%";
+                                if (tier[0].Contains("@sqlike")) c.Parameters.Add("@sqlike", SqlDbType.VarChar, 160).Value = sq + "%";
+                                using (var r = c.ExecuteReader()) while (r.Read()) cands.Add(S(r, 0));
+                            }
+                            if (cands.Count > 0) break;
                         }
                         var five = cands.Where(x => x.Length == 5).ToList();
                         code = cands.Count == 1 ? cands[0] : (five.Count == 1 ? five[0] : "");
+                        // HBL อื่นในงานเดียวกันใช้ได้เฉพาะ "ช่วยเลือก" เมื่อ OPPORT มีหลายรหัส และรหัสนั้นอยู่ในรายการนั้นด้วย (ข้อมูลรหัสของ HBL อื่นอาจผิดค้างอยู่ จึงไม่เชื่อถึงขั้นให้รหัสเองเมื่อ OPPORT ไม่มี)
+                        string jobCode;
+                        if (code == "" && cands.Count > 1 && jobPorts.TryGetValue(name, out jobCode) && cands.Contains(jobCode)) { code = jobCode; notes.Add("ท่า \"" + name + "\" มีหลายรหัสใน OPPORT — เลือก " + jobCode + " ตาม HBL อื่นของงานเดียวกัน"); }
                         if (code == "") notes.Add(cands.Count == 0 ? "ท่า \"" + name + "\" ไม่พบใน OPPORT" : "ท่า \"" + name + "\" มีหลายรหัส (" + string.Join(", ", cands) + ") — ไม่เดา กรุณาใส่เอง");
                     }
                     if (code != "") v[p] = code;
@@ -380,7 +397,7 @@ namespace BLScan
                     c.Parameters.Add("@d", SqlDbType.VarChar, 20).Value = docNo;
                     using (var r = c.ExecuteReader())
                     {
-                        if (!r.Read()) { r.Close(); tx.Rollback(); throw new InvalidOperationException("ไม่พบ DOCNO " + docNo + " ใน SFHBL — ต้องสร้าง record รอไว้ก่อน (โปรแกรมนี้ไม่ INSERT SFHBL)"); }
+                        if (!r.Read()) { r.Close(); tx.Rollback(); throw new InvalidOperationException("ไม่พบ HB/L Ref " + docNo + " ในระบบ — ต้องสร้าง record รอไว้ก่อน (โปรแกรมนี้ไม่สร้าง HB/L ใหม่)"); }
                         for (int i = 0; i < hblCols.Count; i++) cur[hblCols[i]] = Fmt(r.GetValue(i));
                     }
                 }
@@ -412,7 +429,7 @@ namespace BLScan
                     cmd.Parameters.Add("@DOCNO", SqlDbType.VarChar, 20).Value = docNo;
                     cmd.CommandText = "UPDATE SFHBL SET " + string.Join(", ", sets) + " WHERE DOCNO=@DOCNO";
                     int n = cmd.ExecuteNonQuery();
-                    if (n != 1) { tx.Rollback(); throw new InvalidOperationException("UPDATE SFHBL กระทบ " + n + " แถว (ต้องเป็น 1) — ยกเลิก"); }
+                    if (n != 1) { tx.Rollback(); throw new InvalidOperationException("การแก้ไข HB/L กระทบ " + n + " รายการ (ต้องเป็น 1) — ยกเลิก"); }
                 }
 
                 // ---- SFMARK ----
@@ -426,6 +443,7 @@ namespace BLScan
                 Action<string, string> m = (col, key) => { string s = Fields.Val(scan, key).Trim(); if (s != "") mark[col] = Fields.Val(scan, key); };
                 m("MARKDESC", "MARKDESC"); m("GOODS", "GOODS"); m("UNITCODE", "UNITCODE"); m("PKGUNIT", "PKGUNIT"); m("PKGQTY", "PKGQTY");
                 m("GW", "GW"); m("CBM", "CBM"); m("PKGWORD", "PKGWORD"); m("CONSIGNEENAME", "CONSIGNEENAME");
+                m("CTNLIST", "CTNLIST");          // SFMARK.CTNLIST (text) ได้ค่าเดียวกับ SFHBL.CTNLIST
                 string master = Fields.Val(cur, "MASTERNO").Trim();
                 if (master != "") mark["NEWHBLNO"] = master;
 
@@ -436,7 +454,7 @@ namespace BLScan
                         c.Parameters.Add("@d", SqlDbType.VarChar, 20).Value = docNo;
                         detId = Convert.ToInt32(c.ExecuteScalar());
                     }
-                    res.MarkAction = "UPDATE SFMARK DETID " + detId + (rows > 1 ? " (แถวแรก จากทั้งหมด " + rows + " แถว)" : "");
+                    res.MarkAction = "แก้ไขรายการสินค้า (รายการแรก" + (rows > 1 ? " จากทั้งหมด " + rows + " รายการ" : "") + ")";
                     var cmd = Cmd(cn, "", tx);
                     var sets = new List<string>();
                     foreach (var kv in mark)
@@ -453,11 +471,11 @@ namespace BLScan
                     cmd.CommandText = "UPDATE SFMARK SET " + string.Join(", ", sets) + " WHERE DETID=@DETID AND HBLREF=@HBLREF";
                     cmd.Parameters.Add("@HBLREF", SqlDbType.VarChar, 20).Value = docNo;
                     int n = cmd.ExecuteNonQuery();
-                    if (n != 1) { tx.Rollback(); throw new InvalidOperationException("UPDATE SFMARK กระทบ " + n + " แถว (ต้องเป็น 1) — ยกเลิก"); }
+                    if (n != 1) { tx.Rollback(); throw new InvalidOperationException("การแก้ไขรายการสินค้ากระทบ " + n + " รายการ (ต้องเป็น 1) — ยกเลิก"); }
                 }
                 else
                 {
-                    res.MarkAction = "INSERT SFMARK ใหม่ 1 แถว";
+                    res.MarkAction = "สร้างรายการสินค้าใหม่ 1 รายการ";
                     var vals = new Dictionary<string, object>();
                     vals["LOCK"] = lockVal; vals["JOBNO"] = jobNo; vals["MARKSTAT"] = ""; vals["HBLREF"] = docNo;
                     vals["DOCTYPE"] = Fields.Val(cur, "DOCTYPE") == "" ? "Direct" : Fields.Val(cur, "DOCTYPE");
@@ -482,25 +500,25 @@ namespace BLScan
                         // INSERT ที่ไม่เพิ่มแถว (WHERE 1=0) — ตรวจชื่อคอลัมน์/ชนิดข้อมูลได้ แต่ไม่ใช้เลข identity (rollback ไม่คืนเลข DETID)
                         cmd.CommandText = "INSERT INTO SFMARK (" + cols + ") SELECT " + args + " WHERE 1=0";
                         cmd.ExecuteNonQuery();
-                        res.MarkAction = "INSERT SFMARK ใหม่ 1 แถว (dry run ตรวจ SQL แบบไม่เพิ่มแถว — DETID ไม่ถูกใช้)";
+                        res.MarkAction = "สร้างรายการสินค้าใหม่ 1 รายการ (dry run ตรวจแบบไม่เพิ่มข้อมูล)";
                     }
                     else
                     {
                         cmd.CommandText = "INSERT INTO SFMARK (" + cols + ") VALUES (" + args + "); SELECT CAST(SCOPE_IDENTITY() AS int)";
                         int newId = Convert.ToInt32(cmd.ExecuteScalar());
-                        res.MarkAction = "INSERT SFMARK ใหม่ 1 แถว DETID " + newId;
+                        res.MarkAction = "สร้างรายการสินค้าใหม่ 1 รายการ";
                     }
                 }
 
                 if (dryRun)
                 {
                     tx.Rollback();
-                    res.Message = "DRY RUN ผ่าน — SFHBL เปลี่ยน " + res.HblChanges.Count + " ช่อง, " + res.MarkAction + " แล้ว ROLLBACK (ไม่มีข้อมูลเปลี่ยนใน DB)";
+                    res.Message = "DRY RUN ผ่าน — HB/L เปลี่ยน " + res.HblChanges.Count + " ช่อง, " + res.MarkAction + " แล้ว ROLLBACK (ไม่มีข้อมูลเปลี่ยนใน DB)";
                 }
                 else
                 {
                     tx.Commit();
-                    res.Message = "บันทึกแล้ว: SFHBL.DOCNO=" + docNo + " (" + res.HblChanges.Count + " ช่อง) + " + res.MarkAction;
+                    res.Message = "บันทึกแล้ว: HB/L Ref=" + docNo + " (" + res.HblChanges.Count + " ช่อง) + " + res.MarkAction;
                 }
                 return res;
             }
@@ -520,7 +538,7 @@ namespace BLScan
             Func<string, object> txt = s => s.Trim();
             switch (col)
             {
-                case "MARKDESC": case "GOODS": case "PKGWORD": return Tuple.Create(SqlDbType.Text, 0, memo);
+                case "MARKDESC": case "GOODS": case "PKGWORD": case "CTNLIST": return Tuple.Create(SqlDbType.Text, 0, memo);
                 case "GW": case "CBM": case "PKGQTY": return Tuple.Create(SqlDbType.Decimal, 0, dec);
                 case "PKGUNIT": return Tuple.Create(SqlDbType.VarChar, 20, txt);
                 case "UNITCODE": return Tuple.Create(SqlDbType.VarChar, 5, txt);

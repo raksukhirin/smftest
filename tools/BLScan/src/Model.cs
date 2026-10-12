@@ -23,7 +23,7 @@ namespace BLScan
             Group = group; Key = key; Table = table; Caption = caption; Kind = kind; MaxLen = maxLen; System = system;
         }
 
-        public string DbName { get { return string.IsNullOrEmpty(Table) ? "(preview)" : Table + "." + Key; } }
+        public string DbName { get { return string.IsNullOrEmpty(Table) ? "(preview)" : Key; } }      // แสดงเฉพาะชื่อช่อง ไม่แสดงชื่อ Table
     }
 
     public static class Fields
@@ -56,16 +56,16 @@ namespace BLScan
             new FieldDef(GBL, "FREIGHTTEXT", "", "Freight & Charges (ข้อความ)", FieldKind.Text, 0),
             new FieldDef(GBL, "SIGNEDBY", "", "Signed for the Carrier", FieldKind.Text, 0),
 
-            new FieldDef(GParty, "SHIPPER", "SFHBL", "Shipper code (SMBUSINESS)", FieldKind.Text, 20),
+            new FieldDef(GParty, "SHIPPER", "SFHBL", "Shipper code", FieldKind.Text, 20),
             new FieldDef(GParty, "SHIPPERNAME", "SFHBL", "Shipper", FieldKind.Text, 150),
             new FieldDef(GParty, "S_ADD", "SFHBL", "Shipper (ชื่อ+ที่อยู่)", FieldKind.Memo, 0),
-            new FieldDef(GParty, "CONSIGNEE", "SFHBL", "Consignee code (SMBUSINESS)", FieldKind.Text, 20),
+            new FieldDef(GParty, "CONSIGNEE", "SFHBL", "Consignee code", FieldKind.Text, 20),
             new FieldDef(GParty, "CONSIGNEENAME", "SFHBL", "Consignee", FieldKind.Text, 150),
             new FieldDef(GParty, "C_ADD", "SFHBL", "Consignee (ชื่อ+ที่อยู่)", FieldKind.Memo, 0),
-            new FieldDef(GParty, "NOTIFY", "SFHBL", "Notify code (SMBUSINESS)", FieldKind.Text, 20),
+            new FieldDef(GParty, "NOTIFY", "SFHBL", "Notify code", FieldKind.Text, 20),
             new FieldDef(GParty, "NOTIFYNAME", "SFHBL", "Notify Party", FieldKind.Text, 150),
             new FieldDef(GParty, "N_ADD", "SFHBL", "Notify (ชื่อ+ที่อยู่)", FieldKind.Memo, 0),
-            new FieldDef(GParty, "AGENTNO", "SFHBL", "Agent code (SMBUSINESS)", FieldKind.Text, 20),
+            new FieldDef(GParty, "AGENTNO", "SFHBL", "Agent code", FieldKind.Text, 20),
             new FieldDef(GParty, "AGENTNAME", "SFHBL", "Delivery Agent", FieldKind.Text, 150),
             new FieldDef(GParty, "A_ADD", "SFHBL", "Agent (ที่อยู่)", FieldKind.Memo, 0),
 
@@ -88,10 +88,11 @@ namespace BLScan
             new FieldDef(GCargo, "GOODS", "SFMARK", "Description of Goods", FieldKind.Memo, 0),
             new FieldDef(GCargo, "PKGQTY", "SFHBL", "No. of Packages", FieldKind.Decimal, 0),
             new FieldDef(GCargo, "PKGUNIT", "SFHBL", "Package Unit", FieldKind.Text, 20),
-            new FieldDef(GCargo, "UNITCODE", "SFMARK", "Unit Code (SMUOM)", FieldKind.Text, 5),
+            new FieldDef(GCargo, "UNITCODE", "SFMARK", "Unit Code", FieldKind.Text, 5),
             new FieldDef(GCargo, "GW", "SFHBL", "Gross Weight (KGS)", FieldKind.Decimal, 0),
             new FieldDef(GCargo, "CBM", "SFHBL", "Measurement (CBM)", FieldKind.Decimal, 0),
             new FieldDef(GCargo, "PKGWORD", "SFHBL", "Total Packages (in words)", FieldKind.Memo, 0),
+            new FieldDef(GCargo, "CTNLIST", "SFHBL", "Container List", FieldKind.Memo, 0),
         };
 
         public static FieldDef Get(string key) { return All.First(f => f.Key == key); }
@@ -134,7 +135,7 @@ namespace BLScan
                 if (f.Kind == FieldKind.Int && !int.TryParse(s.Trim(), out iv)) errs.Add(f.DbName + ": ต้องเป็นจำนวนเต็ม \"" + s + "\"");
                 if (f.MaxLen > 0 && s.Length > f.MaxLen) errs.Add(f.DbName + ": ยาว " + s.Length + " ตัวอักษร เกินขนาดคอลัมน์ " + f.MaxLen);
             }
-            if (string.IsNullOrWhiteSpace(Val(v, "DOCNO"))) errs.Add("ยังไม่ได้ใส่ SFHBL.DOCNO");
+            if (string.IsNullOrWhiteSpace(Val(v, "DOCNO"))) errs.Add("ยังไม่ได้ใส่เลข HB/L Ref");
             if (string.IsNullOrWhiteSpace(Val(v, "JOBNO"))) errs.Add("ยังไม่มี JOBNO");
             if (Val(v, "DOCNO").Contains(" ")) errs.Add("DOCNO ห้ามมีช่องว่าง");
             if (string.IsNullOrWhiteSpace(Val(v, "DOCNO"))) errs.Add("DOCNO ว่าง — ห้าม update");

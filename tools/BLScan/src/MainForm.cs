@@ -69,7 +69,7 @@ namespace BLScan
         // ------------------------------------------------------------ UI
         void BuildUi()
         {
-            Text = "BLScan — Scan House B/L แล้ว Update เข้า SMF (SFHBL / SFMARK)";
+            Text = "BLScan — Scan House B/L แล้ว Update เข้า SMF";
             Font = new Font("Tahoma", 9f);
             Width = 1440; Height = 920;
             StartPosition = FormStartPosition.CenterScreen;
@@ -86,7 +86,7 @@ namespace BLScan
             btnBrowse = new Button { Text = "เลือกไฟล์…", Width = 90, Height = 26 };
             btnBrowse.Click += (s, e) => BrowseFile();
             row1.Controls.Add(btnBrowse);
-            row1.Controls.Add(new Label { Text = "SFHBL.DOCNO:", AutoSize = true, Margin = new Padding(16, 7, 4, 0), Font = new Font(Font, FontStyle.Bold) });
+            row1.Controls.Add(new Label { Text = "HB/L Ref:", AutoSize = true, Margin = new Padding(16, 7, 4, 0), Font = new Font(Font, FontStyle.Bold) });
             txtDocNo = new TextBox { Width = 170, CharacterCasing = CharacterCasing.Upper, MaxLength = 20, Font = new Font("Consolas", 10.5f) };
             txtDocNo.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; docTimer.Stop(); CheckDocNoAsync(); } };
             txtDocNo.Leave += (s, e) => { docTimer.Stop(); CheckDocNoAsync(); };
@@ -304,7 +304,7 @@ namespace BLScan
         static string StartHtml()
         {
             return "<html><body style=\"font-family:Tahoma;color:#666;padding:30px\"><h3>House B/L preview</h3>" +
-                   "1) เลือกไฟล์ B/L (PDF / JPG / PNG / TIF)<br>2) ใส่ SFHBL.DOCNO ของ record ที่สร้างรอไว้<br>" +
+                   "1) เลือกไฟล์ B/L (PDF / JPG / PNG / TIF)<br>2) ใส่เลข HB/L Ref ของ record ที่สร้างรอไว้<br>" +
                    "3) กด ▶ Scan — ดูแท็บ \"สิ่งที่จะเปลี่ยนใน DB\" ตรวจ/แก้ค่า แล้วกด Update DB</body></html>";
         }
 
@@ -407,17 +407,17 @@ namespace BLScan
                 isReference = refDoc != "" && refDoc == doc;
                 if (ex == null)
                 {
-                    lblDocState.Text = "✗ ไม่พบ DOCNO นี้ใน SFHBL — ต้องสร้าง record รอไว้ก่อน (โปรแกรมนี้ไม่ INSERT SFHBL)";
+                    lblDocState.Text = "✗ ไม่พบ HB/L Ref นี้ในระบบ — ต้องสร้าง record รอไว้ก่อน (โปรแกรมนี้ไม่สร้าง HB/L ใหม่)";
                     lblDocState.ForeColor = Color.Firebrick;
                     foreach (var k in new[] { "JOBNO", "MASTERNO", "JOBCLASS", "JOBTYPE", "LOADTYPE", "DOCDATE" }) SetValue(k, "");
-                    Log("DOCNO " + doc + " ไม่มีใน SFHBL");
+                    Log("HB/L Ref " + doc + " ไม่มีในระบบ");
                 }
                 else
                 {
                     loadingValues = true;
                     foreach (var k in new[] { "JOBNO", "MASTERNO", "JOBCLASS", "JOBTYPE", "LOADTYPE", "DOCDATE" }) SetValue(k, Fields.Val(ex.V, k));
                     loadingValues = false;
-                    string sfmark = ex.MarkRows == 0 ? "SFMARK ยังไม่มี → จะ INSERT" : ex.MarkRows == 1 ? "SFMARK มี 1 แถว → จะ UPDATE" : "SFMARK มี " + ex.MarkRows + " แถว → UPDATE แถวแรก (DETID " + ex.MarkDetId + ")";
+                    string sfmark = ex.MarkRows == 0 ? "รายการสินค้ายังไม่มี → จะสร้างใหม่" : ex.MarkRows == 1 ? "รายการสินค้า 1 รายการ → จะแก้ไข" : "รายการสินค้า " + ex.MarkRows + " รายการ → แก้ไขรายการแรก";
                     lblDocState.Text = (isReference ? "ℹ record อ้างอิง — ใช้เทียบอย่างเดียว ไม่เขียน · " : "✓ พบ record · ") +
                                        "งาน " + ex.JobNo + " (" + ex.JobClass + ") · " + sfmark;
                     lblDocState.ForeColor = isReference ? Color.SteelBlue : Color.DarkGreen;
@@ -469,12 +469,12 @@ namespace BLScan
             lvCompare.Items.Clear();
             if (existing == null)
             {
-                lvCompare.Items.Add(new ListViewItem(new[] { "(ไม่พบ DOCNO ใน SFHBL — ไม่มีข้อมูลให้เทียบ)" }));
+                lvCompare.Items.Add(new ListViewItem(new[] { "(ไม่พบ HB/L Ref ในระบบ — ไม่มีข้อมูลให้เทียบ)" }));
                 tabCompare.Text = "สิ่งที่จะเปลี่ยนใน DB";
                 return;
             }
             var plan = Fields.Plan(CurrentValues(), existing.V);
-            string act = existing.MarkRows == 0 ? "SFMARK: INSERT ใหม่ 1 แถว" : "SFMARK: UPDATE DETID " + existing.MarkDetId + (existing.MarkRows > 1 ? " (แถวแรก จาก " + existing.MarkRows + " แถว)" : "");
+            string act = existing.MarkRows == 0 ? "รายการสินค้า: สร้างใหม่ 1 รายการ" : "รายการสินค้า: แก้ไขรายการแรก" + (existing.MarkRows > 1 ? " (จาก " + existing.MarkRows + " รายการ)" : "");
             lvCompare.Items.Add(new ListViewItem(new[] { act, "", "", "", "" }) { BackColor = Color.FromArgb(231, 245, 255) });
             int chg = 0, same = 0, skip = 0;
             foreach (var c in plan)
@@ -656,7 +656,7 @@ namespace BLScan
         string StatusText()
         {
             if (updated) return "บันทึกแล้ว " + DateTime.Now.ToString("HH:mm");
-            if (existing == null) return NormDoc() != "" ? "ไม่พบ DOCNO ใน SFHBL" : "PREVIEW — ยังไม่ระบุ DOCNO";
+            if (existing == null) return NormDoc() != "" ? "ไม่พบ HB/L Ref ในระบบ" : "PREVIEW — ยังไม่ระบุ DOCNO";
             if (isReference) return "record อ้างอิง — เทียบอย่างเดียว";
             return "PREVIEW — ยังไม่ได้บันทึก";
         }
@@ -705,7 +705,7 @@ namespace BLScan
             if (doc == "") { MessageBox.Show(this, "DOCNO ว่าง — ห้าม update", "BLScan", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
 
             // ตรวจ DOCNO ใน DB ใหม่อีกครั้งก่อน update (ไม่เชื่อค่าที่จำไว้ — record อาจถูกลบ/เปลี่ยนไปแล้ว)
-            SetBusy(true, "ตรวจ DOCNO " + doc + " ใน SFHBL…");
+            SetBusy(true, "ตรวจ HB/L Ref " + doc + " …");
             ExistingDoc fresh;
             try { fresh = await Task.Run(() => _db.LoadExisting(doc)); }
             catch (Exception ex)
@@ -720,10 +720,10 @@ namespace BLScan
             existing = fresh;
             if (fresh == null)
             {
-                lblDocState.Text = "✗ ไม่พบ DOCNO นี้ใน SFHBL — ตรวจเลข DOCNO อีกครั้ง"; lblDocState.ForeColor = Color.Firebrick;
+                lblDocState.Text = "✗ ไม่พบ HB/L Ref นี้ในระบบ — ตรวจเลขอีกครั้ง"; lblDocState.ForeColor = Color.Firebrick;
                 FillCompare(); UpdateButtons();
-                Log("ก่อน update: ไม่พบ DOCNO " + doc + " ใน SFHBL — ยกเลิก");
-                MessageBox.Show(this, "ไม่พบ DOCNO \"" + doc + "\" ใน SFHBL\r\n\r\nโปรแกรมนี้ update record ที่สร้างรอไว้แล้วเท่านั้น (ไม่สร้าง SFHBL ใหม่)\r\nกรุณาตรวจเลข DOCNO หรือสร้าง record ก่อน", "ไม่พบ DOCNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                Log("ก่อน update: ไม่พบ HB/L Ref " + doc + " ในระบบ — ยกเลิก");
+                MessageBox.Show(this, "ไม่พบ HB/L Ref \"" + doc + "\" ในระบบ\r\n\r\nโปรแกรมนี้ update record ที่สร้างรอไว้แล้วเท่านั้น (ไม่สร้าง HB/L ใหม่)\r\nกรุณาตรวจเลข DOCNO หรือสร้าง record ก่อน", "ไม่พบ DOCNO", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
             FillCompare();
@@ -731,7 +731,7 @@ namespace BLScan
             var v = CurrentValues();
             v["DOCNO"] = doc;
             var errs = Fields.Validate(v);
-            if (existing == null) errs.Insert(0, "ไม่พบ DOCNO " + doc + " ใน SFHBL");
+            if (existing == null) errs.Insert(0, "ไม่พบ HB/L Ref " + doc + " ในระบบ");
             if (isReference && !dryRun) errs.Insert(0, "DOCNO " + doc + " เป็น record อ้างอิง (ReferenceDocNo ใน ini) — ใช้เทียบเท่านั้น ไม่ให้เขียน");
             if (errs.Count > 0)
             {
@@ -740,19 +740,15 @@ namespace BLScan
             }
             var plan = Fields.Plan(v, existing.V);
             int chg = plan.Count(c => c.Differs);
-            string act = existing.MarkRows == 0 ? "INSERT SFMARK 1 แถว" : "UPDATE SFMARK DETID " + existing.MarkDetId;
             if (!dryRun)
             {
                 var warn = new List<string>();
-                foreach (var w in Fields.Warnings(v)) warn.Add("⚠ ค่าผิดปกติ: " + w);
-                if (Fields.Val(v, "BLNO").Trim() == "") warn.Add("⚠ ยังไม่มี B/L No.");
+                foreach (var w in Fields.Warnings(v)) warn.Add("Error - ค่าผิดปกติ: " + w);
+                if (Fields.Val(v, "BLNO").Trim() == "") warn.Add("Error - ยังไม่มี B/L No.");
                 foreach (var k in new[] { "RECPORT", "LOADPORT", "DISPORT", "DELPORT" })
-                    if (Fields.Val(v, k).Trim() == "" && Fields.Val(v, k + "NAME").Trim() != "") warn.Add("⚠ ยังไม่มีรหัส " + k + " (" + Fields.Val(v, k + "NAME") + ") — จะไม่ถูกเขียน");
-                string msg = "แก้ข้อมูลใน SMF DB\r\n\r\n" +
-                             "SFHBL.DOCNO = " + doc + "  (งาน " + existing.JobNo + ")\r\n" +
-                             "SFHBL: UPDATE " + chg + " ช่อง\r\n" + act + "\r\n\r\n" +
-                             "ช่องที่ scan ได้ค่าว่างจะไม่ถูกแตะ · ไม่มี DELETE" +
-                             (warn.Count > 0 ? "\r\n\r\n" + string.Join("\r\n", warn) : "") + "\r\n\r\nยืนยัน Update?";
+                    if (Fields.Val(v, k).Trim() == "" && Fields.Val(v, k + "NAME").Trim() != "") warn.Add("Error - ยังไม่มีรหัส " + k + " (" + Fields.Val(v, k + "NAME") + ") — จะไม่ถูกเขียน");
+                string msg = "HB/L Ref : " + doc +
+                             (warn.Count > 0 ? "\r\n\r\n" + string.Join("\r\n", warn) : "") + "\r\n\r\nยืนยันการ Update ?";
                 if (MessageBox.Show(this, msg, "ยืนยัน Update", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.Yes) return;
             }
 
@@ -762,9 +758,9 @@ namespace BLScan
             {
                 var r = await Task.Run(() => _db.Update(v, doc, user, dryRun));
                 Log(r.Message);
-                foreach (var c in r.HblChanges) Log("  SFHBL " + c);
+                foreach (var c in r.HblChanges) Log("  " + c);
                 Log("  " + r.MarkAction);
-                foreach (var c in r.MarkChanges) Log("  SFMARK " + c);
+                foreach (var c in r.MarkChanges) Log("  " + c);
                 if (!dryRun)
                 {
                     updated = true;
@@ -791,9 +787,9 @@ namespace BLScan
             {
                 string p = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "BLScan.log");
                 var sb = new StringBuilder();
-                sb.AppendFormat("{0:yyyy-MM-dd HH:mm:ss}\t{1}\tDOCNO={2}\tFILE={3}\tUSER={4}\t{5}\r\n", DateTime.Now, _db.ServerName, Fields.Val(v, "DOCNO"), sourceFile, Environment.UserName, r.MarkAction);
-                foreach (var c in r.HblChanges) sb.Append("    SFHBL ").AppendLine(c);
-                foreach (var c in r.MarkChanges) sb.Append("    SFMARK ").AppendLine(c);
+                sb.AppendFormat("{0:yyyy-MM-dd HH:mm:ss}\t{1}\tHBLREF={2}\tFILE={3}\tUSER={4}\t{5}\r\n", DateTime.Now, _db.ServerName, Fields.Val(v, "DOCNO"), sourceFile, Environment.UserName, r.MarkAction);
+                foreach (var c in r.HblChanges) sb.Append("    ").AppendLine(c);
+                foreach (var c in r.MarkChanges) sb.Append("    ").AppendLine(c);
                 File.AppendAllText(p, sb.ToString(), Encoding.UTF8);
             }
             catch (Exception ex) { Log("เขียน BLScan.log ไม่ได้: " + ex.Message); }

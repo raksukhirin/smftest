@@ -483,6 +483,27 @@ namespace BLScan
                 }
             }
 
+            // ---------- กรอบดึงค่าของ Template: ค่าของช่อง = เฉพาะคำ OCR ที่อยู่ในกรอบ (ชนะการจับด้วยหัวช่องเสมอ) ----------
+            foreach (var kv in tpl.Areas)
+            {
+                var adef = defs.FirstOrDefault(d => string.Equals(d.Key, kv.Key, StringComparison.OrdinalIgnoreCase));
+                if (adef == null) continue;
+                var z = kv.Value;
+                var inside = page.Words.Where(w => w.Text.Trim().Length > 0 && w.CX >= z.X && w.CX <= z.X + z.W && w.CY >= z.Y && w.CY <= z.Y + z.H).ToList();
+                var lab = res.Labels.FirstOrDefault(l => l.Key == adef.Key);
+                if (lab == null) { lab = new FoundLabel { Def = adef, X = z.X, R = z.X + Math.Max(0.04, z.W), Y = z.Y - 0.002, B = z.Y - 0.001, Synthetic = true }; res.Labels.Add(lab); }
+                foreach (var oc in res.AllChunks.Where(c => c.Owner != null && c.Owner.Key == adef.Key)) oc.Owner = null;
+                var fresh = new List<Chunk>();
+                foreach (var g in inside.GroupBy(w => w.LineNo).OrderBy(g => g.Min(w => w.Y)))
+                {
+                    var ws = g.OrderBy(w => w.X).ToList();
+                    fresh.Add(new Chunk { Words = ws, Text = string.Join(" ", ws.Select(w => w.Text)), Owner = lab });
+                }
+                if (fresh.Count > 0) { res.ByLabel[adef.Key] = fresh; res.AllChunks.AddRange(fresh); }
+                else res.ByLabel.Remove(adef.Key);
+                res.Notes.Add("ช่อง " + adef.Key + " ใช้ค่าจากกรอบดึงข้อมูลของ Template");
+            }
+
             Extract(res, tpl, defs);
             return res;
         }
@@ -840,6 +861,16 @@ namespace BLScan
             string flat = Regex.Replace(all, @"\s+", " ");
 
             v["MARKDESC"] = Memo(LinesOf(r, "MARKS"));
+
+            // Container List: กรอบดึงค่า CTNNO ของ Template = ตามที่ scan ได้; ไม่งั้นเก็บเฉพาะเลขตู้มาตรฐาน (4 ตัวอักษรลงท้าย U/J/Z + เลข 7 หลัก) จากช่อง Container/Marks บรรทัดละเลข
+            if (tpl.Areas.ContainsKey("CTNNO")) v["CTNLIST"] = Memo(LinesOf(r, "CTNNO"));
+            else
+            {
+                var ctnText = string.Join("\n", LinesOf(r, "CTNNO").Concat(LinesOf(r, "MARKS")));
+                var ctns = Regex.Matches(ctnText.ToUpperInvariant(), @"\b[A-Z]{3}[UJZ]\s?\d{7}\b").Cast<Match>()
+                                .Select(m => Regex.Replace(m.Value, @"\s+", "")).Distinct().ToList();
+                if (ctns.Count > 0) v["CTNLIST"] = string.Join("\n", ctns);
+            }
             var goods = LinesOf(r, "DESC");
             goods.RemoveAll(l => Regex.IsMatch(l, @"^(CY|CFS|DOOR)\s*[/-]\s*(CY|CFS|DOOR)$", RegexOptions.IgnoreCase));    // บรรทัด "CFS-CFS" ไม่ใช่รายละเอียดสินค้า
             foreach (var kv in tpl.Terms) goods.RemoveAll(l => string.Equals(l.Trim(), kv.Key, StringComparison.OrdinalIgnoreCase));

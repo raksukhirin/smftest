@@ -1,7 +1,7 @@
 // Template Designer — เครื่องมือของ admin สร้าง/แก้ Template ของผู้ออก B/L โดยดูผลบนภาพจริง
 //   1) เปิดใบตัวอย่าง (PDF/รูป) → OCR → ตัวอ่านใช้ Template ที่กำลังแก้ทันที แล้วแสดงกรอบซ้อนบนภาพ
 //   2) แท็บ "หัวช่อง / โซน": เลือกช่อง → เพิ่มคำเรียกหัวช่อง (เลือกคำบนภาพ) หรือลากกรอบเป็นโซนสำรอง
-//   3) แท็บ "ผลลัพธ์ & เฉลย": พิมพ์ค่าที่ถูกต้อง เห็นผ่าน/ไม่ผ่านทันที
+//   3) แท็บ "เตรียมลงฐานข้อมูล": พิมพ์ค่าที่ถูกต้อง เห็นผ่าน/ไม่ผ่านทันที
 //   4) แท็บ "ทั่วไป": คำระบุผู้ออก, ข้อความตัดทิ้ง, คำแปลง, รูปแบบวันที่
 //   5) แท็บ "ตัวอย่าง / ทดสอบ": บันทึกใบตัวอย่างพร้อมเฉลยไว้กับ Template แล้วทดสอบทุกใบก่อนบันทึก
 using System;
@@ -44,6 +44,22 @@ namespace BLScan
         ImageCanvas canvas;
         TabControl tabs;
 
+        // ---- แท็บ "แก้ปัญหา" (ทางลัดสำหรับผู้ใช้ทั่วไป: เห็นเฉพาะช่องที่ยังว่าง พร้อมปุ่มแก้ทีละขั้น)
+        TabPage tabFix;
+        ListView lvIssues;
+        Label lblFixSummary, lblFixIssuer, lblFixSel;
+        Panel panelFix;
+        ComboBox cmbCopyFrom;
+        bool zoneFromFix;
+        readonly HashSet<string> ignored = new HashSet<string>();
+        static readonly string[] CoreKeys = { "BLNO", "SHIPPER", "CONSIGNEE", "NOTIFY", "RECEIPT", "VESSEL", "LOADPORT", "DISPORT", "DELIVERY", "FINALDEST", "MARKS", "PKGS", "DESC", "GW", "MEAS", "ONBOARD", "ISSUE" };
+
+        class Choice
+        {
+            public string Text, Out;
+            public override string ToString() { return Text; }
+        }
+
         ListView lvLabels;
         Label lblSelKey, lblDefault, lblZone;
         TextBox txtSyn, txtCaptured;
@@ -74,7 +90,7 @@ namespace BLScan
             { "LOADPORT", "LOADPORTNAME" }, { "DISPORT", "DISPORTNAME" }, { "DELIVERY", "DELPORTNAME" }, { "FINALDEST", "FINALPORTNAME" },
             { "NOOFORIG", "BLCOPY" }, { "MARKS", "MARKDESC" }, { "PKGS", "PKGQTY, PKGUNIT" }, { "DESC", "GOODS" },
             { "GW", "GW" }, { "MEAS", "CBM" }, { "ONBOARD", "ETD" }, { "TOTALPKG", "PKGWORD" }, { "PAYABLEAT", "PAYABLEAT" },
-            { "FREIGHT", "BILLDESC" }, { "AGENT", "AGENTNAME, A_ADD" }, { "ISSUE", "ISSUPLACE, ISSUDATE" }, { "SIGNED", "SIGNEDBY" },
+            { "FREIGHT", "BILLDESC" }, { "CTNNO", "CTNLIST" }, { "AGENT", "AGENTNAME, A_ADD" }, { "ISSUE", "ISSUPLACE, ISSUDATE" }, { "SIGNED", "SIGNEDBY" },
         };
 
         static readonly Color[] Palette =
@@ -132,7 +148,7 @@ namespace BLScan
             btnReocr.Click += (s, e) => { if (samplePath != "") LoadSampleAsync(samplePath, (int)numPage.Value, null); };
             row2.Controls.Add(btnReocr);
             rbWords = new RadioButton { Text = "เลือกคำ", AutoSize = true, Checked = true, Margin = new Padding(16, 5, 0, 0) };
-            rbZone = new RadioButton { Text = "ลากโซน", AutoSize = true, Margin = new Padding(6, 5, 0, 0) };
+            rbZone = new RadioButton { Text = "ลากกรอบดึงค่า", AutoSize = true, Margin = new Padding(6, 5, 0, 0) };
             rbWords.CheckedChanged += (s, e) => canvas.Mode = rbZone.Checked ? CanvasMode.Zone : CanvasMode.Words;
             rbZone.CheckedChanged += (s, e) => canvas.Mode = rbZone.Checked ? CanvasMode.Zone : CanvasMode.Words;
             chkWordBoxes = new CheckBox { Text = "กรอบคำ OCR", AutoSize = true, Checked = true, Margin = new Padding(14, 5, 0, 0) };
@@ -159,12 +175,14 @@ namespace BLScan
             split.Panel1.Controls.Add(host);
 
             tabs = new TabControl { Dock = DockStyle.Fill };
-            var tabLabels = new TabPage("หัวช่อง / โซน");
-            var tabResults = new TabPage("ผลลัพธ์ & เฉลย");
-            var tabGeneral = new TabPage("ทั่วไป");
+            tabFix = new TabPage("แก้ปัญหา");
+            var tabLabels = new TabPage("ขั้นสูง: หัวช่อง/โซน");
+            var tabResults = new TabPage("เตรียมลงฐานข้อมูล");
+            var tabGeneral = new TabPage("ตั้งค่า Template");
             var tabSamples = new TabPage("ตัวอย่าง / ทดสอบ");
-            tabs.TabPages.AddRange(new[] { tabLabels, tabResults, tabGeneral, tabSamples });
+            tabs.TabPages.AddRange(new[] { tabFix, tabResults, tabSamples, tabGeneral, tabLabels });
             split.Panel2.Controls.Add(tabs);
+            BuildFixTab(tabFix);
             BuildLabelsTab(tabLabels);
             BuildResultsTab(tabResults);
             BuildGeneralTab(tabGeneral);
@@ -177,10 +195,228 @@ namespace BLScan
             Load += (s, e) => { split.SplitterDistance = (int)(ClientSize.Width * 0.60); };
         }
 
+        // ================================================================ แท็บ "แก้ปัญหา"
+        /// <summary>
+        /// ตารางที่เลือกแถวแล้ว "สีไม่หาย": ListView ปกติเปลี่ยนแถวที่เลือกเป็นสีเทาจาง/ไม่เห็นเมื่อตารางไม่ได้โฟกัส
+        /// (เช่น เมาส์ไปอยู่บนภาพ) — วาดเองให้แถวที่เลือกเป็นสีน้ำเงินตลอด
+        /// </summary>
+        static void StableSelection(ListView lv)
+        {
+            lv.OwnerDraw = true;
+            typeof(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(lv, true, null);
+            lv.DrawColumnHeader += (s, e) => e.DrawDefault = true;
+            lv.DrawItem += (s, e) => { };
+            lv.DrawSubItem += (s, e) =>
+            {
+                bool sel = e.Item.Selected;
+                Color back = sel ? SystemColors.Highlight : lv.BackColor;
+                Color fore = sel ? SystemColors.HighlightText : e.Item.ForeColor;
+                using (var b = new SolidBrush(back)) e.Graphics.FillRectangle(b, e.Bounds);
+                using (var pen = new Pen(Color.FromArgb(225, 225, 225)))
+                {
+                    e.Graphics.DrawLine(pen, e.Bounds.Right - 1, e.Bounds.Top, e.Bounds.Right - 1, e.Bounds.Bottom);
+                    e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+                }
+                TextRenderer.DrawText(e.Graphics, e.SubItem.Text, lv.Font, Rectangle.Inflate(e.Bounds, -3, 0), fore,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
+            };
+        }
+
+        /// <summary>ตำแหน่งเลื่อนของ ListView (แถวบนสุดที่เห็น) — เก็บก่อนล้างรายการ แล้วคืนหลังเติมใหม่ ไม่ให้เด้งกลับขึ้นบน</summary>
+        static int TopIndex(ListView lv) { return lv.TopItem == null ? 0 : lv.TopItem.Index; }
+        static void RestoreTop(ListView lv, int top)
+        {
+            if (lv.Items.Count == 0) return;
+            try { lv.TopItem = lv.Items[Math.Min(top, lv.Items.Count - 1)]; } catch { }
+        }
+
+        static string PrimaryOut(string labelKey)
+        {
+            string o;
+            return OutKeys.TryGetValue(labelKey, out o) ? o.Split(',')[0].Trim() : "";
+        }
+
+        static string CaptionOf(string key) { string c; return Captions.TryGetValue(key, out c) ? c : key; }
+
+        static string Short(string s, int n) { s = (s ?? "").Replace("\r\n", " ").Replace("\n", " ").Trim(); return s.Length > n ? s.Substring(0, n) + "…" : s; }
+
+        void BuildFixTab(TabPage tab)
+        {
+            var p = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
+            int y = 8;
+            lblFixSummary = new Label { Left = 8, Top = y, Width = 520, Height = 22, Font = new Font(Font, FontStyle.Bold), Text = "เปิดใบตัวอย่างก่อน (ปุ่ม \"เปิดใบตัวอย่าง…\" ด้านบน)" };
+            y += 28;
+            lblFixIssuer = new Label { Left = 8, Top = y + 5, Width = 330, Height = 20, ForeColor = Color.DimGray };
+            var bGuess = new Button { Text = "เดาคำระบุผู้ออกจากหัวฟอร์ม ▾", Left = 340, Top = y, Width = 190, Height = 28 };
+            bGuess.Click += (s, e) => GuessIssuer(bGuess);
+            y += 38;
+            p.Controls.Add(new Label { Left = 8, Top = y, Width = 520, Text = "ช่องหลักที่ยังว่าง — คลิกแถวที่อยากแก้ แล้วทำตามข้อด้านล่าง" });
+            y += 22;
+            lvIssues = new ListView { Left = 8, Top = y, Width = 520, Height = 150, View = View.Details, FullRowSelect = true, GridLines = true, HideSelection = false, MultiSelect = false };
+            lvIssues.Columns.Add("ช่อง", 230); lvIssues.Columns.Add("สถานะ", 270);
+            StableSelection(lvIssues);
+            lvIssues.SelectedIndexChanged += (s, e) => OnIssueSelected();
+            y += 158;
+
+            panelFix = new Panel { Left = 8, Top = y, Width = 520, Height = 270, Visible = false, BorderStyle = BorderStyle.FixedSingle };
+            int py = 6;
+            lblFixSel = new Label { Left = 8, Top = py, Width = 500, Height = 22, Font = new Font(Font, FontStyle.Bold) };
+            py += 28;
+            panelFix.Controls.Add(new Label { Left = 8, Top = py, Width = 500, Text = "① ช่องนี้ใช้ค่าเดียวกับช่องอื่น (เช่น Final Destination = Place of Delivery)" });
+            py += 22;
+            cmbCopyFrom = new ComboBox { Left = 8, Top = py, Width = 380, DropDownStyle = ComboBoxStyle.DropDownList };
+            var bCopy = new Button { Text = "ใช้ค่านี้", Left = 396, Top = py - 1, Width = 100, Height = 26 };
+            bCopy.Click += (s, e) => FixCopy();
+            py += 36;
+            var l2 = new Label { Left = 8, Top = py, Width = 500, Height = 36, Text = "② ในใบมีหัวช่องแต่โปรแกรมไม่รู้จักคำ: โหมด \"เลือกคำ\" → คลิกคำหัวช่องบนภาพ → กดปุ่มข้างล่าง" };
+            py += 38;
+            var bLabel = new Button { Text = "ใช้คำที่เลือกบนภาพเป็นหัวช่อง", Left = 8, Top = py, Width = 250, Height = 28 };
+            bLabel.Click += (s, e) => FixLabel();
+            py += 36;
+            var l3 = new Label { Left = 8, Top = py, Width = 500, Height = 36, Text = "③ ดึงเฉพาะบริเวณที่ต้องการ: ลากกรอบรอบ \"ค่า\" บนภาพ — ได้เฉพาะคำที่อยู่ในกรอบ (ใช้ได้เมื่อฟอร์มวางตำแหน่งเดิมทุกใบ)" };
+            py += 38;
+            var bZone = new Button { Text = "เริ่มลากกรอบดึงค่า", Left = 8, Top = py, Width = 250, Height = 28 };
+            bZone.Click += (s, e) => FixZone();
+            var bSkip = new Button { Text = "ข้าม (ใบนี้ไม่มีข้อมูลนี้)", Left = 268, Top = py, Width = 228, Height = 28 };
+            bSkip.Click += (s, e) => FixSkip();
+            panelFix.Controls.AddRange(new Control[] { lblFixSel, cmbCopyFrom, bCopy, l2, bLabel, l3, bZone, bSkip });
+
+            p.Controls.AddRange(new Control[] { lblFixSummary, lblFixIssuer, bGuess, lvIssues, panelFix });
+            tab.Controls.Add(p);
+        }
+
+        void RefreshIssues()
+        {
+            if (lvIssues == null) return;
+            string keep = lvIssues.SelectedItems.Count == 0 ? null : (string)lvIssues.SelectedItems[0].Tag;
+            refreshingIssues = true;
+            int topIssue = TopIndex(lvIssues);
+            lvIssues.BeginUpdate();
+            lvIssues.Items.Clear();
+            int total = 0, ok = 0;
+            if (parse != null && working != null)
+            {
+                foreach (var k in CoreKeys)
+                {
+                    if (ignored.Contains(k)) continue;
+                    total++;
+                    string outKey = PrimaryOut(k);
+                    if (Fields.Val(values, outKey).Trim() != "") { ok++; continue; }
+                    bool found = parse.Labels.Any(l => l.Key == k && !l.Synthetic);
+                    var it = new ListViewItem(new[] { CaptionOf(k) + "  (" + outKey + ")", found ? "พบหัวช่องในใบ แต่ไม่มีค่า" : "ไม่พบหัวช่องในใบนี้" }) { Tag = k, ForeColor = Color.Firebrick };
+                    if (k == keep) it.Selected = true;
+                    lvIssues.Items.Add(it);
+                }
+                int bad = total - ok;
+                lblFixSummary.Text = bad == 0 ? "✓ ช่องหลักอ่านได้ครบ (" + ok + " ช่อง)" : "อ่านได้ " + ok + " จาก " + total + " ช่องหลัก — ยังว่าง " + bad + " ช่อง";
+                lblFixSummary.ForeColor = bad == 0 ? Color.DarkGreen : Color.DarkOrange;
+                tabFix.Text = bad == 0 ? "แก้ปัญหา ✓" : "แก้ปัญหา (" + bad + ")";
+            }
+            else
+            {
+                lblFixSummary.Text = "เปิดใบตัวอย่างก่อน (ปุ่ม \"เปิดใบตัวอย่าง…\" ด้านบน)";
+                lblFixSummary.ForeColor = Color.DimGray;
+                tabFix.Text = "แก้ปัญหา";
+            }
+            RestoreTop(lvIssues, topIssue);
+            lvIssues.EndUpdate();
+            refreshingIssues = false;
+            if (lvIssues.SelectedItems.Count == 0) panelFix.Visible = false;
+            else ShowFixPanel((string)lvIssues.SelectedItems[0].Tag);
+        }
+
+        bool refreshingIssues;
+
+        void OnIssueSelected()
+        {
+            if (refreshingIssues) return;
+            if (lvIssues.SelectedItems.Count == 0) { panelFix.Visible = false; return; }
+            string key = (string)lvIssues.SelectedItems[0].Tag;
+            ShowFixPanel(key);
+            SelectLabel(key);
+            rbWords.Checked = true;
+        }
+
+        void ShowFixPanel(string key)
+        {
+            panelFix.Visible = true;
+            lblFixSel.Text = CaptionOf(key) + "  (" + PrimaryOut(key) + ")";
+            cmbCopyFrom.Items.Clear();
+            foreach (var k in CoreKeys)
+            {
+                if (k == key) continue;
+                string o = PrimaryOut(k), v = Fields.Val(values, o).Trim();
+                if (v != "") cmbCopyFrom.Items.Add(new Choice { Text = CaptionOf(k) + "  —  " + Short(v, 40), Out = o });
+            }
+            if (cmbCopyFrom.Items.Count > 0) cmbCopyFrom.SelectedIndex = 0;
+        }
+
+        string FixKey() { return lvIssues.SelectedItems.Count == 0 ? null : (string)lvIssues.SelectedItems[0].Tag; }
+
+        void FixCopy()
+        {
+            string key = FixKey(); var ch = cmbCopyFrom.SelectedItem as Choice;
+            if (working == null || key == null || ch == null) { SetStatus("เลือกช่องที่จะคัดลอกจากก่อน", true); return; }
+            ApplyGeneralEdits(false);
+            working.Copy[PrimaryOut(key)] = ch.Out;
+            dirty = true;
+            ShowGeneral();
+            Reparse();
+            SetStatus(CaptionOf(key) + " จะใช้ค่าเดียวกับ " + ch.Out + " เมื่ออ่านไม่ได้ (กติกานี้อยู่ในแท็บ ตั้งค่า Template)");
+        }
+
+        void FixLabel()
+        {
+            string key = FixKey();
+            if (key == null) return;
+            SelectLabel(key);
+            AddSelectionAsLabel();
+        }
+
+        void FixZone()
+        {
+            string key = FixKey();
+            if (key == null) return;
+            SelectLabel(key);
+            zoneFromFix = true;
+            rbZone.Checked = true;
+            SetStatus("ลากกรอบบนภาพรอบ \"ค่า\" ของ " + CaptionOf(key) + " (ไม่รวมหัวช่อง) แล้วปล่อยเมาส์ — จะได้เฉพาะคำในกรอบ");
+        }
+
+        void FixSkip()
+        {
+            string key = FixKey();
+            if (key == null) return;
+            ignored.Add(key);
+            RefreshIssues();
+            SetStatus("ข้าม " + CaptionOf(key) + " (เฉพาะใบนี้ ไม่ได้เปลี่ยน Template)");
+        }
+
+        void GuessIssuer(Control anchor)
+        {
+            if (working == null) { SetStatus("เลือกหรือสร้าง Template ก่อน", true); return; }
+            if (ocr == null) { SetStatus("เปิดใบตัวอย่างก่อน แล้วค่อยเดาชื่อผู้ออก", true); return; }
+            var list = TemplateEditor.GuessIssuers(ocr.Words, 4);
+            if (list.Count == 0) { SetStatus("เดาไม่ได้ — พิมพ์ชื่อบริษัทที่หัวฟอร์มเองในแท็บ ตั้งค่า Template ช่อง คำระบุผู้ออก", true); return; }
+            var menu = new ContextMenuStrip();
+            foreach (var name in list)
+            {
+                string n = name;
+                menu.Items.Add("ใช้ \"" + n + "\"", null, (s, e) =>
+                {
+                    ApplyGeneralEdits(false);
+                    if (TemplateEditor.AddIdentify(working, n)) { dirty = true; ShowGeneral(); UpdateIdentifyState(); SetStatus("เพิ่มคำระบุผู้ออก \"" + n + "\" แล้ว"); }
+                    else SetStatus("มีคำนี้อยู่แล้ว", true);
+                });
+            }
+            menu.Show(anchor, new Point(0, anchor.Height));
+        }
+
         void BuildLabelsTab(TabPage tab)
         {
             lvLabels = new ListView { Dock = DockStyle.Top, Height = 330, View = View.Details, FullRowSelect = true, GridLines = true, HideSelection = false, MultiSelect = false };
-            lvLabels.Columns.Add("ช่อง", 190); lvLabels.Columns.Add("หัวช่อง", 110); lvLabels.Columns.Add("ข้อความที่จับได้", 250); lvLabels.Columns.Add("ตัวแปรผลลัพธ์", 150);
+            lvLabels.Columns.Add("ช่องใน B/L", 190); lvLabels.Columns.Add("หัวช่อง", 100); lvLabels.Columns.Add("ค่าที่อ่านได้", 250); lvLabels.Columns.Add("ลงช่องฐานข้อมูล", 150);
+            StableSelection(lvLabels);
             lvLabels.SelectedIndexChanged += (s, e) => ShowLabelDetail();
             var detail = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
             int y = 8;
@@ -188,26 +424,29 @@ namespace BLScan
             y += 24;
             lblDefault = new Label { Left = 6, Top = y, Width = 520, Height = 32, ForeColor = Color.DimGray, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             y += 36;
-            detail.Controls.Add(new Label { Left = 6, Top = y, Width = 480, Text = "คำเรียกหัวช่องเพิ่มของ Template นี้ (บรรทัดละ 1 คำ — เลือกคำบนภาพแล้วกดปุ่มเพิ่มได้)" });
-            y += 20;
+            detail.Controls.Add(new Label { Left = 6, Top = y, Width = 520, Height = 74, ForeColor = Color.DimGray, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right,
+                Text = "สอนโปรแกรมให้รู้จัก \"ชื่อหัวช่อง\" อื่นของช่องนี้ (ใช้เมื่อใบเขียนหัวช่องเป็นคำที่โปรแกรมไม่รู้จัก — ไม่ใช่การเลือก \"ค่า\")\r\nวิธี 1: โหมด \"เลือกคำ\" → คลิกคำหัวช่องบนภาพ → กดปุ่มซ้าย\r\nวิธี 2: พิมพ์ชื่อหัวช่องในกล่องข้างล่าง (บรรทัดละ 1 ชื่อ) → กดปุ่มขวา" });
+            y += 78;
             txtSyn = new TextBox { Left = 6, Top = y, Width = 520, Height = 60, Multiline = true, ScrollBars = ScrollBars.Vertical, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             y += 66;
-            var bAdd = new Button { Text = "เพิ่มคำที่เลือกบนภาพเป็นหัวช่อง", Left = 6, Top = y, Width = 230, Height = 28 };
+            var bAdd = new Button { Text = "เพิ่มชื่อหัวช่อง จากคำที่คลิกบนภาพ", Left = 6, Top = y, Width = 250, Height = 28 };
             bAdd.Click += (s, e) => AddSelectionAsLabel();
-            var bApply = new Button { Text = "ใช้การแก้ไขในกล่อง", Left = 242, Top = y, Width = 150, Height = 28 };
+            var bApply = new Button { Text = "เพิ่มชื่อหัวช่อง จากที่พิมพ์ในกล่อง", Left = 262, Top = y, Width = 250, Height = 28 };
             bApply.Click += (s, e) => ApplySynonyms();
             y += 36;
             lblZone = new Label { Left = 6, Top = y, Width = 520, Height = 34, ForeColor = Color.DimGray, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             y += 36;
-            var bDelZone = new Button { Text = "ลบโซนของช่องนี้", Left = 6, Top = y, Width = 150, Height = 28 };
+            var bDelZone = new Button { Text = "ลบกรอบของช่องนี้", Left = 6, Top = y, Width = 150, Height = 28 };
             bDelZone.Click += (s, e) => DeleteZone();
             y += 36;
-            detail.Controls.Add(new Label { Left = 6, Top = y, Width = 480, Text = "ข้อความที่ตัวอ่านจับเข้าช่องนี้ตอนนี้" });
+            detail.Controls.Add(new Label { Left = 6, Top = y, Width = 480, Text = "ค่าที่โปรแกรมอ่านได้ตอนนี้" });
             y += 20;
             txtCaptured = new TextBox { Left = 6, Top = y, Width = 520, Height = 70, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BackColor = Color.White, Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right };
             detail.Controls.AddRange(new Control[] { lblSelKey, lblDefault, txtSyn, bAdd, bApply, lblZone, bDelZone, txtCaptured });
             tab.Controls.Add(detail);
             tab.Controls.Add(lvLabels);
+            tab.Controls.Add(new Label { Dock = DockStyle.Top, Height = 56, Padding = new Padding(6, 4, 6, 0), ForeColor = Color.DimGray,
+                Text = "หน้านี้สำหรับปรับละเอียด — ส่วนใหญ่ใช้แท็บ \"แก้ปัญหา\" ก็พอ\r\nหนึ่งแถว = หนึ่งช่องในใบ B/L  •  \"เจอ\" = หาหัวช่องเจอ  •  \"ไม่เจอ\" = ไม่พบ (บางทีใบก็ไม่มีช่องนี้จริง)" });
         }
 
         void BuildResultsTab(TabPage tab)
@@ -221,6 +460,8 @@ namespace BLScan
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colValue", HeaderText = "อ่านได้", ReadOnly = true, FillWeight = 34 });
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colExpect", HeaderText = "เฉลย (พิมพ์ค่าที่ถูกต้อง)", FillWeight = 34 });
             dgv.Columns.Add(new DataGridViewTextBoxColumn { Name = "colResult", HeaderText = "ผล", ReadOnly = true, FillWeight = 8 });
+            dgv.DefaultCellStyle.SelectionBackColor = SystemColors.Highlight;      // แถวที่เลือกเป็นสีน้ำเงินเสมอ แม้ตารางไม่ได้โฟกัส
+            dgv.DefaultCellStyle.SelectionForeColor = SystemColors.HighlightText;
             dgv.CellEndEdit += (s, e) => OnExpectEdited(e.RowIndex);
             var bottom = new Panel { Dock = DockStyle.Bottom, Height = 66 };
             var bCopy = new Button { Text = "คัดลอกค่าที่อ่านได้เป็นเฉลย", Left = 6, Top = 6, Width = 200, Height = 28 };
@@ -487,6 +728,7 @@ namespace BLScan
         public void ApplyOcr(OcrPage o, string path, int page, Dictionary<string, string> withExpect)
         {
             ocr = o; samplePath = path;
+            ignored.Clear();
             sampleLabel = Path.GetFileName(path) + (page > 1 || path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) ? " หน้า " + page : "");
             if (withExpect != null) expect = new Dictionary<string, string>(withExpect);
             canvas.Words = ocr.Words;
@@ -500,11 +742,12 @@ namespace BLScan
         // ================================================================ อ่านด้วย Template ที่กำลังแก้
         public void Reparse()
         {
-            if (working == null || ocr == null) { RefreshLabelsList(); RefreshResultsGrid(); UpdateOverlays(); UpdateIdentifyState(); return; }
+            if (working == null || ocr == null) { RefreshLabelsList(); RefreshResultsGrid(); RefreshIssues(); UpdateOverlays(); UpdateIdentifyState(); return; }
             parse = BLParser.Parse(ocr, working);
             values = Fields.FromParse(parse);
             RefreshLabelsList();
             RefreshResultsGrid();
+            RefreshIssues();
             UpdateOverlays();
             UpdateIdentifyState();
         }
@@ -516,6 +759,7 @@ namespace BLScan
             else if (working.Identify.Length == 0) { lblIdentifyState.Text = "⚠ ยังไม่มีคำระบุผู้ออก"; lblIdentifyState.ForeColor = Color.DarkOrange; }
             else if (working.Matches(ocr.RawText)) { lblIdentifyState.Text = "✓ ใบนี้ตรงกับ Template"; lblIdentifyState.ForeColor = Color.DarkGreen; }
             else { lblIdentifyState.Text = "✗ ไม่พบคำระบุผู้ออกในใบนี้"; lblIdentifyState.ForeColor = Color.Firebrick; }
+            if (lblFixIssuer != null) { lblFixIssuer.Text = "ผู้ออก: " + lblIdentifyState.Text; lblFixIssuer.ForeColor = lblIdentifyState.ForeColor; }
         }
 
         Color KeyColor(string key)
@@ -536,6 +780,9 @@ namespace BLScan
                     canvas.Overlays.Add(new CanvasOverlay { R = new RectangleF((float)l.X, (float)l.Y, (float)(l.R - l.X), (float)(l.B - l.Y)), Caption = "หัวช่อง " + l.Key, Color = Color.ForestGreen });
             }
             if (working != null)
+                foreach (var kv in working.Areas)
+                    canvas.Overlays.Add(new CanvasOverlay { R = new RectangleF((float)kv.Value.X, (float)kv.Value.Y, (float)kv.Value.W, (float)kv.Value.H), Caption = "กรอบ " + kv.Key, Color = Color.OrangeRed, Dashed = true });
+            if (working != null)
                 foreach (var kv in working.Zones)
                     canvas.Overlays.Add(new CanvasOverlay { R = new RectangleF((float)kv.Value.X, (float)kv.Value.Y, (float)kv.Value.W, (float)kv.Value.H), Caption = "โซน " + kv.Key, Color = Color.OrangeRed, Dashed = true });
             canvas.Invalidate();
@@ -550,6 +797,7 @@ namespace BLScan
         void RefreshLabelsList()
         {
             string keep = SelectedKey();
+            int topLabel = TopIndex(lvLabels);
             lvLabels.BeginUpdate();
             lvLabels.Items.Clear();
             foreach (var d in BLParser.Labels)
@@ -557,21 +805,27 @@ namespace BLScan
                 string cap;
                 if (!Captions.TryGetValue(d.Key, out cap)) cap = d.Key;
                 bool found = parse != null && parse.Labels.Any(l => l.Key == d.Key && !l.Synthetic);
-                bool zoned = working != null && working.Zones.ContainsKey(d.Key);
+                bool zoned = working != null && (working.Zones.ContainsKey(d.Key) || working.Areas.ContainsKey(d.Key));
                 bool synth = parse != null && parse.Labels.Any(l => l.Key == d.Key && l.Synthetic);
-                string state = found ? (zoned ? "พบ (มีโซนสำรอง)" : "พบ") : synth ? "ใช้โซน/อนุมาน" : zoned ? "โซนสำรอง" : (parse == null ? "-" : "ไม่พบ");
+                string state = found ? (zoned ? "เจอ (มีกรอบสำรอง)" : "เจอ") : synth ? "ใช้กรอบ/เดา" : zoned ? "ใช้กรอบสำรอง" : (parse == null ? "-" : "ไม่เจอ");
                 string captured = "";
                 List<Chunk> cs;
                 if (parse != null && parse.ByLabel.TryGetValue(d.Key, out cs))
                     captured = string.Join(" | ", cs.OrderBy(c => c.Y).ThenBy(c => c.X).Select(c => c.Text));
                 if (captured.Length > 90) captured = captured.Substring(0, 90) + "…";
                 string outKey; if (!OutKeys.TryGetValue(d.Key, out outKey)) outKey = "-";
+                // หัวช่องนี้ไม่เจอ แต่ช่องผลลัพธ์ได้ค่าแล้วจากทางอื่น (เช่น เที่ยวเรือมากับชื่อเรือในหัวช่อง Vessel/Voyage, หรือกติกาคัดลอก)
+                string pk = PrimaryOut(d.Key);
+                bool filledElsewhere = parse != null && !found && !synth && !zoned && pk != "" && Fields.Val(values, pk).Trim() != "";
+                if (filledElsewhere) { state = "ไม่เจอ แต่ได้ค่าแล้ว"; captured = "(จากทางอื่น) " + Short(Fields.Val(values, pk), 70); }
                 var it = new ListViewItem(new[] { d.Key + "  " + cap, state, captured, outKey }) { Tag = d.Key };
-                if (parse != null && !found && !synth && !zoned) it.ForeColor = Color.Firebrick;
+                if (filledElsewhere) it.ForeColor = Color.DimGray;
+                else if (parse != null && !found && !synth && !zoned) it.ForeColor = Color.Firebrick;
                 else if (parse != null && !found && (synth || zoned)) it.ForeColor = Color.DarkOrange;
                 if (d.Key == keep) it.Selected = true;
                 lvLabels.Items.Add(it);
             }
+            RestoreTop(lvLabels, topLabel);
             lvLabels.EndUpdate();
             ShowLabelDetail();
         }
@@ -583,13 +837,15 @@ namespace BLScan
             string cap; if (!Captions.TryGetValue(key, out cap)) cap = key;
             lblSelKey.Text = key + " — " + cap;
             var def = BLParser.Labels.First(d => d.Key == key);
-            lblDefault.Text = "คำเรียกมาตรฐาน: " + string.Join(" · ", def.Phrases);
+            lblDefault.Text = "โปรแกรมรู้จักหัวช่องนี้ด้วยคำว่า: " + string.Join(" · ", def.Phrases);
             string[] syn;
             txtSyn.Text = working.Labels.TryGetValue(key, out syn) ? string.Join("\r\n", syn) : "";
-            Zone z;
-            lblZone.Text = working.Zones.TryGetValue(key, out z)
-                ? "โซนสำรอง: x=" + z.X.ToString("0.###") + " y=" + z.Y.ToString("0.###") + " w=" + z.W.ToString("0.###") + " h=" + z.H.ToString("0.###") + "  (ใช้เมื่อ OCR อ่านหัวช่องนี้ไม่ออก)"
-                : "ยังไม่มีโซนสำรอง — สลับเป็นโหมด \"ลากโซน\" แล้วลากกรอบบนภาพ ให้ขอบบนของกรอบอยู่ตรงที่ข้อความของช่องนี้เริ่ม";
+            Zone z, ar;
+            lblZone.Text = working.Areas.TryGetValue(key, out ar)
+                ? "มีกรอบดึงค่าแล้ว: x=" + ar.X.ToString("0.###") + " y=" + ar.Y.ToString("0.###") + " w=" + ar.W.ToString("0.###") + " h=" + ar.H.ToString("0.###") + "  (ค่าของช่องนี้ = เฉพาะคำที่อยู่ในกรอบ ไม่ว่าหาหัวช่องเจอหรือไม่)"
+                : working.Zones.TryGetValue(key, out z)
+                ? "มีกรอบสำรองแล้ว: x=" + z.X.ToString("0.###") + " y=" + z.Y.ToString("0.###") + " w=" + z.W.ToString("0.###") + " h=" + z.H.ToString("0.###") + "  (ใช้เมื่อหาหัวช่องนี้ไม่เจอ)"
+                : "ยังไม่มีกรอบ — เลือกโหมด \"ลากกรอบดึงค่า\" แล้วลากกรอบรอบ \"ค่า\" ของช่องนี้บนภาพ (ได้เฉพาะคำที่อยู่ในกรอบ)";
             List<Chunk> cs;
             txtCaptured.Text = parse != null && parse.ByLabel.TryGetValue(key, out cs)
                 ? string.Join("\r\n", cs.OrderBy(c => c.Y).ThenBy(c => c.X).Select(c => c.Text)) : "(ไม่มี)";
@@ -622,17 +878,19 @@ namespace BLScan
             string key = SelectedKey();
             if (working == null) return;
             if (key == null) { SetStatus("เลือกช่องในรายการก่อนลากโซน", true); return; }
-            TemplateEditor.SetZone(working, key, r.X, r.Y, r.Width, r.Height);
+            TemplateEditor.SetArea(working, key, r.X, r.Y, r.Width, r.Height);
             dirty = true;
+            if (zoneFromFix) { zoneFromFix = false; rbWords.Checked = true; }      // ลากเสร็จจากแท็บแก้ปัญหา กลับเป็นโหมดเลือกคำ
             Reparse();
-            SetStatus("ตั้งโซนของ " + key + " แล้ว (" + r.X.ToString("0.###") + ", " + r.Y.ToString("0.###") + ")");
+            SetStatus("ตั้งกรอบดึงค่าของ " + key + " แล้ว — ดูช่อง \"ค่าที่โปรแกรมอ่านได้ตอนนี้\" ว่าได้เฉพาะคำในกรอบ");
         }
 
         void DeleteZone()
         {
             string key = SelectedKey();
             if (working == null || key == null) return;
-            if (TemplateEditor.RemoveZone(working, key)) { dirty = true; Reparse(); SetStatus("ลบโซนของ " + key + " แล้ว"); }
+            bool rz = TemplateEditor.RemoveZone(working, key), ra = TemplateEditor.RemoveArea(working, key);
+            if (rz || ra) { dirty = true; Reparse(); SetStatus("ลบกรอบของ " + key + " แล้ว"); }
         }
 
         void OnSelectionChanged()
@@ -641,7 +899,7 @@ namespace BLScan
             SetStatus(canvas.Selected.Count == 0 ? "" : "เลือก " + canvas.Selected.Count + " คำ: " + (t.Length > 80 ? t.Substring(0, 80) + "…" : t));
         }
 
-        // ================================================================ แท็บผลลัพธ์ & เฉลย
+        // ================================================================ แท็บเตรียมลงฐานข้อมูล
         List<FieldDef> OutputFields()
         {
             return Fields.All.Where(f => !f.System && f.Key != "DOCNO").ToList();
@@ -650,6 +908,8 @@ namespace BLScan
         void RefreshResultsGrid()
         {
             loadingUi = true;
+            string keepKey = dgv.CurrentRow == null ? null : (string)dgv.CurrentRow.Tag;
+            int firstRow = -1; try { firstRow = dgv.FirstDisplayedScrollingRowIndex; } catch { }
             dgv.Rows.Clear();
             foreach (var f in OutputFields())
             {
@@ -659,6 +919,14 @@ namespace BLScan
                 dgv.Rows[i].Tag = f.Key;
                 SetResultCell(dgv.Rows[i]);
             }
+            try
+            {
+                if (firstRow >= 0 && firstRow < dgv.Rows.Count) dgv.FirstDisplayedScrollingRowIndex = firstRow;
+                if (keepKey != null)
+                    foreach (DataGridViewRow r in dgv.Rows)
+                        if ((string)r.Tag == keepKey) { dgv.CurrentCell = r.Cells["colValue"]; r.Selected = true; break; }
+            }
+            catch { }
             loadingUi = false;
             UpdateSummary();
         }
@@ -800,7 +1068,7 @@ namespace BLScan
             string err = TemplateEditor.ValidateId(working.Id);
             if (err != "") { SetStatus("id ของ Template ไม่ถูกต้อง: " + err, true); return; }
             var ex = expect.Where(kv => !string.IsNullOrWhiteSpace(kv.Value)).ToDictionary(kv => kv.Key, kv => kv.Value);
-            if (ex.Count == 0) { MessageBox.Show(this, "ยังไม่มีเฉลย — พิมพ์ค่าที่ถูกต้องในแท็บ \"ผลลัพธ์ & เฉลย\" อย่างน้อย 1 ช่อง", "บันทึกตัวอย่าง", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+            if (ex.Count == 0) { MessageBox.Show(this, "ยังไม่มีเฉลย — พิมพ์ค่าที่ถูกต้องในแท็บ \"เตรียมลงฐานข้อมูล\" อย่างน้อย 1 ช่อง", "บันทึกตัวอย่าง", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
             try
             {
                 string dir = SamplesDir();

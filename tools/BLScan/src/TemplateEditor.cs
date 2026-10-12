@@ -69,6 +69,15 @@ namespace BLScan
 
         public static bool RemoveZone(Template t, string key) { return t.Zones.Remove(key); }
 
+        /// <summary>กรอบดึงค่า: ค่าของช่อง = เฉพาะคำ OCR ที่อยู่ในกรอบ</summary>
+        public static void SetArea(Template t, string key, double x, double y, double w, double h)
+        {
+            Func<double, double> c = v => Math.Max(0, Math.Min(1, Math.Round(v, 3)));
+            t.Areas[key] = new Zone { X = c(x), Y = c(y), W = c(w), H = c(h) };
+        }
+
+        public static bool RemoveArea(Template t, string key) { return t.Areas.Remove(key); }
+
         // ---------------- รายการข้อความ ----------------
         public static bool AddIdentify(Template t, string text)
         {
@@ -149,6 +158,32 @@ namespace BLScan
             return string.Join("\r\n", t.Terms.Select(kv => kv.Key + " => " + kv.Value));
         }
 
+        static readonly System.Text.RegularExpressions.Regex CompanyWord = new System.Text.RegularExpressions.Regex(
+            @"\b(LOGISTICS?|LINES?|SHIPPING|FORWARD(?:ING|ERS?)?|EXPRESS|FREIGHT|CARGO|TRANSPORT(?:ATION)?|MARINE|GLOBAL|SAILING|LTD|LIMITED|CO|INC|CORP|COMPANY)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        /// <summary>
+        /// เดาชื่อผู้ออก B/L จากตัวหนังสือบนหน้า: บรรทัดที่มีคำบอกบริษัท (LOGISTICS, LINE, LTD …) เรียงตามขนาดตัวอักษรใหญ่ไปเล็ก
+        /// (ชื่อบริษัทที่หัวฟอร์มมักตัวใหญ่สุด) คืนสูงสุด max รายการ — ผู้ใช้เป็นคนเลือก ไม่ใช่ตัดสินให้
+        /// </summary>
+        public static List<string> GuessIssuers(IEnumerable<OcrWord> words, int max)
+        {
+            var found = new List<KeyValuePair<double, string>>();
+            foreach (var line in words.GroupBy(w => w.LineNo))
+            {
+                string text = Collapse(string.Join(" ", line.OrderBy(w => w.X).Select(w => w.Text))).Trim(' ', '.', ',', ':', ';', '-', '|');
+                int letters = text.Count(char.IsLetter);
+                if (text.Length < 6 || text.Length > 60 || letters < 5 || !CompanyWord.IsMatch(text)) continue;
+                int upper = text.Count(char.IsUpper);
+                if (upper * 10 < letters * 6) continue;           // ข้อความธรรมดา/ตัวพิมพ์เล็กเป็นย่อหน้าเงื่อนไข ไม่ใช่ชื่อบริษัท
+                found.Add(new KeyValuePair<double, string>(line.Max(w => w.H), text));
+            }
+            var res = new List<string>();
+            foreach (var kv in found.OrderByDescending(x => x.Key))
+                if (!res.Any(r => string.Equals(r, kv.Value, StringComparison.OrdinalIgnoreCase)) && res.Count < max) res.Add(kv.Value);
+            return res;
+        }
+
         // ---------------- ข้อความจากคำที่เลือกบนภาพ ----------------
         /// <summary>ต่อคำที่เลือกตามลำดับการอ่าน (บนลงล่าง ซ้ายไปขวา) เป็นข้อความเดียว</summary>
         public static string TextOf(IEnumerable<OcrWord> words)
@@ -175,6 +210,8 @@ namespace BLScan
             if (t.Identify.Length == 0) warnings.Add("ยังไม่มีคำระบุผู้ออก (identify) — ระบบจะตรวจไม่ได้ว่าไฟล์เป็นฟอร์มของผู้ออกนี้จริงไหม");
             foreach (var kv in t.Zones)
                 if (kv.Value.W <= 0 || kv.Value.H <= 0) errors.Add("โซน " + kv.Key + " ขนาดเป็นศูนย์");
+            foreach (var kv in t.Areas)
+                if (kv.Value.W <= 0 || kv.Value.H <= 0) errors.Add("กรอบดึงค่า " + kv.Key + " ขนาดเป็นศูนย์");
             foreach (var kv in t.DateFormats)
                 try { DateTime.Now.ToString(kv, System.Globalization.CultureInfo.InvariantCulture); } catch { errors.Add("รูปแบบวันที่ไม่ถูกต้อง: " + kv); }
             return errors;

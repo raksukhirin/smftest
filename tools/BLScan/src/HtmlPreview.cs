@@ -87,7 +87,7 @@ table.bl td{border:1px solid #495057;vertical-align:top;padding:3px 6px 6px}
             sb.Append("</head><body>");
 
             string stCls = status.StartsWith("บันทึกแล้ว") ? "status ok" : (status.StartsWith("ไม่พบ DOCNO") ? "status bad" : "status");
-            sb.Append("<div class=\"bar\">SFHBL.DOCNO <b>" + H(Fields.Val(v, "DOCNO") == "" ? "(ยังไม่ระบุ)" : Fields.Val(v, "DOCNO")) + "</b>" +
+            sb.Append("<div class=\"bar\">HB/L Ref <b>" + H(Fields.Val(v, "DOCNO") == "" ? "(ยังไม่ระบุ)" : Fields.Val(v, "DOCNO")) + "</b>" +
                       " &nbsp;·&nbsp; JOB <b>" + H(Fields.Val(v, "JOBNO")) + "</b>" +
                       "<span class=\"" + stCls + "\">" + H(status) + "</span></div>");
 
@@ -133,6 +133,7 @@ table.bl td{border:1px solid #495057;vertical-align:top;padding:3px 6px 6px}
             sb.Append("<td class=\"num\"><div class=\"val\">" + F(v, "GW") + "</div></td>");
             sb.Append("<td class=\"num\"><div class=\"val\">" + F(v, "CBM") + "</div></td></tr>");
             sb.Append("<tr><td colspan=\"5\" style=\"height:auto\">" + Box("Total Number of Containers or Packages (in words)", F(v, "PKGWORD", true)) + "</td></tr>");
+            sb.Append("<tr><td colspan=\"5\" style=\"height:auto\">" + Box("Container No.", F(v, "CTNLIST", true)) + "</td></tr>");     // ตำแหน่งตามฟอร์ม Crystal: ใต้ PKGWORD ("CONTAINER NO: {CTNLIST}")
             sb.Append("</table>");
 
             // ท้ายฟอร์ม
