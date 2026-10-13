@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLScan ติดตั้ง</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1f2933; --muted:#5b6770; --line:#dfe3e8; --brand:#1b6ec2; --brand-ink:#fff; --code:#eef1f4; --warn:#fff6e0; --warn-line:#f0d9a0; --ok:#e6f6ea; --ok-line:#b9e0c3; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#14181c; --card:#1d2329; --ink:#e6e9ec; --muted:#9aa5ae; --line:#323b43; --brand:#5aa2ec; --brand-ink:#0c1620; --code:#272f36; --warn:#2b2616; --warn-line:#5b4a1c; --ok:#17291d; --ok-line:#2f5a3b; }
+  }
+  :root[data-theme="dark"] { --bg:#14181c; --card:#1d2329; --ink:#e6e9ec; --muted:#9aa5ae; --line:#323b43; --brand:#5aa2ec; --brand-ink:#0c1620; --code:#272f36; --warn:#2b2616; --warn-line:#5b4a1c; --ok:#17291d; --ok-line:#2f5a3b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI",Tahoma,"Leelawadee UI",sans-serif; line-height:1.65; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 56px; }
+  h1 { font-size:1.6rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0 0 20px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px; margin-top:16px; }
+  h2 { font-size:1.2rem; margin:0 0 8px; display:flex; gap:10px; align-items:center; }
+  h2 .n { display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--brand); color:var(--brand-ink); font-size:.95rem; flex:none; }
+  h3 { font-size:1.02rem; margin:14px 0 4px; }
+  ul, ol { margin:6px 0 6px 1.3em; padding:0; }
+  li { margin:3px 0; }
+  code, pre { font-family:Consolas,"Cascadia Mono",monospace; background:var(--code); border-radius:6px; }
+  code { padding:1px 6px; font-size:.92em; }
+  pre { padding:10px 12px; overflow-x:auto; margin:6px 0 10px; font-size:.9rem; white-space:pre-wrap; }
+  .note { background:var(--warn); border:1px solid var(--warn-line); border-radius:10px; padding:10px 14px; margin:10px 0; font-size:.95rem; }
+  .ok { background:var(--ok); border:1px solid var(--ok-line); border-radius:10px; padding:10px 14px; margin:10px 0; font-size:.95rem; }
+  table { width:100%; border-collapse:collapse; margin:6px 0; font-size:.95rem; }
+  th, td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  footer { color:var(--muted); font-size:.85rem; margin-top:22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>BLScan — คู่มือติดตั้ง</h1>
+  <p class="sub">โปรแกรมอ่านใบ House B/L (PDF หรือรูป) แล้วส่งข้อมูลเข้า SMF — อ่านเอกสารนี้ก่อนใช้งานครั้งแรก</p>
+
+  <section>
+    <h2><span class="n">1</span>ไฟล์ที่ได้รับ</h2>
+    <table>
+      <tr><th>ไฟล์</th><th>หน้าที่</th></tr>
+      <tr><td><code>BLScan.exe</code></td><td>โปรแกรม (ไม่ต้องติดตั้ง วางไว้โฟลเดอร์ใดก็ได้ แล้วดับเบิลคลิก)</td></tr>
+      <tr><td><code>templates\</code></td><td>แบบ (Template) ของใบ B/L แต่ละผู้ออก ต้องวางอยู่ข้าง <code>BLScan.exe</code> ห้ามเปลี่ยนชื่อโฟลเดอร์</td></tr>
+      <tr><td><code>Install-Guide.html</code></td><td>เอกสารนี้</td></tr>
+    </table>
+    <div class="note">ไฟล์ <code>BLScan.ini</code> จะถูกสร้างอัตโนมัติเมื่อบันทึกค่าในขั้นตอนที่ 3 ไม่ต้องคัดลอกมาจากเครื่องอื่น (คัดลอกมาก็ใช้ไม่ได้ เพราะรหัสผ่านที่เก็บไว้ผูกกับเครื่องที่ตั้งค่า)</div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>ตรวจความพร้อมของเครื่อง</h2>
+    <ul>
+      <li><strong>Windows 10 หรือ 11</strong> (โปรแกรมใช้ตัวอ่านข้อความ OCR และตัวเปิด PDF ที่มากับ Windows)</li>
+      <li><strong>.NET Framework 4.x</strong> — มากับ Windows อยู่แล้ว ไม่ต้องติดตั้งเพิ่ม</li>
+      <li><strong>ภาษา OCR ภาษาอังกฤษ (English United States)</strong> — ดูวิธีตรวจและติดตั้งด้านล่าง</li>
+      <li>เครื่องต่อเครือข่ายถึงเซิร์ฟเวอร์ฐานข้อมูล SMF ได้</li>
+    </ul>
+
+    <h3>วิธีตรวจว่ามีภาษา OCR ภาษาอังกฤษหรือยัง</h3>
+    <p><strong>วิธี ก — ใน Settings (Windows 11)</strong></p>
+    <ol>
+      <li>เปิด <strong>Settings → Time &amp; language → Language &amp; region</strong></li>
+      <li>ในรายการ Preferred languages หา <strong>English (United States)</strong> ถ้าไม่มี กด <strong>Add a language</strong> แล้วเลือกเพิ่ม</li>
+      <li>กดจุดสามจุดข้างชื่อภาษา → <strong>Language options</strong></li>
+      <li>ในรายการ Language features ต้องมี <strong>Optical character recognition</strong> และขึ้นว่า Installed ถ้ายังไม่มี ให้กดติดตั้งตรงนั้น แล้วรอจนเสร็จ</li>
+    </ol>
+    <p>Windows 10: <strong>Settings → Time &amp; Language → Language</strong> เลือก English (United States) → Options แล้วดูหัวข้อ Language pack features ในแนวเดียวกัน</p>
+
+    <p><strong>วิธี ข — ใช้ PowerShell</strong> (คลิกขวาที่ PowerShell → Run as administrator)</p>
+    <pre>Get-WindowsCapability -Online | Where-Object Name -like 'Language.OCR*en-US*'</pre>
+    <p>ถ้าสถานะ (State) เป็น <code>Installed</code> แปลว่าพร้อมใช้งาน ถ้าเป็น <code>NotPresent</code> ให้ติดตั้งด้วยคำสั่งนี้ (ต้องต่ออินเทอร์เน็ต)</p>
+    <pre>Add-WindowsCapability -Online -Name "Language.OCR~~~en-US~~~0.0.1.0"</pre>
+
+    <div class="note">ถ้าไม่ได้ติดตั้ง ตอนกด Scan โปรแกรมจะแจ้งว่า <strong>"Windows OCR ไม่มีภาษา en-US — ติดตั้ง language pack ใน Settings &gt; Time &amp; Language"</strong> ให้ทำตามวิธีด้านบน แล้วปิดและเปิดโปรแกรมใหม่</div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>ตั้งค่าการเชื่อมต่อฐานข้อมูล (ทำครั้งเดียว)</h2>
+    <ol>
+      <li>ดับเบิลคลิก <code>BLScan.exe</code> ที่แถบล่างจะขึ้นว่า "DB: ยังไม่ได้ตั้งค่า"</li>
+      <li>กดปุ่ม <strong>ตั้งค่า DB…</strong> แล้วกรอก Server, ฐานข้อมูล, User และ Password ตามที่ผู้ดูแลระบบของคุณให้มา (หรือติ๊ก <strong>ใช้ Windows Authentication</strong> ถ้าใช้บัญชี Windows เชื่อมต่อ)</li>
+      <li>กด <strong>ทดสอบเชื่อมต่อ</strong> แล้วกด <strong>บันทึก</strong></li>
+      <li>เมื่อตั้งค่าถูกต้อง แถบล่างจะขึ้น <strong>"DB: เชื่อมต่อแล้ว ✓"</strong></li>
+    </ol>
+    <div class="ok">รหัสผ่านถูกเก็บในไฟล์ <code>BLScan.ini</code> แบบเข้ารหัสและผูกกับเครื่องนี้ ถ้านำโปรแกรมไปติดตั้งเครื่องอื่น ต้องตั้งค่าใหม่ในเครื่องนั้นเอง</div>
+    <div class="note">หน้าจอและไฟล์ log ของโปรแกรมจะไม่แสดงรายละเอียดเซิร์ฟเวอร์ (แสดงเฉพาะชื่อเซิร์ฟเวอร์เท่านั้น)</div>
+  </section>
+
+  <section>
+    <h2><span class="n">4</span>ทดลองใช้งาน</h2>
+    <ol>
+      <li>ใน SMF เพิ่ม House B/L ว่าง ได้เลข <strong>HB/L Ref</strong></li>
+      <li>ใน BLScan กด <strong>เลือกไฟล์…</strong> เลือกใบ B/L แล้วเลือก <strong>Template</strong> ให้ตรงกับผู้ออกใบ</li>
+      <li>กด <strong>▶ Scan</strong> ตรวจผลที่แสดง แล้วใส่เลข HB/L Ref</li>
+      <li>กด <strong>Update DB</strong> → ตรวจข้อความยืนยัน → <strong>Yes</strong></li>
+    </ol>
+    <p>โปรแกรมเขียนเฉพาะ House B/L ที่สร้างรอไว้ด้วยเลข HB/L Ref นั้น ไม่สร้าง House B/L ใหม่ ช่องที่ Scan ไม่ได้ค่าจะไม่ทับค่าเดิม และไม่มีการลบข้อมูล</p>
+  </section>
+
+  <section>
+    <h2><span class="n">5</span>Template และผู้ดูแล (Admin)</h2>
+    <ul>
+      <li>Template ที่แจกมากับโปรแกรมอยู่ในโฟลเดอร์ <code>templates</code> ข้าง <code>BLScan.exe</code></li>
+      <li>ถ้าหลายเครื่องต้องใช้ Template ชุดเดียวกัน ตั้งโฟลเดอร์กลางได้ที่ <strong>ตั้งค่า DB… → แท็บ Template / Admin</strong></li>
+      <li>ผู้ใช้ทั่วไปเลือกใช้ Template ได้อย่างเดียว การเพิ่ม/แก้/ลบ Template ใช้ <strong>Template Designer</strong> เฉพาะผู้ดูแล (ผู้ใช้ <code>admin</code>) ครั้งแรกให้ตั้งรหัสผ่าน admin ของตนเองในแท็บ Template / Admin (อย่างน้อย 8 ตัวอักษร)</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="n">6</span>แก้ปัญหาเบื้องต้น</h2>
+    <table>
+      <tr><th>อาการ</th><th>วิธีแก้</th></tr>
+      <tr><td>"Windows OCR ไม่มีภาษา en-US …"</td><td>ติดตั้งภาษา OCR ตามข้อ 2 แล้วเปิดโปรแกรมใหม่</td></tr>
+      <tr><td>แถบล่างขึ้น "DB: ยังไม่ได้ตั้งค่า" หรือ "เชื่อมต่อไม่ได้ ✗"</td><td>ตรวจค่าใน "ตั้งค่า DB…" และตรวจว่าเครื่องต่อเครือข่ายถึงเซิร์ฟเวอร์ได้</td></tr>
+      <tr><td>"ไม่พบ HB/L Ref นี้ในระบบ"</td><td>ตรวจเลขที่พิมพ์ และตรวจว่าสร้าง House B/L ว่างใน SMF แล้ว</td></tr>
+      <tr><td>Template ไม่ขึ้นหรือรายการว่าง</td><td>ตรวจว่าโฟลเดอร์ <code>templates</code> อยู่ข้าง <code>BLScan.exe</code> และมีไฟล์ <code>.json</code> อยู่ข้างใน</td></tr>
+      <tr><td>อ่านใบแล้วบางช่องว่างหรือผิด</td><td>ตรวจว่าเลือก Template ตรงผู้ออกใบ และแก้ค่าในช่องด้านขวาก่อนกด Update DB</td></tr>
+    </table>
+  </section>
+
+  <footer>BLScan • เอกสารนี้แนบมากับโปรแกรม</footer>
+</div>
+</body>
+</html>

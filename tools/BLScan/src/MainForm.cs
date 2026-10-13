@@ -74,9 +74,11 @@ namespace BLScan
             Width = 1440; Height = 920;
             StartPosition = FormStartPosition.CenterScreen;
 
-            var top = new TableLayoutPanel { Dock = DockStyle.Top, Height = 74, ColumnCount = 1, RowCount = 2, Padding = new Padding(8, 6, 8, 2) };
+            var top = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, RowCount = 2, Padding = new Padding(8, 6, 8, 6) };
+            top.RowStyles.Add(new RowStyle(SizeType.AutoSize)); top.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            top.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             var row1 = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, AutoSize = true };
-            var row2 = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, AutoSize = true };
+            var row2 = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true, AutoSize = true };      // จอแคบ: ปุ่มขึ้นแถวใหม่ ไม่ล้นขอบ/ไม่ถูกตัด
             top.Controls.Add(row1, 0, 0);
             top.Controls.Add(row2, 0, 1);
 
