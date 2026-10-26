@@ -72,6 +72,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8770", "--directory", "mockup/frmSFContainerPlan"],
       "port": 8770
+    },
+    {
+      "name": "smf-dashboard-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8771", "--directory", "mockup/Dashboard"],
+      "port": 8771
     }
   ]
 }
