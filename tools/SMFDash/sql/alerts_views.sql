@@ -1,7 +1,11 @@
 /*
-  Alert views converted from D:\DEV.VB\SMP\@SQLMAIL\PILOT\*.sql  (run once by a DBA on the SMF database, after alerts_setup.sql)
+  All alert views (run once by a DBA on the SMF database; safe to run again - CREATE OR ALTER, helper views and
+  SMALERTDEF rows are only added when missing). Run alerts_def_and_mail.sql first if you want SMALERTDEF / usp_AlertMail.
+  Converted from D:\DEV.VB\SMP\@SQLMAIL\PILOT\*.sql, plus AL_NOINV.
 
-    AL_OVS_SOA        <- OverseaBillNote_NoReceipt.sql   Oversea with SOA (bill note) issued, not received
+    AL_NOINV          <- (paid job no invoice)           Paid job (PV issued) with no invoice, job period > 3 days, from 2017, incl. CS
+                                                         (follows the query in use; needs AL_JOBPAID and SMALERT)
+    AL_OVS_SOA       <- OverseaBillNote_NoReceipt.sql   Oversea with SOA (bill note) issued, not received
     AL_DEPOSIT        <- dep_NoReceipt.sql               Deposit paid > 15 days, not refunded
     AL_DUTYTAX        <- duty_NoReceipt.sql              Duty / Tax paid > 7 days, not refunded
     AL_INV_CASH       <- Inv_NoReceipt_Cash.sql          Cash invoice unpaid > 3 days
@@ -11,7 +15,7 @@
     AL_OVS_NORCPT     <- Oversea_NoReceipt.sql           Oversea ETD/ETA/FLT > 30 days, not received
     AL_OVS_BYAGENT    <- Oversea_NoReceipt_ByAgent.sql   same, by agent (signed amounts; no TOTAL rows - group in the app)
 
-  Every view follows the convention in alerts_setup.sql: real column types, header = column name ('_' = space),
+  Every view follows one convention: real column types, header = column name ('_' = space),
   DOCNO = hidden key. SMFDash lists any view named AL_* that has a DOCNO column automatically (see README),
   the SMALERTDEF rows at the end only give them a nice title / heading / mail subject.
 
@@ -169,6 +173,26 @@ WHERE   H.POSTENTRY <> 3 AND H.LOCOVER = 2
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
 GO
 
+/* 10. Paid job (PV issued) with no invoice, job period > 3 days -------------------------------------------------- */
+CREATE OR ALTER VIEW dbo.AL_NOINV AS
+SELECT  J.SUB_SYSNAME AS [TYPE],
+        J.JOBCLASS    AS DEPT,
+        J.JOBNO,
+        J.ETDETA      AS PERIOD,
+        J.RECPORT     AS ORIGIN,
+        J.DELPORT     AS DEST,
+        J.USERID,
+        P.PAIDAMT     AS PAID_AMT,
+        J.JOBNO       AS DOCNO
+FROM    dbo.SFJOB J
+JOIN    dbo.AL_JOBPAID P ON J.JOBNO = P.JOBNO
+WHERE   J.JOBSTAT <> 'Deleted'                              -- CS is included (same as the query in use)
+  AND   J.ETDETA >= '20170101'                              -- = year(ETDETA) >= 2017, but can use an index
+  AND   J.ETDETA < DATEADD(DAY, -3, GETDATE())              -- = getdate() - etdeta > 3 (elapsed time, not calendar days)
+  AND   NOT EXISTS (SELECT 1 FROM dbo.ARINVHEAD H WHERE H.JOBNO = J.JOBNO AND H.SRCTYPE = 'AR' AND H.POSTENTRY <> 3)
+  AND   NOT EXISTS (SELECT 1 FROM dbo.SMALERT   A WHERE A.DOCNO = J.JOBNO);
+GO
+
 /* SMALERTDEF rows: title / heading / mail subject. Recipients are NOT copied - fill RECIPIENTS / CC / BCC
    from the old scripts before scheduling dbo.usp_AlertMail (until then the old jobs keep sending). ------------- */
 IF OBJECT_ID('dbo.SMALERTDEF') IS NOT NULL
@@ -176,6 +200,7 @@ BEGIN
     DECLARE @d TABLE (CODE varchar(30), TITLE nvarchar(200), SHORTNAME nvarchar(40), HEADING nvarchar(400), NOTE nvarchar(400),
                       VIEWNAME nvarchar(128), ORDERBY nvarchar(200), SUBJECT nvarchar(200), SORTNO int);
     INSERT @d VALUES
+     ('PAID_NOINV', N'Paid job with no invoice', N'Paid, no invoice', N'Job Period เกิน 3 วัน : ทำ PV จ่ายแล้ว แต่ยังไม่ออก Invoice', NULL, 'AL_NOINV', 'DEPT, JOBNO', N'Paid job with no invoice', 50),
      ('NOBILLNOTE', N'Un-Bill Placement Invoice Listing',  N'Un-Bill',      N'Invoice ที่ออกเกิน 7 วัน , สถานะ : ยังไม่วางบิล', N'(เฉพาะ Invoice ที่มีเครดิต)', 'AL_NOBILLNOTE', 'INV_NO', N'Un-Bill Placement Invoice Listing', 10),
      ('NOAPPOINT',  N'Un-Appoint Invoice Listing',         N'Un-Appoint',   N'Invoice ที่ออกเกิน 7 วัน , สถานะ : ยังไม่นัดรับชำระ', N'(ไม่มี Appoint Date)', 'AL_NOAPPOINT', 'INV_NO', N'Un-Appoint Invoice Listing', 20),
      ('INV_CASH',   N'Outstanding Invoice : Cash',         N'Cash overdue', N'Invoice เงินสด : ที่ค้างชำระเกิน 3 วัน', N'(เงินสด : คือไม่ให้ credit)', 'AL_INV_CASH', 'INV_NO', N'Oustanding Invoice : Cash', 30),

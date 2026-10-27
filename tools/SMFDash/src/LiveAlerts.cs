@@ -1,5 +1,5 @@
 // Alerts straight from the database: SMALERTDEF lists the alerts, each one points at a view (AL_xxx) that is SELECTed here.
-// See sql\alerts_setup.sql. Read-only (Db.Query only allows SELECT). Rows are turned into the same table the HTML parser produces,
+// See sql\alerts_views.sql. Read-only (Db.Query only allows SELECT). Rows are turned into the same table the HTML parser produces,
 // so the page does not care where an alert came from.
 using System;
 using System.Collections.Generic;

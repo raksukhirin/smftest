@@ -1,6 +1,6 @@
 /*
   Alerts - example commands (run each block by hand in SSMS; nothing here runs on its own).
-  Needs alerts_setup.sql, alerts_views.sql and alerts_def_and_mail.sql to have been run.
+  Needs alerts_def_and_mail.sql and alerts_views.sql to have been run.
 */
 
 /* 1. TEST send of one alert: only to the address given, subject starts with the normal subject ------------------ */

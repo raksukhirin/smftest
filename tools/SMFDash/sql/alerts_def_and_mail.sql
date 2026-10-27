@@ -1,6 +1,6 @@
 /*
   OPTIONAL - not needed for the view itself. Adds the list of alerts that SMFDash reads (SMALERTDEF) and
-  dbo.usp_AlertMail (builds the mail from a view). Run after alerts_setup.sql. NOT TESTED on a server yet.
+  dbo.usp_AlertMail (builds the mail from a view). Run this before alerts_views.sql. NOT TESTED on a server yet.
 */
 
 /* 1. definition table ------------------------------------------------------------------------------------------ */
