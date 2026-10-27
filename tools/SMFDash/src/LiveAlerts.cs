@@ -38,6 +38,31 @@ namespace SMFDash
                 }
                 catch (Exception ex) { warning += code + ": " + ex.GetBaseException().Message + "; "; }
             }
+
+            // Views added later need no registration: any view AL_* with a DOCNO column that SMALERTDEF does not mention shows up
+            // (title = MS_Description of the view, else the view name). A SMALERTDEF row with ACTIVE = 0 hides a view.
+            try
+            {
+                var found = db.Query(
+                    "SELECT SCHEMA_NAME(v.schema_id) + '.' + v.name AS VN, v.name AS N, CONVERT(nvarchar(400), ep.value) AS DESCR " +
+                    "FROM sys.views v LEFT JOIN sys.extended_properties ep ON ep.major_id = v.object_id AND ep.minor_id = 0 AND ep.class = 1 AND ep.name = 'MS_Description' " +
+                    "WHERE v.name LIKE 'AL[_]%' " +
+                    "AND EXISTS (SELECT 1 FROM sys.columns c WHERE c.object_id = v.object_id AND c.name = 'DOCNO') " +
+                    "AND NOT EXISTS (SELECT 1 FROM SMALERTDEF d WHERE d.VIEWNAME = v.name OR d.VIEWNAME = SCHEMA_NAME(v.schema_id) + '.' + v.name) " +
+                    "ORDER BY v.name");
+                foreach (DataRow d in found.Rows)
+                {
+                    string view = S(d["VN"]), name = S(d["N"]);
+                    try
+                    {
+                        var dt = db.Query("SELECT TOP " + MaxRows + " * FROM " + view);
+                        string title = S(d["DESCR"]) != "" ? S(d["DESCR"]) : name;
+                        list.Add(new AlertSrc { File = name, Subject = title, Short = "", Html = Html(title, "", dt) });
+                    }
+                    catch (Exception ex) { warning += name + ": " + ex.GetBaseException().Message + "; "; }
+                }
+            }
+            catch (Exception ex) { warning += "view discovery: " + ex.GetBaseException().Message + "; "; }
             return list;
         }
 
