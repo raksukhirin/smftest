@@ -8,7 +8,7 @@ build.bat            → bin\SMFDash.exe + bin\SMFDash.ini
 SMFDash.exe          → the app
 SMFDash.exe /shot <folder>   → save PNGs of every page (no database) to check the layout
 ```
-Press **Settings** → Server / Database / (Windows auth or User+Password) → **Test** → **Save**. The password is stored as `encm:` (Windows DPAPI, machine scope) like BLScan — copying the ini to another machine needs the settings re-saved there. Without a DB the app opens with sample data only.
+Press **Settings** → Server / Database / (Windows auth or User+Password) → **Test** → **Save**. Server, Database, User and Password are all stored as `encm:`; an ini with plain-text Server/Database still works and is encrypted the next time you press Save. The password is stored as `encm:` (Windows DPAPI, machine scope) like BLScan — copying the ini to another machine needs the settings re-saved there. Without a DB the app opens with sample data only.
 
 ## What is real and what is sample
 Every card shows its source in the top-right corner: **● LIVE** (from the DB) or **SAMPLE**.

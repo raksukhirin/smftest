@@ -17,7 +17,7 @@
 
   The WHERE clauses are copied as they are in the mail scripts (calendar-day DATEDIFF where the script uses DATEDIFF,
   elapsed time "getdate() - date > n" where it uses that), so row counts match. Only these were rewritten, same result:
-    year(x) >= 2019        ->  x >= '20190101'   (can use an index)
+    year(x) >= 2019        ->  x >= '20170101'   (can use an index)
     getdate() - x > n      ->  x < DATEADD(DAY, -n, GETDATE())
     NOT IN (subquery)      ->  NOT EXISTS        (a NULL in the sub-query made NOT IN return nothing; JOBNO IS NOT NULL
                                                   keeps the NOT IN behaviour for a NULL job number)
@@ -63,7 +63,7 @@ FROM    dbo.ARINVHEAD H
 LEFT JOIN dbo.SFJOB T ON H.JOBNO = T.JOBNO
 LEFT JOIN dbo.SMBUSINESS S ON H.CUSTCODE = S.COMNO
 WHERE   H.POSTENTRY <> 3 AND H.LOCOVER = 2 AND H.DOCTYPE = 'DN' AND H.SRCTYPE = 'AR' AND H.BILLNOTEDATE IS NOT NULL
-  AND   H.INVDATE >= '20190101'
+  AND   H.INVDATE >= '20170101'
   AND   DATEDIFF(DAY, H.BILLNOTEDATE, GETDATE()) > 0
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
 GO
@@ -74,7 +74,7 @@ SELECT  H.JOBNO, H.INVNO AS INV_NUMBER, H.INVDATE AS INV_DATE, D.THBTOT AS AMOUN
         H.INVNO AS DOCNO
 FROM    dbo.ARINVHEAD H JOIN dbo.ARINVDETAIL D ON H.INVNO = D.INVNO
 WHERE   H.SRCTYPE = 'AP' AND H.POSTENTRY <> 3 AND D.EXPCODE = 'DEP'
-  AND   H.INVNO IN (SELECT P.REFINVNO FROM dbo.AL_APPLY_PR P WHERE P.DOCDATE >= '20200101' AND DATEDIFF(DAY, P.DOCDATE, GETDATE()) > 15)
+  AND   H.INVNO IN (SELECT P.REFINVNO FROM dbo.AL_APPLY_PR P WHERE P.DOCDATE >= '20170101' AND DATEDIFF(DAY, P.DOCDATE, GETDATE()) > 15)
   AND   H.JOBNO IS NOT NULL
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_JOBCOLLECT_DEP C WHERE C.JOBNO = H.JOBNO);
 GO
@@ -85,7 +85,7 @@ SELECT  H.JOBNO, H.INVNO AS INV_NUMBER, H.INVDATE AS INV_DATE, D.THBTOT AS AMOUN
         H.JOBNO AS DOCNO                                   -- SMALERT is keyed by job number
 FROM    dbo.ARINVHEAD H JOIN dbo.ARINVDETAIL D ON H.INVNO = D.INVNO
 WHERE   H.SRCTYPE = 'AP' AND H.POSTENTRY <> 3 AND D.EXPCODE IN ('TAX', 'DUTY')
-  AND   H.INVNO IN (SELECT P.REFINVNO FROM dbo.AL_APPLY_PR P WHERE P.DOCDATE >= '20200101' AND DATEDIFF(DAY, P.DOCDATE, GETDATE()) > 7)
+  AND   H.INVNO IN (SELECT P.REFINVNO FROM dbo.AL_APPLY_PR P WHERE P.DOCDATE >= '20170101' AND DATEDIFF(DAY, P.DOCDATE, GETDATE()) > 7)
   AND   H.JOBNO IS NOT NULL
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_JOBCOLLECT_TAX C WHERE C.JOBNO = H.JOBNO)
   AND   NOT EXISTS (SELECT 1 FROM dbo.SMALERT A WHERE A.DOCNO = H.JOBNO);
@@ -98,7 +98,7 @@ SELECT  H.SUB_SYSNAME AS [TYPE], H.JOBCLASS AS DEPT, H.JOBNO, H.INVNO AS INV_NO,
         H.INVNO AS DOCNO
 FROM    dbo.ARINVHEAD H LEFT JOIN dbo.SMTERM T ON H.TERMCODE = T.TERMCODE
 WHERE   H.POSTENTRY <> 3 AND H.DOCTYPE = 'IN' AND H.SRCTYPE = 'AR'
-  AND   H.INVDATE >= '20200101'
+  AND   H.INVDATE >= '20170101'
   AND   DATEDIFF(DAY, H.INVDATE, GETDATE()) > 3
   AND   T.TOTALDAY <= 0
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
@@ -111,7 +111,7 @@ SELECT  H.SUB_SYSNAME AS [TYPE], H.JOBCLASS AS DEPT, H.JOBNO, H.INVNO AS INV_NO,
         H.INVNO AS DOCNO
 FROM    dbo.ARINVHEAD H LEFT JOIN dbo.SMTERM T ON H.TERMCODE = T.TERMCODE
 WHERE   H.POSTENTRY <> 3 AND H.DOCTYPE = 'IN' AND H.SRCTYPE = 'AR' AND H.APPOINTDATE IS NOT NULL
-  AND   H.INVDATE >= '20200101'
+  AND   H.INVDATE >= '20170101'
   AND   DATEDIFF(DAY, H.APPOINTDATE, GETDATE()) > 0
   AND   T.TOTALDAY > 0
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
@@ -123,7 +123,7 @@ SELECT  H.SUB_SYSNAME AS [TYPE], H.JOBCLASS AS DEPT, H.JOBNO, H.INVNO AS INV_NO,
         H.INVDATE AS INV_DATE, H.THBTOT AS INV_AMT, H.USERID, H.INVNO AS DOCNO
 FROM    dbo.ARINVHEAD H LEFT JOIN dbo.SMTERM T ON H.TERMCODE = T.TERMCODE
 WHERE   H.POSTENTRY <> 3 AND H.DOCTYPE = 'IN' AND H.SRCTYPE = 'AR' AND H.APPOINTDATE IS NULL
-  AND   H.INVDATE >= '20200101'
+  AND   H.INVDATE >= '20170101'
   AND   H.INVDATE < DATEADD(DAY, -7, GETDATE())            -- = getdate() - INVDATE > 7
   AND   T.TOTALDAY > 0
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
@@ -135,7 +135,7 @@ SELECT  H.SUB_SYSNAME AS [TYPE], H.JOBCLASS AS DEPT, H.JOBNO, H.INVNO AS INV_NO,
         H.INVDATE AS INV_DATE, H.THBTOT AS INV_AMT, H.USERID, H.INVNO AS DOCNO
 FROM    dbo.ARINVHEAD H LEFT JOIN dbo.SMTERM T ON H.TERMCODE = T.TERMCODE
 WHERE   H.POSTENTRY <> 3 AND H.DOCTYPE = 'IN' AND H.SRCTYPE = 'AR' AND H.BILLNOTEDATE IS NULL AND H.APPOINTDATE IS NULL
-  AND   H.INVDATE >= '20200101'
+  AND   H.INVDATE >= '20170101'
   AND   DATEDIFF(DAY, H.INVDATE, GETDATE()) > 7
   AND   T.TOTALDAY > 0
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
@@ -150,7 +150,7 @@ FROM    dbo.ARINVHEAD H
 LEFT JOIN dbo.SFJOB T ON H.JOBNO = T.JOBNO
 LEFT JOIN dbo.SMBUSINESS S ON H.CUSTCODE = S.COMNO
 WHERE   H.POSTENTRY <> 3 AND H.LOCOVER = 2 AND H.DOCTYPE = 'DN' AND H.SRCTYPE = 'AR'
-  AND   H.INVDATE >= '20190101'
+  AND   H.INVDATE >= '20170101'
   AND   DATEDIFF(DAY, T.ETDETA, GETDATE()) > 30
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
 GO
@@ -164,7 +164,7 @@ FROM    dbo.ARINVHEAD H
 LEFT JOIN dbo.SFJOB T ON H.JOBNO = T.JOBNO
 LEFT JOIN dbo.SMBUSINESS M ON H.CUSTCODE = M.COMNO
 WHERE   H.POSTENTRY <> 3 AND H.LOCOVER = 2
-  AND   H.INVDATE >= '20190101'
+  AND   H.INVDATE >= '20170101'
   AND   DATEDIFF(DAY, T.ETDETA, GETDATE()) > 30
   AND   NOT EXISTS (SELECT 1 FROM dbo.AL_APPLYINV A WHERE A.REFINVNO = H.INVNO);
 GO
@@ -176,15 +176,15 @@ BEGIN
     DECLARE @d TABLE (CODE varchar(30), TITLE nvarchar(200), SHORTNAME nvarchar(40), HEADING nvarchar(400), NOTE nvarchar(400),
                       VIEWNAME nvarchar(128), ORDERBY nvarchar(200), SUBJECT nvarchar(200), SORTNO int);
     INSERT @d VALUES
-     ('NOBILLNOTE', N'Un-Bill Placement Invoice Listing',  N'Un-Bill',      N'[ACCORD] Invoice ที่ออกเกิน 7 วัน , สถานะ : ยังไม่วางบิล', N'(เฉพาะ Invoice ที่มีเครดิต)', 'AL_NOBILLNOTE', 'INV_NO', N'[ACCORD] Un-Bill Placement Invoice Listing', 10),
-     ('NOAPPOINT',  N'Un-Appoint Invoice Listing',         N'Un-Appoint',   N'[ACCORD] Invoice ที่ออกเกิน 7 วัน , สถานะ : ยังไม่นัดรับชำระ', N'(ไม่มี Appoint Date)', 'AL_NOAPPOINT', 'INV_NO', N'[ACCORD] Un-Appoint Invoice Listing', 20),
-     ('INV_CASH',   N'Outstanding Invoice : Cash',         N'Cash overdue', N'[ACCORD] Invoice เงินสด : ที่ค้างชำระเกิน 3 วัน', N'(เงินสด : คือไม่ให้ credit)', 'AL_INV_CASH', 'INV_NO', N'[ACCORD] Oustanding Invoice : Cash', 30),
-     ('INV_CREDIT', N'Outstanding Invoice : Credit',       N'Over appoint', N'[ACCORD] Invoice มีเครดิต ที่เกินกำหนดนัดรับชำระ', N'(Over Appoint Date)', 'AL_INV_CREDIT', 'INV_NO', N'[ACCORD] Outstanding Invoice : Credit', 40),
-     ('DEPOSIT',    N'Job ค้างรับคืนค่า Deposit',           N'Deposit refund', N'[ACCORD] Job ค้างรับคืนค่า Deposit เฉพาะที่จ่ายแล้วเกิน 15 วัน', NULL, 'AL_DEPOSIT', 'INV_DATE DESC', N'[ACCORD] Job ค้างรับคืนค่า Deposit', 60),
-     ('DUTYTAX',    N'Job ค้างรับคืนค่า Duty Tax',          N'Duty Tax refund', N'[ACCORD] Job ค้างรับคืนค่า Duty Tax เฉพาะที่จ่ายแล้วเกิน 7 วัน', NULL, 'AL_DUTYTAX', 'INV_DATE DESC', N'[ACCORD] Job ค้างรับคืนค่า Duty Tax', 70),
-     ('OVS_NORCPT', N'Outstanding Oversea by job period',  N'Oversea outstanding', N'[ACCORD] Oversea ค้างรับที่มี ETD/ETA/FLT เกิน30วัน', N'(SE=ETD , SI=ETA , AIR=FLT)', 'AL_OVS_NORCPT', 'INV_NO', N'[ACCORD] Outstanding Oversea by job period', 80),
-     ('OVS_AGENT',  N'Outstanding Oversea by agent',       N'Oversea by agent', N'[ACCORD] Oversea ค้างรับที่มี ETD/ETA/FLT เกิน30วัน (แยกตาม Agent)', N'(SE=ETD , SI=ETA , AIR=FLT)', 'AL_OVS_BYAGENT', 'AGENT, INV_NO', N'[ACCORD] Outstanding Oversea by agent', 85),
-     ('OVS_SOA',    N'Outstanding Oversea with SOA confirmed', N'Oversea SOA', N'[ACCORD] Oversea ค้างรับที่มีการออก SOA แล้ว', N'(SOA = Oversea Statement)', 'AL_OVS_SOA', 'INV_NO', N'[ACCORD] Outstanding Oversea with SOA confirmed', 90);
+     ('NOBILLNOTE', N'Un-Bill Placement Invoice Listing',  N'Un-Bill',      N'Invoice ที่ออกเกิน 7 วัน , สถานะ : ยังไม่วางบิล', N'(เฉพาะ Invoice ที่มีเครดิต)', 'AL_NOBILLNOTE', 'INV_NO', N'Un-Bill Placement Invoice Listing', 10),
+     ('NOAPPOINT',  N'Un-Appoint Invoice Listing',         N'Un-Appoint',   N'Invoice ที่ออกเกิน 7 วัน , สถานะ : ยังไม่นัดรับชำระ', N'(ไม่มี Appoint Date)', 'AL_NOAPPOINT', 'INV_NO', N'Un-Appoint Invoice Listing', 20),
+     ('INV_CASH',   N'Outstanding Invoice : Cash',         N'Cash overdue', N'Invoice เงินสด : ที่ค้างชำระเกิน 3 วัน', N'(เงินสด : คือไม่ให้ credit)', 'AL_INV_CASH', 'INV_NO', N'Oustanding Invoice : Cash', 30),
+     ('INV_CREDIT', N'Outstanding Invoice : Credit',       N'Over appoint', N'Invoice มีเครดิต ที่เกินกำหนดนัดรับชำระ', N'(Over Appoint Date)', 'AL_INV_CREDIT', 'INV_NO', N'Outstanding Invoice : Credit', 40),
+     ('DEPOSIT',    N'Job ค้างรับคืนค่า Deposit',           N'Deposit refund', N'Job ค้างรับคืนค่า Deposit เฉพาะที่จ่ายแล้วเกิน 15 วัน', NULL, 'AL_DEPOSIT', 'INV_DATE DESC', N'Job ค้างรับคืนค่า Deposit', 60),
+     ('DUTYTAX',    N'Job ค้างรับคืนค่า Duty Tax',          N'Duty Tax refund', N'Job ค้างรับคืนค่า Duty Tax เฉพาะที่จ่ายแล้วเกิน 7 วัน', NULL, 'AL_DUTYTAX', 'INV_DATE DESC', N'Job ค้างรับคืนค่า Duty Tax', 70),
+     ('OVS_NORCPT', N'Outstanding Oversea by job period',  N'Oversea outstanding', N'Oversea ค้างรับที่มี ETD/ETA/FLT เกิน30วัน', N'(SE=ETD , SI=ETA , AIR=FLT)', 'AL_OVS_NORCPT', 'INV_NO', N'Outstanding Oversea by job period', 80),
+     ('OVS_AGENT',  N'Outstanding Oversea by agent',       N'Oversea by agent', N'Oversea ค้างรับที่มี ETD/ETA/FLT เกิน30วัน (แยกตาม Agent)', N'(SE=ETD , SI=ETA , AIR=FLT)', 'AL_OVS_BYAGENT', 'AGENT, INV_NO', N'Outstanding Oversea by agent', 85),
+     ('OVS_SOA',    N'Outstanding Oversea with SOA confirmed', N'Oversea SOA', N'Oversea ค้างรับที่มีการออก SOA แล้ว', N'(SOA = Oversea Statement)', 'AL_OVS_SOA', 'INV_NO', N'Outstanding Oversea with SOA confirmed', 90);
     INSERT dbo.SMALERTDEF (ALERTCODE, TITLE, SHORTNAME, HEADING, NOTE, VIEWNAME, ORDERBY, SUBJECT, SORTNO)
     SELECT d.CODE, d.TITLE, d.SHORTNAME, d.HEADING, d.NOTE, d.VIEWNAME, d.ORDERBY, d.SUBJECT, d.SORTNO
     FROM @d d WHERE NOT EXISTS (SELECT 1 FROM dbo.SMALERTDEF x WHERE x.ALERTCODE = d.CODE OR x.VIEWNAME = d.VIEWNAME);

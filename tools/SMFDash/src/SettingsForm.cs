@@ -36,7 +36,8 @@ namespace SMFDash
             Controls.AddRange(new Control[] { test, save, cancel, _msg });
             CancelButton = cancel;
 
-            _server.Text = ini.Get("Database", "Server"); _db.Text = ini.Get("Database", "Database"); _user.Text = ini.Get("Database", "User");
+            try { _server.Text = ini.GetSecret("Database", "Server"); _db.Text = ini.GetSecret("Database", "Database"); _user.Text = ini.GetSecret("Database", "User"); }
+            catch (Exception ex) { _msg.Text = ex.Message; }
             _win.Checked = _user.Text == ""; ApplyWin(); _win.CheckedChanged += (s, e) => ApplyWin();
             try { if (_user.Text != "") _pass.Text = ini.GetSecret("Database", "Password"); } catch (Exception ex) { _msg.Text = ex.Message; }
 
@@ -49,8 +50,8 @@ namespace SMFDash
             {
                 try
                 {
-                    _ini.Set("Database", "Server", _server.Text.Trim()); _ini.Set("Database", "Database", _db.Text.Trim());
-                    _ini.Set("Database", "User", _win.Checked ? "" : _user.Text.Trim());
+                    _ini.Set("Database", "Server", _server.Text.Trim(), true); _ini.Set("Database", "Database", _db.Text.Trim(), true);
+                    _ini.Set("Database", "User", _win.Checked ? "" : _user.Text.Trim(), true);
                     _ini.Set("Database", "Password", _win.Checked ? "" : _pass.Text, true);
                     DialogResult = DialogResult.OK;
                 }

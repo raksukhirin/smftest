@@ -20,7 +20,7 @@ namespace SMFDash
         {
             get
             {
-                return Build(_ini.Get("Database", "Server"), _ini.Get("Database", "Database"), _ini.Get("Database", "User"),
+                return Build(_ini.GetSecret("Database", "Server"), _ini.GetSecret("Database", "Database"), _ini.GetSecret("Database", "User"),
                              _ini.GetSecret("Database", "Password"), _ini.GetInt("Database", "Timeout", 15));
             }
         }

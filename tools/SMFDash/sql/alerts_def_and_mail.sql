@@ -27,8 +27,8 @@ GO
 IF NOT EXISTS (SELECT 1 FROM dbo.SMALERTDEF WHERE ALERTCODE = 'PAID_NOINV')
 INSERT dbo.SMALERTDEF (ALERTCODE, TITLE, SHORTNAME, HEADING, VIEWNAME, ORDERBY, SUBJECT, RECIPIENTS, CC, SORTNO)
 VALUES ('PAID_NOINV', N'Paid job with no invoice', N'Paid, no invoice',
-        N'[ACCORD] Job Period เกิน 3 วัน : ทำ PV จ่ายแล้ว แต่ยังไม่ออก Invoice',
-        'AL_NOINV', 'DEPT, JOBNO', N'[ACCORD] Paid job with no invoice',
+        N'Job Period เกิน 3 วัน : ทำ PV จ่ายแล้ว แต่ยังไม่ออก Invoice',
+        'AL_NOINV', 'DEPT, JOBNO', N'Paid job with no invoice',
         'to@yourdomain.com', 'cc1@yourdomain.com;cc2@yourdomain.com', 50);   -- <- put the real addresses here
 GO
 
