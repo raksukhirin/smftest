@@ -51,4 +51,32 @@ window.AF_STEPS = [
     R(12, 'BSE22060001', 'SE', 1, 'Rejected', 'ADMIN', '2026-10-22T10:00', '', '', [F('Booking.PDF', 190)], S2,
       [H(1, 'Requested', 'ADMIN', '2026-10-22T10:00'), H(1, 'Rejected', 'TEST', '2026-10-22T16:40', 'Rate not confirmed by carrier - please resubmit')], 0)
   ];
+  // Extra documents further along the workflow so the Timeline Mgt view has something to show.
+  // gen(...): history is generated step by step (request -> approval, 4-25 h apart); 'since' = when the current step was requested.
+  function gen(id, doc, done, status, by, start, since, sum, remark, deadline) {
+    var t = new Date(start), hist = [], steps = window.AF_STEPS;
+    function iso(d) { var z = function (n) { return ('0' + n).slice(-2); }; return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + 'T' + z(d.getHours()) + ':' + z(d.getMinutes()); }
+    for (var s = 1; s <= done; s++) {
+      hist.push(H(s, 'Requested', by, iso(t)));
+      t = new Date(t.getTime() + (4 + (id * 7 + s * 5) % 22) * 3600000);
+      hist.push(H(s, 'Approved', steps[s - 1].approver, iso(t), s % 4 === 0 ? 'OK' : ''));
+      t = new Date(t.getTime() + ((s * 3) % 5 + 1) * 3600000);
+    }
+    var step = Math.min(done + 1, steps.length), st = status;
+    if (status === 'Wait') hist.push(H(step, 'Requested', by, since));
+    if (status === 'Rejected') { hist.push(H(step, 'Requested', by, iso(t))); hist.push(H(step, 'Rejected', steps[step - 1].approver, since, 'Documents incomplete - please resubmit')); }
+    if (status === 'Approved') step = steps.length;
+    var first = hist.length ? hist[0].at : start;
+    return R(id, doc, 'SE', step, st, by, first, deadline || '', remark || '', [F(doc + '.PDF', 250)], sum, hist, done);
+  }
+  window.AF_SEED.push(
+    gen(13, 'BSE26100020', 13, 'Approved', 'ADMIN', '2026-10-01T09:00', '', S1, 'Closed'),
+    gen(14, 'BSE26100021', 13, 'Approved', 'JACK', '2026-10-03T10:00', '', S2, ''),
+    gen(15, 'TESTBYBOSS012', 9, 'Wait', 'ADMIN', '2026-10-08T09:00', '2026-10-27T07:00', S3, 'Invoice for B/L release'),
+    gen(16, 'BSE26100025', 7, 'Wait', 'JACK', '2026-10-10T09:00', '2026-10-24T09:00', S4, 'Draft B/L from carrier'),
+    gen(17, 'BSE26100027', 5, 'Wait', 'ADMIN', '2026-10-14T09:00', '2026-10-26T10:00', S1, 'Waiting customs entry', '2026-10-28'),
+    gen(18, 'BSE26100030', 3, 'Wait', 'SUDA', '2026-10-21T09:00', '2026-10-27T12:00', S2, ''),
+    gen(19, 'BSE26100031', 11, 'Wait', 'JACK', '2026-10-05T09:00', '2026-10-27T09:00', S3, 'Final payment'),
+    gen(20, 'BSE26100012', 5, 'Rejected', 'ADMIN', '2026-10-09T09:00', '2026-10-26T16:00', S4, '')
+  );
 })();

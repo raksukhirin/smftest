@@ -13,6 +13,13 @@ Based on the current system: the request form in SMF (VB6 "Update Timeline": Doc
 | Action bar | One remark box + **Approve** / **Reject**. Reject needs a reason. Requests that wait for someone else are read-only ("Waiting for JACK") |
 | Toast | Every approve/reject shows **UNDO** for 6 s |
 
+### Timeline Mgt view (switch at the top right: Inbox | Timeline Mgt)
+For tracking and controlling the whole workflow rather than deciding one request:
+- **KPI boxes** — in progress, on track, at risk, stalled/overdue, rejected, completed, average cycle time (click a box to filter).
+- **Waiting at step** row — number of documents currently waiting at each of the 13 steps (amber/red when any of them is at risk/stalled): shows the bottleneck.
+- **Matrix** — one row per document × 13 steps: ✓ approved, coloured cell = waiting with its age (indigo on track · amber ≥ 24 h · red ≥ 48 h or past deadline), ✕ rejected; plus progress %, waiting time and owner. Hover a cell for approver and timing, click a row for the detail panel.
+- Filters: status, owner, search; group by risk / job type / none; **⬇ CSV** export. The SLA (24 h / 48 h) is a placeholder.
+
 The list turns into cards when its column is narrow (phone / split with the detail panel), so the same page works as a phone approval screen.
 
 ## Decisions kept simple (to confirm when the tables arrive)

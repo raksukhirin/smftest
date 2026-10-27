@@ -67,7 +67,9 @@ namespace SMFDash
         /// <summary>Headless: render one page to a PNG (used for checking the layout; /shot on the command line).</summary>
         public void Snapshot(string mod, string mode, string path)
         {
-            _mod = mod; _mode = mode; Render(); Application.DoEvents();
+            _mod = mod; _mode = mode; Render();
+            if (mod == "apr" && _apr != null) _apr.SetView(mode == "timeline" ? "timeline" : "inbox");
+            Application.DoEvents();
             using (var bmp = new Bitmap(ClientSize.Width, ClientSize.Height)) { DrawToBitmap(bmp, new Rectangle(0, 0, bmp.Width, bmp.Height)); bmp.Save(path, System.Drawing.Imaging.ImageFormat.Png); }
         }
 

@@ -19,7 +19,8 @@ namespace SMFDash
     {
         public static GraphicsPath Round(RectangleF r, float rad)
         {
-            var p = new GraphicsPath(); float d = rad * 2;
+            var p = new GraphicsPath(); float d = Math.Min(rad * 2, Math.Min(r.Width, r.Height));
+            if (d <= 0) { p.AddRectangle(r); return p; }
             p.AddArc(r.X, r.Y, d, d, 180, 90); p.AddArc(r.Right - d, r.Y, d, d, 270, 90);
             p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90); p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);
             p.CloseFigure(); return p;

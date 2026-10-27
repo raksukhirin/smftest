@@ -76,6 +76,20 @@ namespace SMFDash
         readonly HashSet<int> _sel = new HashSet<int>();
         int _open, _shown;
 
+        // Timeline Mgt
+        string _view = "inbox", _tStatusKey = "active", _tOwnerKey = "all", _tGroupKey = "risk";
+        static readonly string[] TlKeys = { "active", "risk", "rej", "done", "all" };
+        readonly List<PillButton> _viewBtns = new List<PillButton>();
+        readonly ComboBox _tStatus = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 130 };
+        readonly ComboBox _tOwner = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 130 };
+        readonly ComboBox _tGroup = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList, Width = 140 };
+        readonly Button _csv = new Button { Text = "⬇ CSV", Width = 70, Height = 26 };
+        readonly KpiStrip _kpi = new KpiStrip { Dock = DockStyle.Top, Height = 58 };
+        readonly TimelineCanvas _canvas = new TimelineCanvas();
+        readonly Panel _tlScroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.White };
+        readonly Panel _tlHost = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Bg, Visible = false };
+        Panel _tlBar;
+
         // top bars
         readonly List<PillButton> _modBtns = new List<PillButton>(), _tabBtns = new List<PillButton>();
         readonly TextBox _search = new TextBox { Width = 200 };
@@ -96,6 +110,7 @@ namespace SMFDash
         readonly Panel _right = new Panel { Dock = DockStyle.Right, Width = 440, BackColor = Color.White };
         readonly Label _dType = new Label { Left = 14, Top = 8, AutoSize = true, ForeColor = Theme.Muted, Font = Theme.Small };
         readonly Label _dDoc = new Label { Left = 12, Top = 24, AutoSize = true, Font = new Font("Segoe UI", 13f, FontStyle.Bold) };
+        readonly Button _dClose = new Button { Text = "✕", Width = 26, Height = 26, Top = 10, FlatStyle = FlatStyle.Flat, Visible = false };
         readonly Label _dStatus = new Label { Top = 14, AutoSize = true, Font = Theme.Bold, Anchor = AnchorStyles.Top | AnchorStyles.Right, Padding = new Padding(8, 2, 8, 2) };
         readonly Stepper _stepper = new Stepper { Dock = DockStyle.Top, Height = 100 };
         readonly Panel _info = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = Color.White, Padding = new Padding(10, 0, 6, 8) };
@@ -210,9 +225,45 @@ namespace SMFDash
             _lateBox.CheckedChanged += (s, e) => { if (!_loading) { _late = _lateBox.Checked; RefreshAll(); } };
             _bulk.Click += (s, e) => ApproveMany(_sel.ToList());
 
-            _bars = new[] { modBar, filter, tabs };
+            // view switch: Inbox | Timeline Mgt (right side of the title bar)
+            foreach (var v in new[] { new[] { "inbox", "Inbox" }, new[] { "timeline", "Timeline Mgt" } })
+            {
+                var b = new PillButton(v[1]) { Top = 6, Height = 28, Tag = v[0], Rounded = true };
+                b.Click += (s, e) => { SetView((string)((Control)s).Tag); };
+                modBar.Controls.Add(b); _viewBtns.Add(b);
+            }
+            modBar.Resize += (s, e) => PlaceViewBtns(modBar);
+
+            // timeline filter bar
+            var tl = new Panel { Dock = DockStyle.Top, Height = 40, Visible = false };
+            _tStatus.Items.AddRange(new object[] { "In progress", "At risk / stalled", "Rejected", "Completed", "All" }); _tStatus.SelectedIndex = 0;
+            _tGroup.Items.AddRange(new object[] { "Group by: Risk", "Group by: Job type", "No grouping" }); _tGroup.SelectedIndex = 0;
+            _tOwner.Items.Add("All owners"); _tOwner.SelectedIndex = 0;
+            _tStatus.Left = 0; _tStatus.Top = 8; _tOwner.Left = _tStatus.Right + 8; _tOwner.Top = 8; _tGroup.Left = _tOwner.Right + 8; _tGroup.Top = 8;
+            _csv.Left = _tGroup.Right + 12; _csv.Top = 7;
+            tl.Controls.AddRange(new Control[] { _tStatus, _tOwner, _tGroup, _csv });
+            _tStatus.SelectedIndexChanged += (s, e) => { if (!_loading) { _tStatusKey = TlKeys[_tStatus.SelectedIndex]; RefreshAll(); } };
+            _tOwner.SelectedIndexChanged += (s, e) => { if (!_loading) { _tOwnerKey = _tOwner.SelectedIndex <= 0 ? "all" : (string)_tOwner.SelectedItem; RefreshAll(); } };
+            _tGroup.SelectedIndexChanged += (s, e) => { if (!_loading) { _tGroupKey = new[] { "risk", "job", "none" }[_tGroup.SelectedIndex]; RefreshAll(); } };
+            _csv.Click += (s, e) => ExportCsv();
+
+            _tlBar = tl;
+            _bars = new[] { modBar, filter, tabs, tl };
         }
         Panel[] _bars;
+
+        void PlaceViewBtns(Panel bar)
+        {
+            int x = bar.Width - 4;
+            for (int i = _viewBtns.Count - 1; i >= 0; i--) { x -= _viewBtns[i].Width; _viewBtns[i].Left = x; x -= 4; }
+        }
+
+        void ApplyView()
+        {
+            bool tl = _view == "timeline";
+            _gridHost.Visible = !tl; _tlHost.Visible = tl; _bars[2].Visible = !tl; _tlBar.Visible = tl;
+            foreach (var b in _viewBtns) b.On = (string)b.Tag == _view;
+        }
 
         void BuildGrid()
         {
@@ -273,7 +324,9 @@ namespace SMFDash
         {
             var head = new Panel { Dock = DockStyle.Top, Height = 54, BackColor = Color.White };
             head.Controls.Add(_dType); head.Controls.Add(_dDoc); head.Controls.Add(_dStatus);
-            _dStatus.Left = _right.Width - 90; head.Resize += (s, e) => { _dStatus.Left = head.Width - _dStatus.Width - 12; };
+            _dStatus.Left = _right.Width - 90; head.Resize += (s, e) => { _dClose.Left = head.Width - 34; ShowDetail(); };
+            _dClose.Click += (s, e) => { _open = 0; _canvas.SelectedId = 0; _canvas.Invalidate(); ShowDetail(); };
+            head.Controls.Add(_dClose);
 
             _foot.Controls.Add(_wait);
             var buttons = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
@@ -300,9 +353,16 @@ namespace SMFDash
             _right.Dock = DockStyle.Fill; wrap.Controls.Add(_right);
             _wrapRight = wrap;
 
-            Controls.Add(_gridHost); Controls.Add(wrap);
+            _tlScroll.Controls.Add(_canvas);
+            _tlHost.Controls.Add(_tlScroll); _tlHost.Controls.Add(_kpi); _tlScroll.BringToFront();
+            _kpi.Picked += key => { _tStatusKey = key; RefreshAll(); };
+            _canvas.RowClicked += id => { _open = id; _canvas.SelectedId = id; _canvas.Invalidate(); ShowDetail(); };
+            _tlScroll.Resize += (s, e) => FitCanvas();
+
+            Controls.Add(_gridHost); Controls.Add(_tlHost); Controls.Add(wrap);
             foreach (var b in _bars.Reverse()) Controls.Add(b);
-            _gridHost.BringToFront();
+            _gridHost.BringToFront(); _tlHost.BringToFront();
+            ApplyView(); PlaceViewBtns(_bars[0]);
             Padding = new Padding(0);
         }
         Panel _wrapRight; TableLayoutPanel _actions;
@@ -330,7 +390,7 @@ namespace SMFDash
                 }
                 _stepBox.Left = tx + 16; _whoBox.Left = _stepBox.Right + 8; _lateBox.Left = _whoBox.Right + 10; _bulk.Left = _lateBox.Right + 16;
                 var mod = ApprovalData.Modules.First(x => x[0] == _mod);
-                _title.Text = mod[1] + " — Approval Requests   ";
+                _title.Text = mod[1] + (_view == "timeline" ? " — Timeline Management   " : " — Approval Requests   ");
                 _grid.Columns[6].HeaderText = ""; _grid.Columns[7].HeaderText = "";
 
                 var rows = Filtered().ToList();
@@ -348,12 +408,102 @@ namespace SMFDash
                     if (!act) _grid.Rows[i].Cells[0].ReadOnly = true;
                     if (r.Id == _open) _grid.Rows[i].Selected = true;
                 }
-                if (!rows.Any(r => r.Id == _open)) _open = rows.Count > 0 ? rows[0].Id : 0;
-                foreach (DataGridViewRow gr in _grid.Rows) gr.Selected = (int)gr.Tag == _open;
+                if (_view == "inbox")
+                {
+                    if (!rows.Any(r => r.Id == _open)) _open = rows.Count > 0 ? rows[0].Id : 0;
+                    foreach (DataGridViewRow gr in _grid.Rows) gr.Selected = (int)gr.Tag == _open;
+                }
+                else RefreshTimeline();
                 if (rows.Count == 0) _grid.ClearSelection();
                 UpdateBulk(); ShowDetail();
             }
             finally { _loading = false; }
+        }
+
+        /* ---------- Timeline Mgt ---------- */
+        public void SetView(string v) { _view = v; if (v == "timeline") _open = 0; ApplyView(); RefreshAll(); }
+
+        void FitCanvas()
+        {
+            _canvas.Width = Math.Max(_tlScroll.ClientSize.Width, TimelineCanvas.TotalWidth); _canvas.Height = Math.Max(_canvas.ContentHeight(), _tlScroll.ClientSize.Height);
+        }
+
+        List<ApprReq> TlRows()
+        {
+            string q = _search.Text.Trim().ToLowerInvariant();
+            return _data.Where(r =>
+            {
+                if (r.Module != _mod) return false;
+                string k = ApprovalData.Risk(r);
+                if (_tStatusKey == "active" && (k == "rej" || k == "done")) return false;
+                if (_tStatusKey == "risk" && k != "warn" && k != "late") return false;
+                if (_tStatusKey == "rej" && k != "rej") return false;
+                if (_tStatusKey == "done" && k != "done") return false;
+                if (_tOwnerKey != "all" && (r.Status != "Wait" || StepOf(r).Approver != _tOwnerKey)) return false;
+                if (q != "" && (r.Doc + " " + r.Shipper + " " + r.Consignee + " " + r.RequestedBy + " " + r.Remark).ToLowerInvariant().IndexOf(q, StringComparison.Ordinal) < 0) return false;
+                return true;
+            }).OrderByDescending(r => r.Status == "Wait" ? ApprovalData.AgeH(r) : -1).ThenByDescending(r => r.RequestedAt).ToList();
+        }
+
+        void RefreshTimeline()
+        {
+            var all = _data.Where(r => r.Module == _mod).ToList();
+            var cnt = new Dictionary<string, int> { { "ok", 0 }, { "warn", 0 }, { "late", 0 }, { "rej", 0 }, { "done", 0 } };
+            foreach (var r in all) cnt[ApprovalData.Risk(r)]++;
+            int active = cnt["ok"] + cnt["warn"] + cnt["late"];
+            var done = all.Where(r => ApprovalData.Risk(r) == "done").ToList();
+            string cyc = done.Count == 0 ? "—" : done.Average(r => (r.History[r.History.Count - 1].At - r.RequestedAt).TotalDays).ToString("0.0") + " d";
+
+            // owners combo (keeps the current choice if it still exists)
+            var owners = all.Where(r => r.Status == "Wait").Select(r => StepOf(r).Approver).Distinct().OrderBy(x => x).ToList();
+            if (_tOwnerKey != "all" && !owners.Contains(_tOwnerKey)) _tOwnerKey = "all";
+            _tOwner.Items.Clear(); _tOwner.Items.Add("All owners"); foreach (var o in owners) _tOwner.Items.Add(o);
+            _tOwner.SelectedIndex = _tOwnerKey == "all" ? 0 : owners.IndexOf(_tOwnerKey) + 1;
+            _tStatus.SelectedIndex = Array.IndexOf(TlKeys, _tStatusKey);
+
+            Func<string, string, int, string, KpiBox> kb = (l, key, n, hex) => new KpiBox { Label = l, Key = key, Value = n.ToString(), Col = Theme.Hex(hex) };
+            _kpi.Boxes = new List<KpiBox>
+            {
+                kb("In progress", "active", active, "#4f46e5"), kb("On track", "active", cnt["ok"], "#10b981"), kb("At risk", "risk", cnt["warn"], "#f59e0b"),
+                kb("Stalled / overdue", "risk", cnt["late"], "#ef4444"), kb("Rejected", "rej", cnt["rej"], "#ef4444"), kb("Completed", "done", cnt["done"], "#94a3b8"),
+                new KpiBox { Label = "Avg cycle time", Value = cyc, Key = null, Col = Theme.Hex("#cbd5e1") }
+            };
+            _kpi.Invalidate();
+
+            var rows = TlRows(); var items = new List<TlItem>();
+            Action<string, Color, List<ApprReq>> grp = (name, col, list) =>
+            {
+                if (list.Count == 0) return;
+                if (name != "") items.Add(new TlItem { Header = name, HeaderCol = col, Count = list.Count });
+                items.AddRange(list.Select(r => new TlItem { R = r }));
+            };
+            if (_tGroupKey == "risk")
+            {
+                grp("Stalled / overdue", Theme.Hex("#b91c1c"), rows.Where(r => ApprovalData.Risk(r) == "late").ToList());
+                grp("At risk", Theme.Hex("#b45309"), rows.Where(r => ApprovalData.Risk(r) == "warn").ToList());
+                grp("On track", Theme.Hex("#4338ca"), rows.Where(r => ApprovalData.Risk(r) == "ok").ToList());
+                grp("Rejected", Theme.Hex("#b91c1c"), rows.Where(r => ApprovalData.Risk(r) == "rej").ToList());
+                grp("Completed", Theme.Hex("#047857"), rows.Where(r => ApprovalData.Risk(r) == "done").ToList());
+            }
+            else if (_tGroupKey == "job") foreach (var g in rows.GroupBy(r => r.JobType).OrderBy(g => g.Key)) grp(g.Key, Theme.Muted, g.ToList());
+            else grp("", Theme.Muted, rows);
+
+            _canvas.Items = items; _canvas.WipSource = all.ToArray(); _canvas.Me = _me; _canvas.SelectedId = _open;
+            FitCanvas(); _canvas.Invalidate();
+        }
+
+        void ExportCsv()
+        {
+            using (var dlg = new SaveFileDialog { Filter = "CSV (*.csv)|*.csv", FileName = "timeline.csv" })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                Func<string, string> q = t => "\"" + (t ?? "").Replace("\"", "\"\"") + "\"";
+                var lines = new List<string> { "Docno,Job type,Requested,Requested by,Status,Risk,Current step,Owner,Waiting (h),Progress %" };
+                foreach (var r in TlRows())
+                    lines.Add(string.Join(",", new[] { q(r.Doc), q(r.JobType), q(r.RequestedAt.ToString("yyyy-MM-dd HH:mm")), q(r.RequestedBy), q(r.Status), q(ApprovalData.Risk(r)),
+                        q(r.Step.ToString("00") + " " + StepOf(r).Name), q(r.Status == "Wait" ? StepOf(r).Approver : ""), q(r.Status == "Wait" ? ApprovalData.AgeH(r).ToString("0.0", CultureInfo.InvariantCulture) : ""), (r.DoneSteps * 100 / ApprovalData.Steps.Length).ToString() }));
+                System.IO.File.WriteAllLines(dlg.FileName, lines.ToArray(), new System.Text.UTF8Encoding(true));
+            }
         }
 
         void UpdateBulk()
@@ -379,15 +529,17 @@ namespace SMFDash
 
         void ShowDetail()
         {
+            if (_wrapRight == null || _actions == null) return;     // called by a Resize while the page is still being built
             var r = ById(_open);
-            _right.Visible = r != null;
+            _right.Visible = _wrapRight.Visible = r != null;
             if (r == null) return;
             var cur = StepOf(r); bool act = CanAct(r);
             _dType.Text = r.Type + " · " + ApprovalData.Modules.First(m => m[0] == r.Module)[1];
             _dDoc.Text = r.Doc;
             _dStatus.Text = r.Status; _dStatus.ForeColor = r.Status == "Approved" ? Theme.Hex("#047857") : r.Status == "Rejected" ? Theme.Hex("#b91c1c") : Theme.Hex("#b45309");
             _dStatus.BackColor = r.Status == "Approved" ? Theme.Hex("#d1fae5") : r.Status == "Rejected" ? Theme.Hex("#fee2e2") : Theme.Hex("#fef3c7");
-            if (_dStatus.Parent != null) _dStatus.Left = _dStatus.Parent.Width - _dStatus.PreferredSize.Width - 14;
+            _dClose.Visible = _view == "timeline";
+            if (_dStatus.Parent != null) _dStatus.Left = _dStatus.Parent.Width - _dStatus.PreferredSize.Width - (_dClose.Visible ? 40 : 14);
             _stepper.Req = r;
 
             _info.SuspendLayout();

@@ -9,7 +9,7 @@
     if (!data) data = JSON.parse(JSON.stringify(window.AF_SEED));
     function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
 
-    var st = { mod: 'SE', tab: 'pending', q: '', step: 'all', mine: 'mine', late: false, sel: {}, open: null };
+    var st = { view: 'inbox', tStatus: 'active', tOwner: 'all', tGroup: 'risk', mod: 'SE', tab: 'pending', q: '', step: 'all', mine: 'mine', late: false, sel: {}, open: null };
 
     /* ---------- helpers ---------- */
     var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -106,6 +106,111 @@
         }).join('');
     }
 
+
+    /* ---------- Timeline Mgt ---------- */
+    var SLA_WARN = 24, SLA_LATE = 48;   // hours a request may wait at one step before it is "at risk" / "stalled"
+    function lastAt(r, stepNo, action) { var t = null; r.history.forEach(function (h) { if (h.step === stepNo && h.action === action) t = h.at; }); return t; }
+    function ageH(r) { return (NOW - new Date(lastAt(r, r.step, 'Requested') || r.requestedAt)) / 3600000; }
+    function ageTxt(h) { return h < 1 ? '<1h' : h < 48 ? Math.round(h) + 'h' : (h / 24).toFixed(1) + 'd'; }
+    function risk(r) {
+        if (r.status === 'Rejected') return 'rej';
+        if (r.status === 'Approved') return r.doneSteps >= STEPS.length ? 'done' : 'ok';
+        var a = ageH(r);
+        return isLate(r) || a >= SLA_LATE ? 'late' : a >= SLA_WARN ? 'warn' : 'ok';
+    }
+    var RISK_NAME = { late: 'Stalled / overdue', warn: 'At risk', ok: 'On track', rej: 'Rejected', done: 'Completed' };
+
+    function tlRows() {
+        var q = st.q.toLowerCase();
+        return data.filter(function (r) {
+            if (r.module !== st.mod) return false;
+            var k = risk(r);
+            if (st.tStatus === 'active' && (k === 'rej' || k === 'done')) return false;
+            if (st.tStatus === 'risk' && k !== 'warn' && k !== 'late') return false;
+            if (st.tStatus === 'rej' && k !== 'rej') return false;
+            if (st.tStatus === 'done' && k !== 'done') return false;
+            if (st.tOwner !== 'all' && (r.status !== 'Wait' || step(r).approver !== st.tOwner)) return false;
+            if (q && (r.doc + ' ' + r.sum.shipper + ' ' + r.sum.consignee + ' ' + r.requestedBy + ' ' + r.remark).toLowerCase().indexOf(q) < 0) return false;
+            return true;
+        });
+    }
+
+    function tlCell(r, s) {
+        var sp = STEPS[s - 1], req = lastAt(r, s, 'Requested'), app = lastAt(r, s, 'Approved'), rej = lastAt(r, s, 'Rejected');
+        var cls = 'todo', txt = '', tip = String(s).padStart(2, '0') + ' ' + sp.name + ' \u00b7 approver ' + sp.approver;
+        if (s <= r.doneSteps) { cls = 'done'; txt = '\u2713'; tip += app ? ' \u00b7 approved ' + fmt(app) + (req ? ' (took ' + ageTxt((new Date(app) - new Date(req)) / 3600000) + ')' : '') : ''; }
+        else if (s === r.step && r.status === 'Rejected') { cls = 'rej'; txt = '\u2715'; tip += ' \u00b7 rejected ' + fmt(rej); }
+        else if (s === r.step && r.status === 'Wait') { cls = 'cur ' + risk(r); txt = ageTxt(ageH(r)); tip += ' \u00b7 waiting ' + ageTxt(ageH(r)) + ' since ' + fmt(req); }
+        return '<div class="tc ' + cls + '" title="' + esc(tip) + '">' + txt + '</div>';
+    }
+
+    function tlRow(r) {
+        var k = risk(r), cells = '';
+        for (var s = 1; s <= STEPS.length; s++) cells += tlCell(r, s);
+        var wait = r.status === 'Wait' ? '<span class="chip ' + (k === 'late' ? 'c-late' : k === 'warn' ? 'c-wait' : 'c-ok') + '">' + ageTxt(ageH(r)) + '</span>' : '<span class="sub">\u2014</span>';
+        var owner = r.status === 'Wait' ? esc(step(r).approver) + (step(r).approver === ME ? ' <span class="chip c-wait">you</span>' : '') : '<span class="sub">\u2014</span>';
+        return '<div class="tl-row ' + (st.open === r.id ? 'sel' : '') + '" data-id="' + r.id + '">' +
+            '<div><div class="docno">' + esc(r.doc) + '</div><div class="sub">' + esc(r.type) + '</div></div>' +
+            '<div class="text-xs">' + fmt(r.requestedAt) + '<div class="sub">' + esc(r.requestedBy) + '</div></div>' +
+            '<div class="text-xs">' + esc(r.sum.jobType) + '<div class="sub">' + esc(r.sum.sale) + '</div></div>' +
+            cells +
+            '<div class="flex items-center gap-1.5"><div class="pbar flex-1"><i style="width:' + pct(r) + '%"></i></div><b class="text-[11px] w-8 text-right">' + pct(r) + '%</b></div>' +
+            '<div>' + wait + '</div><div class="text-xs">' + owner + '</div></div>';
+    }
+
+    function renderTimeline() {
+        var mod = MODS.filter(function (x) { return x.id === st.mod; })[0];
+        var all = data.filter(function (r) { return r.module === st.mod; });
+        var cnt = { ok: 0, warn: 0, late: 0, rej: 0, done: 0 };
+        all.forEach(function (r) { cnt[risk(r)]++; });
+        var active = cnt.ok + cnt.warn + cnt.late;
+        var done = all.filter(function (r) { return risk(r) === 'done'; });
+        var cyc = done.length ? done.reduce(function (a, r) { return a + (new Date(r.history[r.history.length - 1].at) - new Date(r.requestedAt)) / 86400000; }, 0) / done.length : 0;
+        $('#listTitle').textContent = mod.name + ' \u2014 Timeline Management';
+        $('#listSub').textContent = 'SLA: at risk after ' + SLA_WARN + ' h, stalled after ' + SLA_LATE + ' h at one step (or past deadline) \u00b7 demo clock ' + fmt(NOW.toISOString().slice(0, 16));
+
+        var owners = {}; all.forEach(function (r) { if (r.status === 'Wait') owners[step(r).approver] = 1; });
+        $('#tOwner').innerHTML = '<option value="all">All owners</option>' + Object.keys(owners).sort().map(function (o) { return '<option value="' + o + '"' + (st.tOwner === o ? ' selected' : '') + '>Owner: ' + o + '</option>'; }).join('');
+        $('#tStatus').value = st.tStatus; $('#tGroup').value = st.tGroup;
+
+        var kpi = [['active', 'In progress', active, 'k-ind'], ['active', 'On track', cnt.ok, 'k-ok'], ['risk', 'At risk', cnt.warn, 'k-warn'], ['risk', 'Stalled / overdue', cnt.late, 'k-bad'],
+                   ['rej', 'Rejected', cnt.rej, 'k-bad'], ['done', 'Completed', cnt.done, 'k-mute']];
+        var kpiHtml = '<div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-2 mb-3">' + kpi.map(function (k) {
+            return '<button class="kpi ' + k[3] + '" data-tstatus="' + k[0] + '"><span class="kl">' + k[1] + '</span><span class="kv2">' + k[2] + '</span></button>';
+        }).join('') + '<div class="kpi k-plain"><span class="kl">Avg cycle time</span><span class="kv2">' + (done.length ? cyc.toFixed(1) + ' d' : '\u2014') + '</span></div></div>';
+
+        // WIP row: how many requests currently wait at each step (shows the bottleneck)
+        var wip = STEPS.map(function (sp) {
+            var rs = all.filter(function (r) { return r.status === 'Wait' && r.step === sp.no; });
+            var worst = rs.reduce(function (a, r) { var k = risk(r); return k === 'late' ? 'late' : (k === 'warn' && a !== 'late') ? 'warn' : a; }, 'ok');
+            return '<div class="wip ' + (rs.length ? 'w-' + worst : '') + '" title="' + String(sp.no).padStart(2, '0') + ' ' + esc(sp.name) + ' \u00b7 approver ' + sp.approver + ' \u00b7 ' + rs.length + ' waiting">' + (rs.length || '') + '</div>';
+        }).join('');
+        var heads = STEPS.map(function (sp) { return '<div class="th-s" title="' + String(sp.no).padStart(2, '0') + ' ' + esc(sp.name) + ' \u00b7 approver ' + sp.approver + '">' + sp.no + '</div>'; }).join('');
+
+        var rows = tlRows(), groups = [];
+        rows.sort(function (a, b) { return (b.status === 'Wait' ? ageH(b) : -1) - (a.status === 'Wait' ? ageH(a) : -1) || new Date(b.requestedAt) - new Date(a.requestedAt); });
+        if (st.tGroup === 'risk') ['late', 'warn', 'ok', 'rej', 'done'].forEach(function (k) { groups.push([RISK_NAME[k], rows.filter(function (r) { return risk(r) === k; }), k]); });
+        else if (st.tGroup === 'job') { var jt = {}; rows.forEach(function (r) { (jt[r.sum.jobType] = jt[r.sum.jobType] || []).push(r); }); Object.keys(jt).sort().forEach(function (j) { groups.push([j, jt[j], '']); }); }
+        else groups.push(['', rows, '']);
+
+        var body = groups.filter(function (g) { return g[1].length; }).map(function (g) {
+            return (g[0] ? '<div class="tl-group ' + (g[2] ? 'g-' + g[2] : '') + '">' + esc(g[0]) + ' <span>' + g[1].length + '</span></div>' : '') + g[1].map(tlRow).join('');
+        }).join('') || '<div class="empty">No documents match.</div>';
+
+        var legend = '<div class="legend"><span><i class="tc done"></i>Approved</span><span><i class="tc cur ok"></i>Waiting (age)</span><span><i class="tc cur warn"></i>At risk</span>' +
+            '<span><i class="tc cur late"></i>Stalled</span><span><i class="tc rej"></i>Rejected</span><span><i class="tc todo"></i>Not started</span></div>';
+
+        $('#list').innerHTML = kpiHtml + '<div class="tl-wrap"><div class="tl-grid tl-head"><div>Document</div><div>Requested</div><div>Job type</div>' + heads + '<div>Progress</div><div>Waiting</div><div>Owner</div></div>' +
+            '<div class="tl-grid tl-wipr"><div class="wip-l">Waiting at step \u2192</div>' + wip + '</div>' + body + '</div>' + legend;
+    }
+
+    function exportCsv() {
+        var rows = [['Docno', 'Job type', 'Requested', 'Requested by', 'Status', 'Risk', 'Current step', 'Owner', 'Waiting (h)', 'Progress %']];
+        tlRows().forEach(function (r) { rows.push([r.doc, r.sum.jobType, r.requestedAt, r.requestedBy, r.status, RISK_NAME[risk(r)], String(r.step).padStart(2, '0') + ' ' + step(r).name, r.status === 'Wait' ? step(r).approver : '', r.status === 'Wait' ? ageH(r).toFixed(1) : '', pct(r)]); });
+        var csv = rows.map(function (a) { return a.map(function (c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = 'timeline.csv'; a.click();
+    }
+
     /* ---------- detail ---------- */
     function renderDetail() {
         var el = $('#detail'), r = st.open && byId(st.open);
@@ -159,11 +264,20 @@
         }
     }
 
-    function render() { renderNav(); renderList(); renderDetail(); }
+    function render() {
+        var tl = st.view === 'timeline';
+        $('#tabs').classList.toggle('hidden', tl); $('#inboxF').classList.toggle('hidden', tl); $('#tlF').classList.toggle('hidden', !tl);
+        if (tl) $('#bulk').classList.add('hidden');
+        document.querySelectorAll('#viewSw button').forEach(function (b) { b.classList.toggle('on', b.dataset.view === st.view); });
+        renderNav(); if (tl) renderTimeline(); else renderList(); renderDetail();
+    }
 
     /* ---------- events ---------- */
     document.addEventListener('click', function (e) {
         var t;
+        if ((t = e.target.closest('[data-view]'))) { st.view = t.dataset.view; st.open = null; return render(); }
+        if ((t = e.target.closest('[data-tstatus]'))) { st.tStatus = t.dataset.tstatus; return render(); }
+        if ((t = e.target.closest('.tl-row[data-id]'))) { st.open = +t.dataset.id; return render(); }
         if ((t = e.target.closest('[data-mod]'))) { st.mod = t.dataset.mod; st.open = null; st.sel = {}; $('#side').classList.remove('open'); $('#scrim').classList.add('hidden'); return render(); }
         if ((t = e.target.closest('[data-tab]'))) { st.tab = t.dataset.tab; st.sel = {}; return render(); }
         if ((t = e.target.closest('[data-ck]'))) { if (t.checked) st.sel[t.dataset.ck] = 1; else delete st.sel[t.dataset.ck]; e.stopPropagation(); return renderList(); }
@@ -176,10 +290,14 @@
         if ((t = e.target.closest('[data-file]'))) { e.preventDefault(); return toast('Preview of ' + t.dataset.file + ' (mockup)'); }
         if ((t = e.target.closest('.row[data-id]'))) { st.open = +t.dataset.id; return render(); }
     });
-    $('#q').oninput = function () { st.q = this.value; renderList(); };
+    $('#q').oninput = function () { st.q = this.value; if (st.view === 'timeline') renderTimeline(); else renderList(); };
     $('#fStep').onchange = function () { st.step = this.value; renderList(); };
     $('#fMine').onchange = function () { st.mine = this.value; renderList(); };
     $('#fLate').onchange = function () { st.late = this.checked; renderList(); };
+    $('#tStatus').onchange = function () { st.tStatus = this.value; render(); };
+    $('#tOwner').onchange = function () { st.tOwner = this.value; render(); };
+    $('#tGroup').onchange = function () { st.tGroup = this.value; render(); };
+    $('#tExport').onclick = exportCsv;
     $('#btnRefresh').onclick = render;
     $('#bulkApprove').onclick = function () { approveMany(Object.keys(st.sel).map(Number)); };
     $('#bulkClear').onclick = function () { st.sel = {}; renderList(); };

@@ -45,21 +45,39 @@
                     <h1 id="listTitle" class="text-xl font-semibold">Approval Requests</h1>
                     <p id="listSub" class="text-xs text-slate-500"></p>
                 </div>
-                <button id="btnRefresh" class="btn-secondary">↻ Refresh</button>
+                <div class="flex items-center gap-2">
+                    <div id="viewSw" class="seg">
+                        <button data-view="inbox">Inbox</button><button data-view="timeline">Timeline Mgt</button>
+                    </div>
+                    <button id="btnRefresh" class="btn-secondary">↻ Refresh</button>
+                </div>
             </div>
 
             <!-- tabs -->
             <div id="tabs" class="flex gap-1 border-b border-slate-200 mb-3 overflow-x-auto"></div>
 
             <!-- filters -->
-            <div class="flex flex-wrap items-center gap-2 mb-3">
+            <div id="fRow" class="flex flex-wrap items-center gap-2 mb-3">
                 <input id="q" class="field w-56" placeholder="Search Docno / customer …">
-                <select id="fStep" class="field"></select>
-                <select id="fMine" class="field">
-                    <option value="mine">Waiting for me</option>
-                    <option value="all">Everyone</option>
-                </select>
-                <label class="text-xs text-slate-500 flex items-center gap-1 ml-1"><input id="fLate" type="checkbox"> Overdue only</label>
+                <span id="inboxF" class="contents">
+                    <select id="fStep" class="field"></select>
+                    <select id="fMine" class="field">
+                        <option value="mine">Waiting for me</option>
+                        <option value="all">Everyone</option>
+                    </select>
+                    <label class="text-xs text-slate-500 flex items-center gap-1 ml-1"><input id="fLate" type="checkbox"> Overdue only</label>
+                </span>
+                <span id="tlF" class="contents hidden">
+                    <select id="tStatus" class="field">
+                        <option value="active">In progress</option><option value="risk">At risk / stalled</option>
+                        <option value="rej">Rejected</option><option value="done">Completed</option><option value="all">All</option>
+                    </select>
+                    <select id="tOwner" class="field"></select>
+                    <select id="tGroup" class="field">
+                        <option value="risk">Group by: Risk</option><option value="job">Group by: Job type</option><option value="none">No grouping</option>
+                    </select>
+                    <button id="tExport" class="btn-secondary">⬇ CSV</button>
+                </span>
             </div>
 
             <!-- bulk bar -->
