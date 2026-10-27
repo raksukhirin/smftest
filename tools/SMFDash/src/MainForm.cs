@@ -102,7 +102,21 @@ namespace SMFDash
                 }
                 Render();
             }, TaskScheduler.FromCurrentSynchronizationContext());
+
+            // Alerts: SMALERTDEF + views. Missing table = not installed yet -> keep whatever is shown (demo / loaded files)
+            Task.Factory.StartNew(() => { string w; var l = LiveAlerts.Load(db, out w); return Tuple.Create(l, w); }).ContinueWith(t =>
+            {
+                if (t.IsFaulted) { _alrNote = "Alerts: not read from DB (" + t.Exception.GetBaseException().Message + ")"; }
+                else
+                {
+                    _alr.SetLive(t.Result.Item1, db.Target);
+                    _alrNote = "Alerts: LIVE from " + db.Target + " (" + t.Result.Item1.Count + " alert(s))" + (t.Result.Item2 != "" ? " - problems: " + t.Result.Item2 : "");
+                }
+                if (_mod == "alr") _status.Text = _alrNote;
+            }, TaskScheduler.FromCurrentSynchronizationContext());
         }
+
+        string _alrNote = "";
 
         void Render()
         {
@@ -116,7 +130,7 @@ namespace SMFDash
                 if (_apr == null) _apr = new ApprovalPage(_db.Ini.Get("Approval", "User", "TEST"));
                 _status.Text = "Approval: DEMO data - approve / reject only change this window (SMFDash never writes to the database). Signed in as " + _db.Ini.Get("Approval", "User", "TEST");
             }
-            if (_mod == "alr") _status.Text = "Alerts: HTML reports from SQL (demo reports until real files are loaded - use Load HTML or drop .html files). Read-only.";
+            if (_mod == "alr") _status.Text = _alrNote != "" ? _alrNote : "Alerts: demo reports - connect to the database (Settings) to read them live from SMALERTDEF, or use Load HTML / drop .html files. Read-only.";
             Control page = _mod == "alr" ? (Control)_alr : _mod == "apr" ? (Control)_apr : _mod == "ops" ? Pages.Ops(_ops[_mode]) : _mod == "acc" ? Pages.Acc(_acc) : Pages.Mkt(_mkt);
             _body.SuspendLayout();
             var old = _body.Controls.Cast<Control>().ToList();

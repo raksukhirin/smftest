@@ -77,7 +77,7 @@ namespace SMFDash
             top.Resize += (s, e) => { reset.Left = top.Width - reset.Width - 4; load.Left = reset.Left - load.Width - 6; };
             top.Controls.AddRange(new Control[] { title, _sub, load, reset });
             load.Click += (s, e) => LoadFiles();
-            reset.Click += (s, e) => { _src.Clear(); _src.AddRange(AlertSamples.Demo()); _sel = 0; ResetFilters(); Rebuild(); };
+            reset.Click += (s, e) => { _liveNote = ""; AlertParser.Today = ApprovalData.Now; _src.Clear(); _src.AddRange(AlertSamples.Demo()); _sel = 0; ResetFilters(); Rebuild(); };
 
             // detail card
             var tool = new Panel { Dock = DockStyle.Top, Height = 34 };
@@ -116,6 +116,15 @@ namespace SMFDash
             DragEnter += OnDrag; DragDrop += OnDrop; _grid.DragEnter += OnDrag; _grid.DragDrop += OnDrop; _cards.AllowDrop = true; _cards.DragEnter += OnDrag; _cards.DragDrop += OnDrop;
 
             Rebuild();
+        }
+
+        string _liveNote = "";
+
+        /// <summary>Replace the list with alerts read from the database (SMALERTDEF + views); ages then use today's real date.</summary>
+        public void SetLive(List<AlertSrc> live, string target)
+        {
+            _src.Clear(); _src.AddRange(live); _sel = 0; _liveNote = "LIVE · " + target; AlertParser.Today = DateTime.Today;
+            ResetFilters(); Rebuild();
         }
 
         AlertDef Sel() { return _alerts.Count > 0 ? _alerts[Math.Min(_sel, _alerts.Count - 1)] : null; }
@@ -162,7 +171,8 @@ namespace SMFDash
                 _cards.Controls.Add(card);
             }
             _cards.ResumeLayout(true);
-            _sub.Text = _alerts.Count + " report(s) from SQL · " + TotalItems + " item(s) need attention · demo clock " + ApprovalData.Now.ToString("d MMM yyyy", CultureInfo.InvariantCulture);
+            _sub.Text = _alerts.Count + " report(s) · " + TotalItems + " item(s) need attention · " +
+                (_liveNote != "" ? _liveNote : "demo data, demo clock " + ApprovalData.Now.ToString("d MMM yyyy", CultureInfo.InvariantCulture));
             RefreshDetail(true);
             if (Changed != null) Changed();
         }

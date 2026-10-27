@@ -10,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace SMFDash
 {
-    public class AlertSrc { public string File, Subject, Html; }
+    public class AlertSrc { public string File, Subject, Html, Short; }
     public class AlertCol { public string Name, Kind; }
 
     public class AlertDef
@@ -50,6 +50,8 @@ namespace SMFDash
             decimal v; return decimal.TryParse((s ?? "").Replace(",", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out v) ? v : 0;
         }
         static bool IsNum(string s) { return Regex.IsMatch(s ?? "", @"^-?[\d,]+(\.\d+)?$"); }
+        /// <summary>"Today" for the derived AGE column: the demo clock until alerts come from the database.</summary>
+        public static DateTime Today = ApprovalData.Now;
         public static string Sev(double d) { return d >= 90 ? "bad" : d >= 30 ? "warn" : "info"; }
 
         public static AlertDef Parse(AlertSrc src)
@@ -66,7 +68,7 @@ namespace SMFDash
             var head = rows[0]; rows.RemoveAt(0);
 
             // drop columns that are empty in every row (e.g. REMARK)
-            var keep = Enumerable.Range(0, head.Count).Where(i => rows.Any(r => i < r.Count && r[i] != "")).ToList();
+            var keep = Enumerable.Range(0, head.Count).Where(i => rows.Count == 0 || rows.Any(r => i < r.Count && r[i] != "")).ToList();
             var a = new AlertDef { File = src.File, Html = src.Html };
             var data = rows.Select(r => keep.Select(i => i < r.Count ? r[i] : "").ToList()).ToList();
             var names = keep.Select(i => head[i]).ToList();
@@ -79,7 +81,7 @@ namespace SMFDash
                 else if (vals.Count > 0 && vals.All(IsNum)) kind = Regex.IsMatch(hu, "AMT|AMOUNT") ? "money" : hu.Contains("DAYS") ? "days" : "num";
                 else if (hu.Contains("USER")) kind = "user";
                 else if (Regex.IsMatch(hu, @"JOB ?NO|JOBNO")) kind = "job";
-                else if (Regex.IsMatch(hu, @"INV\. ?(NO|NUMBER)")) kind = "inv";
+                else if (Regex.IsMatch(hu, @"INV\.? ?(NO|NUMBER)")) kind = "inv";
                 a.Cols.Add(new AlertCol { Name = names[i], Kind = kind });
             }
 
@@ -91,7 +93,7 @@ namespace SMFDash
                 if (di >= 0)
                 {
                     a.Cols.Add(new AlertCol { Name = "AGE", Kind = "age" });
-                    foreach (var r in data) { var d = DateOf(r[di]); r.Add(d.HasValue ? Math.Max(0, (int)(ApprovalData.Now - d.Value).TotalDays).ToString() : ""); }
+                    foreach (var r in data) { var d = DateOf(r[di]); r.Add(d.HasValue ? Math.Max(0, (int)(Today - d.Value).TotalDays).ToString() : ""); }
                     a.Di = a.Cols.Count - 1;
                 }
             }
@@ -102,6 +104,7 @@ namespace SMFDash
             a.Title = subject != "" ? subject : heading; a.Heading = heading; a.Note = h2.Success ? Clean(h2.Groups[1].Value) : "";
             a.Short = a.Title; a.Icon = "\U0001F514";
             foreach (var c in Cat) if (((Regex)c[0]).IsMatch(subject + " " + heading)) { a.Short = (string)c[1]; a.Icon = (string)c[2]; break; }
+            if (!string.IsNullOrEmpty(src.Short)) a.Short = src.Short;
             a.MaxDays = a.Di >= 0 && a.Rows.Count > 0 ? a.Rows.Max(r => (double)Num(r[a.Di])) : 0;
             a.Total = a.Mi >= 0 ? a.Rows.Sum(r => Num(r[a.Mi])) : (decimal?)null;
             a.Sev = a.Rows.Count == 0 ? "ok" : a.Di >= 0 ? Sev(a.MaxDays) : "warn";
