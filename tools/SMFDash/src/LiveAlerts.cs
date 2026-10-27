@@ -13,7 +13,6 @@ namespace SMFDash
 {
     public static class LiveAlerts
     {
-        const int MaxRows = 5000;
         static readonly Regex SafeName = new Regex(@"^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)?$", RegexOptions.Compiled);
 
         /// <summary>Active alerts from SMALERTDEF, in SORTNO order. Throws when the table does not exist yet.</summary>
@@ -28,7 +27,7 @@ namespace SMFDash
                 if (!SafeName.IsMatch(view)) { warning += code + ": bad view name; "; continue; }
                 try
                 {
-                    var dt = db.Query("SELECT TOP " + MaxRows + " * FROM " + view);
+                    var dt = db.Query("SELECT TOP " + AlertSettings.MaxRows + " * FROM " + view);
                     string title = S(d["TITLE"]);
                     list.Add(new AlertSrc
                     {
@@ -55,7 +54,7 @@ namespace SMFDash
                     string view = S(d["VN"]), name = S(d["N"]);
                     try
                     {
-                        var dt = db.Query("SELECT TOP " + MaxRows + " * FROM " + view);
+                        var dt = db.Query("SELECT TOP " + AlertSettings.MaxRows + " * FROM " + view);
                         string title = S(d["DESCR"]) != "" ? S(d["DESCR"]) : name;
                         list.Add(new AlertSrc { File = name, Subject = title, Short = "", Html = Html(title, "", dt) });
                     }

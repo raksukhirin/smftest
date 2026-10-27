@@ -13,6 +13,29 @@ namespace SMFDash
     public class AlertSrc { public string File, Subject, Html, Short; }
     public class AlertCol { public string Name, Kind; }
 
+    /// <summary>Display settings of the Alerts tab, from [Alerts] in SMFDash.ini (what the alerts select is decided by the views).</summary>
+    public static class AlertSettings
+    {
+        public static int WarnDays = 30, BadDays = 90, MaxRows = 5000, RefreshMin = 0;
+        public static bool HideEmpty;
+
+        static int Int(Ini ini, string key, int def, int min, int max) { int v = ini.GetInt("Alerts", key, def); return v < min ? min : v > max ? max : v; }
+
+        public static void Load(Ini ini)
+        {
+            WarnDays = Int(ini, "WarnDays", 30, 0, 36500); BadDays = Int(ini, "BadDays", 90, 0, 36500);
+            if (BadDays < WarnDays) BadDays = WarnDays;
+            MaxRows = Int(ini, "MaxRows", 5000, 100, 100000); RefreshMin = Int(ini, "RefreshMin", 0, 0, 1440);
+            HideEmpty = ini.GetInt("Alerts", "HideEmpty", 0) != 0;
+        }
+
+        public static void Save(Ini ini, int warn, int bad, int maxRows, bool hideEmpty, int refreshMin)
+        {
+            ini.Set("Alerts", "WarnDays", warn.ToString()); ini.Set("Alerts", "BadDays", bad.ToString()); ini.Set("Alerts", "MaxRows", maxRows.ToString());
+            ini.Set("Alerts", "HideEmpty", hideEmpty ? "1" : "0"); ini.Set("Alerts", "RefreshMin", refreshMin.ToString());
+        }
+    }
+
     public class AlertDef
     {
         public string File, Title, Heading, Note, Short, Icon, Html, Sev;
@@ -52,7 +75,7 @@ namespace SMFDash
         static bool IsNum(string s) { return Regex.IsMatch(s ?? "", @"^-?[\d,]+(\.\d+)?$"); }
         /// <summary>"Today" for the derived AGE column: the demo clock until alerts come from the database.</summary>
         public static DateTime Today = ApprovalData.Now;
-        public static string Sev(double d) { return d >= 90 ? "bad" : d >= 30 ? "warn" : "info"; }
+        public static string Sev(double d) { return d >= AlertSettings.BadDays ? "bad" : d >= AlertSettings.WarnDays ? "warn" : "info"; }
 
         public static AlertDef Parse(AlertSrc src)
         {

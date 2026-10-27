@@ -25,6 +25,13 @@ namespace SMFDash
         ApprovalPage _apr;
         readonly AlertsPage _alr = new AlertsPage();   // kept alive between tab switches (holds the loaded reports)
         public bool NoLoad;
+        readonly Timer _autoRefresh = new Timer();
+
+        void ApplyRefresh()
+        {
+            _autoRefresh.Stop();
+            if (AlertSettings.RefreshMin > 0 && !NoLoad) { _autoRefresh.Interval = AlertSettings.RefreshMin * 60000; _autoRefresh.Start(); }
+        }
 
         public MainForm(Db db)
         {
@@ -56,7 +63,14 @@ namespace SMFDash
             settings.Left = _top.Width - 96; refresh.Left = settings.Left - 92;
             _top.Controls.Add(settings); _top.Controls.Add(refresh);
             refresh.Click += (s, e) => Reload();
-            settings.Click += (s, e) => { using (var f = new SettingsForm(_db.Ini)) if (f.ShowDialog(this) == DialogResult.OK) Reload(); };
+            settings.Click += (s, e) =>
+            {
+                using (var f = new SettingsForm(_db.Ini))
+                    if (f.ShowDialog(this) == DialogResult.OK) { AlertSettings.Load(_db.Ini); ApplyRefresh(); _alr.Reapply(); Reload(); }
+            };
+            AlertSettings.Load(_db.Ini); _alr.Reapply();
+            _autoRefresh.Tick += (s, e) => { if (_db.Configured) Reload(); };
+            ApplyRefresh();
 
             int sx = 180;
             foreach (var m in Sample.OpsModes)

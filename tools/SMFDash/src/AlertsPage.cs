@@ -120,6 +120,9 @@ namespace SMFDash
 
         string _liveNote = "";
 
+        /// <summary>Re-read the loaded reports with the current display settings (colour thresholds, hide empty).</summary>
+        public void Reapply() { ResetFilters(); Rebuild(); }
+
         /// <summary>Replace the list with alerts read from the database (SMALERTDEF + views); ages then use today's real date.</summary>
         public void SetLive(List<AlertSrc> live, string target)
         {
@@ -161,7 +164,7 @@ namespace SMFDash
 
         void Rebuild()
         {
-            _alerts = _src.Select(AlertParser.Parse).Where(a => a != null).ToList();
+            _alerts = _src.Select(AlertParser.Parse).Where(a => a != null && (!AlertSettings.HideEmpty || a.Rows.Count > 0)).ToList();
             if (_sel >= _alerts.Count) _sel = 0;
             _cards.SuspendLayout(); foreach (Control c in _cards.Controls.Cast<Control>().ToList()) c.Dispose(); _cards.Controls.Clear();
             for (int i = 0; i < _alerts.Count; i++)
