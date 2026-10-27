@@ -108,7 +108,8 @@ namespace SMFDash
         static readonly Regex Ok = new Regex("on time|arrived|flown|cleared|balanced", RegexOptions.IgnoreCase);
         static readonly Regex Info = new Regex("transit|lodged|dispatched|booked|planned|open", RegexOptions.IgnoreCase);
 
-        public static DataGridView Make(string[] cols, IList<string[]> rows, int pill, params int[] num)
+        /// <summary>Flat, borderless grid in the dashboard style (no columns yet).</summary>
+        public static DataGridView Styled()
         {
             var d = new DataGridView
             {
@@ -122,6 +123,12 @@ namespace SMFDash
             d.ColumnHeadersDefaultCellStyle.BackColor = Color.White; d.ColumnHeadersDefaultCellStyle.ForeColor = Theme.Muted;
             d.ColumnHeadersDefaultCellStyle.Font = Theme.Section; d.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.White;
             d.ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
+            return d;
+        }
+
+        public static DataGridView Make(string[] cols, IList<string[]> rows, int pill, params int[] num)
+        {
+            var d = Styled();
             for (int i = 0; i < cols.Length; i++)
             {
                 var c = new DataGridViewTextBoxColumn { HeaderText = cols[i], SortMode = DataGridViewColumnSortMode.NotSortable };

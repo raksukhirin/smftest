@@ -22,6 +22,7 @@ namespace SMFDash
         AccData _acc = Sample.Acc();
         readonly MktData _mkt = Sample.Mkt();
         string _liveNote = "";
+        ApprovalPage _apr;
         public bool NoLoad;
 
         public MainForm(Db db)
@@ -35,9 +36,9 @@ namespace SMFDash
             _top.Controls.Add(logo); _top.Controls.Add(name);
 
             int x = 180;
-            foreach (var m in new[] { new[] { "ops", "Operations" }, new[] { "acc", "Accounting" }, new[] { "mkt", "Marketing" } })
+            foreach (var m in new[] { new[] { "ops", "Operations" }, new[] { "acc", "Accounting" }, new[] { "mkt", "Marketing" }, new[] { "apr", "Approval" } })
             {
-                var b = new PillButton(m[1]) { Left = x, Top = 12, Tag = m[0], Accent = m[0] == "ops" ? Theme.Ops : m[0] == "acc" ? Theme.Acc : Theme.Mkt };
+                var b = new PillButton(m[1]) { Left = x, Top = 12, Tag = m[0], Accent = m[0] == "ops" ? Theme.Ops : m[0] == "acc" ? Theme.Acc : m[0] == "mkt" ? Theme.Mkt : Theme.Apr };
                 b.Click += (s, e) => { _mod = (string)((Control)s).Tag; Render(); };
                 _top.Controls.Add(b); _mods.Add(b); x += b.Width + 6;
             }
@@ -100,10 +101,15 @@ namespace SMFDash
             _sub.Visible = _mod == "ops";
             _status.Text = _liveNote;
 
-            Control page = _mod == "ops" ? Pages.Ops(_ops[_mode]) : _mod == "acc" ? Pages.Acc(_acc) : Pages.Mkt(_mkt);
+            if (_mod == "apr")
+            {
+                if (_apr == null) _apr = new ApprovalPage(_db.Ini.Get("Approval", "User", "TEST"));
+                _status.Text = "Approval: DEMO data - approve / reject only change this window (SMFDash never writes to the database). Signed in as " + _db.Ini.Get("Approval", "User", "TEST");
+            }
+            Control page = _mod == "apr" ? (Control)_apr : _mod == "ops" ? Pages.Ops(_ops[_mode]) : _mod == "acc" ? Pages.Acc(_acc) : Pages.Mkt(_mkt);
             _body.SuspendLayout();
             var old = _body.Controls.Cast<Control>().ToList();
-            _body.Controls.Clear(); foreach (var c in old) c.Dispose();
+            _body.Controls.Clear(); foreach (var c in old) if (c != _apr) c.Dispose();
             _body.Controls.Add(page);
             _body.ResumeLayout(true);
             _body.AutoScrollPosition = new Point(0, 0);

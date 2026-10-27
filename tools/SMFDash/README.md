@@ -28,11 +28,18 @@ Open-item rule (from `frmRPAging.frm`): group rows by `JOINID = CASE WHEN REFINV
 - the AP sign convention (`DOCBAL`) and AR/AP numbers vs. the VB6 aging report — ask Accounting to compare one customer/vendor
 - Branch and Period filters from the mockup are left out until the branch column is identified (`mockup\Dashboard\mapping.md`, item 4.5)
 
+## Approval tab (demo)
+4th module **Approval** — same layout as `mockup\ApprovalFlow`: module pills (Sea/Air Export/Import) with the count waiting for the signed-in user, tabs Pending / Approved / Rejected / All, filters (search, working step, waiting for me / everyone, overdue), checkboxes + **Approve selected**, quick **APP. / REJ.** links per row, and a detail panel (progress, 13-step stepper, request, attachments, document, history, remark + Approve / Reject; Reject needs a reason; **UNDO** for 6 s).
+- The user is `[Approval] User=` in `SMFDash.ini` (default `TEST`); a step is actionable only when that user is the step's approver.
+- **Data is a demo list in memory** (`src\ApprovalData.cs`). Approve / reject change only the open window and are lost on restart — SMFDash is read-only and the approval tables are not known yet. When they are, write the update through a separate, explicit write path (not `Db.Query`).
+- Step names 04-13 and the approver per step are placeholders. "View" on attachments is not implemented.
+
 ## Layout of the code
 | File | Role |
 |---|---|
 | `Program.cs`, `MainForm.cs` | window, module / Operations sub-tabs, async reload |
 | `Pages.cs` | one function per module — arranges cards |
+| `ApprovalPage.cs`, `ApprovalData.cs` | Approval tab (stateful page, kept alive between tab switches) + demo data |
 | `Widgets.cs` | KpiCard, Card, PillButton, table (DataGridView) and the row layout |
 | `Charts.cs` | Bar / GroupBar / Line / Donut / HBar / Funnel (hover for values) |
 | `LiveData.cs` | the only SQL; add new live widgets here and drop the matching sample |

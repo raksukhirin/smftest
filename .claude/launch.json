@@ -78,6 +78,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8771", "--directory", "mockup/Dashboard"],
       "port": 8771
+    },
+    {
+      "name": "approvalflow-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8772", "--directory", "mockup/ApprovalFlow"],
+      "port": 8772
     }
   ]
 }
