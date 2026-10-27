@@ -35,6 +35,12 @@ Open-item rule (from `frmRPAging.frm`): group rows by `JOINID = CASE WHEN REFINV
 - **Data is a demo list in memory** (`src\ApprovalData.cs`). Approve / reject change only the open window and are lost on restart — SMFDash is read-only and the approval tables are not known yet. When they are, write the update through a separate, explicit write path (not `Db.Query`).
 - Step names 04-13 and the approver per step are placeholders. "View" on attachments is not implemented.
 
+## Alerts tab
+5th module **Alerts** (`AlertsPage.cs`, `AlertData.cs`) — same behaviour as the Alerts page in `mockup\ApprovalFlow`: each SQL HTML report (an `<h1>`/`<h2>` + one `<table>`) becomes a card (count, total, oldest age, severity stripe) and a table with search, user chips, group by user with subtotals, header sort, click a Job / Invoice No to copy it, totals row, **CSV** and **Original HTML**. The tab shows the total number of items.
+- **Real files:** press **Load HTML…** or drag `.html` files onto the page. They are only read locally (the parser is a small regex reader — no extra library); nothing is written anywhere. Until then the 7 demo reports (modelled on the mails provided) are shown.
+- Column types are detected from the values (date `dd-mm-yyyy`, money, days, user, Job No / Invoice No); empty columns are dropped; with no TOTAL DAYS column an **AGE** column is derived from the first date column. Severity: ≥ 90 days red, ≥ 30 amber. Age uses the demo clock (27 Oct 2026) like the rest of the Approval tabs.
+- Not done: reading the reports straight from SQL / a mail folder (today they are files), and reports whose HTML has more than one table (only the first is read).
+
 ## Layout of the code
 | File | Role |
 |---|---|

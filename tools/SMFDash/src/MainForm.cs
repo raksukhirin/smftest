@@ -23,6 +23,7 @@ namespace SMFDash
         readonly MktData _mkt = Sample.Mkt();
         string _liveNote = "";
         ApprovalPage _apr;
+        readonly AlertsPage _alr = new AlertsPage();   // kept alive between tab switches (holds the loaded reports)
         public bool NoLoad;
 
         public MainForm(Db db)
@@ -36,12 +37,19 @@ namespace SMFDash
             _top.Controls.Add(logo); _top.Controls.Add(name);
 
             int x = 180;
-            foreach (var m in new[] { new[] { "ops", "Operations" }, new[] { "acc", "Accounting" }, new[] { "mkt", "Marketing" }, new[] { "apr", "Approval" } })
+            foreach (var m in new[] { new[] { "ops", "Operations" }, new[] { "acc", "Accounting" }, new[] { "mkt", "Marketing" }, new[] { "apr", "Approval" }, new[] { "alr", "Alerts" } })
             {
-                var b = new PillButton(m[1]) { Left = x, Top = 12, Tag = m[0], Accent = m[0] == "ops" ? Theme.Ops : m[0] == "acc" ? Theme.Acc : m[0] == "mkt" ? Theme.Mkt : Theme.Apr };
+                var b = new PillButton(m[1]) { Left = x, Top = 12, Tag = m[0], Accent = m[0] == "ops" ? Theme.Ops : m[0] == "acc" ? Theme.Acc : m[0] == "mkt" ? Theme.Mkt : m[0] == "apr" ? Theme.Apr : Theme.Hex("#d97706") };
                 b.Click += (s, e) => { _mod = (string)((Control)s).Tag; Render(); };
                 _top.Controls.Add(b); _mods.Add(b); x += b.Width + 6;
             }
+
+            Action badge = () =>
+            {
+                var b = _mods.First(m => (string)m.Tag == "alr");
+                b.Text = "Alerts" + (_alr.TotalItems > 0 ? " (" + _alr.TotalItems + ")" : ""); b.Width = TextRenderer.MeasureText(b.Text, Theme.Bold).Width + 32; b.Invalidate();
+            };
+            _alr.Changed += badge; badge();
 
             var settings = new Button { Text = "Settings", Width = 80, Height = 28, Top = 13, Anchor = AnchorStyles.Top | AnchorStyles.Right, FlatStyle = FlatStyle.System };
             var refresh = new Button { Text = "↻ Refresh", Width = 84, Height = 28, Top = 13, Anchor = AnchorStyles.Top | AnchorStyles.Right, FlatStyle = FlatStyle.System };
@@ -108,10 +116,11 @@ namespace SMFDash
                 if (_apr == null) _apr = new ApprovalPage(_db.Ini.Get("Approval", "User", "TEST"));
                 _status.Text = "Approval: DEMO data - approve / reject only change this window (SMFDash never writes to the database). Signed in as " + _db.Ini.Get("Approval", "User", "TEST");
             }
-            Control page = _mod == "apr" ? (Control)_apr : _mod == "ops" ? Pages.Ops(_ops[_mode]) : _mod == "acc" ? Pages.Acc(_acc) : Pages.Mkt(_mkt);
+            if (_mod == "alr") _status.Text = "Alerts: HTML reports from SQL (demo reports until real files are loaded - use Load HTML or drop .html files). Read-only.";
+            Control page = _mod == "alr" ? (Control)_alr : _mod == "apr" ? (Control)_apr : _mod == "ops" ? Pages.Ops(_ops[_mode]) : _mod == "acc" ? Pages.Acc(_acc) : Pages.Mkt(_mkt);
             _body.SuspendLayout();
             var old = _body.Controls.Cast<Control>().ToList();
-            _body.Controls.Clear(); foreach (var c in old) if (c != _apr) c.Dispose();
+            _body.Controls.Clear(); foreach (var c in old) if (c != _apr && c != _alr) c.Dispose();
             _body.Controls.Add(page);
             _body.ResumeLayout(true);
             _body.AutoScrollPosition = new Point(0, 0);
