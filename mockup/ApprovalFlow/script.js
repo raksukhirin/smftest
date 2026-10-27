@@ -9,7 +9,7 @@
     if (!data) data = JSON.parse(JSON.stringify(window.AF_SEED));
     function save() { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
 
-    var st = { view: 'inbox', tStatus: 'active', tOwner: 'all', tGroup: 'risk', mod: 'SE', tab: 'pending', q: '', step: 'all', mine: 'mine', late: false, sel: {}, open: null };
+    var st = { page: 'approval', view: 'inbox', tStatus: 'active', tOwner: 'all', tGroup: 'risk', mod: 'SE', tab: 'pending', q: '', step: 'all', mine: 'mine', late: false, sel: {}, open: null };
 
     /* ---------- helpers ---------- */
     var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -102,7 +102,7 @@
     function renderNav() {
         $('#modNav').innerHTML = MODS.map(function (x) {
             var n = data.filter(function (r) { return r.module === x.id && canAct(r); }).length;
-            return '<button class="nav-i ' + (st.mod === x.id ? 'on' : '') + '" data-mod="' + x.id + '"><span>' + x.icon + '</span>' + x.name + '<span class="n ' + (n ? '' : 'z') + '">' + n + '</span></button>';
+            return '<button class="nav-i ' + (st.page !== 'alerts' && st.mod === x.id ? 'on' : '') + '" data-mod="' + x.id + '"><span>' + x.icon + '</span>' + x.name + '<span class="n ' + (n ? '' : 'z') + '">' + n + '</span></button>';
         }).join('');
     }
 
@@ -265,6 +265,9 @@
     }
 
     function render() {
+        var al = st.page === 'alerts';
+        $('#alertsPage').classList.toggle('hidden', !al); $('#apprPage').classList.toggle('hidden', al); $('#navAlerts').classList.toggle('on', al);
+        if (al) { $('#detail').classList.add('hidden'); renderNav(); window.AFAlerts.render(); return; }
         var tl = st.view === 'timeline';
         $('#tabs').classList.toggle('hidden', tl); $('#inboxF').classList.toggle('hidden', tl); $('#tlF').classList.toggle('hidden', !tl);
         if (tl) $('#bulk').classList.add('hidden');
@@ -278,7 +281,8 @@
         if ((t = e.target.closest('[data-view]'))) { st.view = t.dataset.view; st.open = null; return render(); }
         if ((t = e.target.closest('[data-tstatus]'))) { st.tStatus = t.dataset.tstatus; return render(); }
         if ((t = e.target.closest('.tl-row[data-id]'))) { st.open = +t.dataset.id; return render(); }
-        if ((t = e.target.closest('[data-mod]'))) { st.mod = t.dataset.mod; st.open = null; st.sel = {}; $('#side').classList.remove('open'); $('#scrim').classList.add('hidden'); return render(); }
+        if ((t = e.target.closest('#navAlerts'))) { st.page = 'alerts'; $('#side').classList.remove('open'); $('#scrim').classList.add('hidden'); return render(); }
+        if ((t = e.target.closest('[data-mod]'))) { st.page = 'approval'; st.mod = t.dataset.mod; st.open = null; st.sel = {}; $('#side').classList.remove('open'); $('#scrim').classList.add('hidden'); return render(); }
         if ((t = e.target.closest('[data-tab]'))) { st.tab = t.dataset.tab; st.sel = {}; return render(); }
         if ((t = e.target.closest('[data-ck]'))) { if (t.checked) st.sel[t.dataset.ck] = 1; else delete st.sel[t.dataset.ck]; e.stopPropagation(); return renderList(); }
         if ((t = e.target.closest('[data-q]'))) {

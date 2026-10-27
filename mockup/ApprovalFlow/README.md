@@ -13,6 +13,13 @@ Based on the current system: the request form in SMF (VB6 "Update Timeline": Doc
 | Action bar | One remark box + **Approve** / **Reject**. Reject needs a reason. Requests that wait for someone else are read-only ("Waiting for JACK") |
 | Toast | Every approve/reject shows **UNDO** for 6 s |
 
+### Alerts (sidebar → Monitoring → Alerts)
+Shows the HTML reports that SQL Server produces (mail-style: an `<h1>`/`<h2>` and one `<table>`). One report = one card (count, total amount, oldest age, red/amber/green stripe); the selected report opens as a sortable table.
+- **Input:** `alerts-data.js` holds demo HTML built like the SQL output (`window.AF_ALERT_HTML = [{file, subject, html}]`). In production, replace it with the 5 HTML bodies (and mail subjects) from SQL. **To try real output now: click "Load HTML…" or drop `.html` files onto the page** — nothing is uploaded, the browser parses it locally.
+- **Parsing (`alerts.js`):** the first table is read; column types are detected from the values (date `dd-mm-yyyy`, money, days, user, Job No / Invoice No); empty columns (e.g. REMARK) are dropped; if the report has no "TOTAL DAYS" column an **AGE** column is derived from the first date column. Severity: ≥ 90 days red, ≥ 30 amber.
+- **Table:** click a header to sort, search, filter by user chip, group by user with subtotals, click a Job/Invoice No to copy it, footer totals, **⬇ CSV**, **↗ Original HTML**.
+- The sidebar badge is the total number of items. The 7 samples are copied from the mails you sent (Un-Bill, Un-Appoint, cash invoice > 3 days, Deposit, Duty Tax, paid job with no invoice, overseas outstanding). A report with an unknown subject still works (generic 🔔 card).
+
 ### Timeline Mgt view (switch at the top right: Inbox | Timeline Mgt)
 For tracking and controlling the whole workflow rather than deciding one request:
 - **KPI boxes** — in progress, on track, at risk, stalled/overdue, rejected, completed, average cycle time (click a box to filter).
