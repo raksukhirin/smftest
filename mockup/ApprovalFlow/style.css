@@ -118,3 +118,12 @@ button.kpi:hover { box-shadow: 0 1px 6px rgba(79,70,229,.15); }
 @keyframes pulse { 50% { box-shadow: 0 0 0 4px rgba(239,68,68,.25); } }
 .legend { margin: 10px 2px; display: flex; gap: 14px; flex-wrap: wrap; font-size: 11px; color: #475569; }
 .legend i.tc { display: inline-block; width: 16px; height: 10px; vertical-align: middle; margin-right: 5px; border-radius: 2px; }
+
+/* embedded in Dashboard (index.html?embed=1 inside an iframe): the Dashboard supplies the top bar.
+   Narrow screens keep this header because it holds the ☰ button for the sidebar. */
+@media (min-width: 1024px) {
+    html.embed body > header { display: none; }
+    html.embed .side { top: 0; min-height: 100vh; }
+    html.embed .detail { top: 0; height: 100vh; }
+    html.embed .bulk { top: 8px; }
+}

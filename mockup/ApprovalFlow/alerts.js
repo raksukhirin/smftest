@@ -18,6 +18,7 @@
     ];
 
     var sources = [], items = [], st = { sel: 0, q: '', user: 'all', sort: null, group: false };
+    var live = null;   // set when this page runs inside SMFDash.Web (window.SMF = bridge to the read-only DB queries): { target, warning } or { err }
 
     /* ---------- parsing ---------- */
     function dateOf(s) { var m = /^(\d{2})-(\d{2})-(\d{4})$/.exec(s); return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null; }
@@ -67,6 +68,7 @@
         var heading = h1 ? h1.textContent.replace(/\s+/g, ' ').trim() : '';
         var text = subject + ' ' + heading, cat = { short: subject || heading || src.file, icon: '🔔' };
         CAT.some(function (c) { if (c[0].test(text)) { cat = c[1]; return true; } return false; });
+        if (src.short) cat = { short: src.short, icon: cat.icon };   // SHORTNAME of SMALERTDEF (live) wins over the guess above
         var maxDays = dayIdx >= 0 ? Math.max.apply(null, rows.map(function (r) { return num(r[dayIdx]) || 0; }).concat([0])) : 0;
         var total = mi >= 0 ? rows.reduce(function (a, r) { return a + (num(r[mi]) || 0); }, 0) : null;
         return {
@@ -163,8 +165,11 @@
         }
         page.innerHTML =
             '<div class="flex items-end justify-between gap-3 flex-wrap mb-3"><div><h1 class="text-xl font-semibold">Alerts</h1>' +
-            '<p class="text-xs text-slate-500">' + items.length + ' report(s) from SQL · ' + totalRows + ' item(s) need attention · demo clock ' + NOW.getDate() + ' ' + MON[NOW.getMonth()] + ' ' + NOW.getFullYear() + '</p></div>' +
-            '<div class="flex gap-2"><label class="btn-secondary cursor-pointer">⬆ Load HTML…<input id="alFile" type="file" accept=".html,.htm" multiple hidden></label><button id="alReset" class="btn-ghost">↺ Demo data</button></div></div>' +
+            '<p class="text-xs text-slate-500">' + items.length + ' report(s) from SQL · ' + totalRows + ' item(s) need attention · ' + (live && live.target ? 'LIVE · ' + esc(live.target) : 'demo clock ' + NOW.getDate() + ' ' + MON[NOW.getMonth()] + ' ' + NOW.getFullYear()) + '</p>' +
+            (live && live.err ? '<p class="text-xs text-red-600">Could not read from the database: ' + esc(live.err) + ' — showing demo reports</p>' : '') +
+            (live && live.warning ? '<p class="text-xs text-amber-600">Problems: ' + esc(live.warning) + '</p>' : '') + '</div>' +
+            '<div class="flex gap-2"><label class="btn-secondary cursor-pointer">⬆ Load HTML…<input id="alFile" type="file" accept=".html,.htm" multiple hidden></label>' +
+            (window.SMF ? '<button id="alLive" class="btn-secondary">↻ Reload from DB</button>' : '') + '<button id="alReset" class="btn-ghost">↺ Demo data</button></div></div>' +
             '<div class="al-cards">' + cards + '</div><div class="card mt-3">' + detail + '</div>' +
             '<div class="text-[11px] text-slate-400 mt-2">Tip: drop one or more .html files on this page to preview real SQL output. Click a Job / Invoice number to copy it.</div>';
         if (focus >= 0) { var q = $('#alQ'); if (q) { q.focus(); q.setSelectionRange(focus, focus); } }
@@ -199,7 +204,8 @@
         if ((t = e.target.closest('[data-copy]'))) { try { navigator.clipboard.writeText(t.dataset.copy); } catch (x) {} t.classList.add('copied'); setTimeout(function () { t.classList.remove('copied'); }, 700); return; }
         if (e.target.closest('#alCsv')) return csv();
         if (e.target.closest('#alOpen')) { var a = items[st.sel]; if (a) window.open(URL.createObjectURL(new Blob([a.html], { type: 'text/html' })), '_blank'); return; }
-        if (e.target.closest('#alReset')) { sources = window.AF_ALERT_HTML.slice(); rebuild(); st.sel = 0; st.q = ''; st.user = 'all'; return render(); }
+        if (e.target.closest('#alLive')) return loadLive();
+        if (e.target.closest('#alReset')) { live = null; NOW = window.AF_NOW || new Date(); sources = window.AF_ALERT_HTML.slice(); rebuild(); st.sel = 0; st.q = ''; st.user = 'all'; return render(); }
     });
     document.addEventListener('input', function (e) { if (e.target.id === 'alQ') { st.q = e.target.value; render(); } });
     document.addEventListener('change', function (e) {
@@ -209,7 +215,18 @@
     document.addEventListener('dragover', function (e) { var p = $('#alertsPage'); if (p && !p.classList.contains('hidden')) e.preventDefault(); });
     document.addEventListener('drop', function (e) { var p = $('#alertsPage'); if (p && !p.classList.contains('hidden') && e.dataTransfer && e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } });
 
+    // inside SMFDash.Web: the alerts come from SMALERTDEF + the AL_* views (same HTML the page parses for files), ages use today's date
+    function loadLive() {
+        if (!window.SMF) return;
+        return window.SMF.call('alerts').then(function (r) {
+            sources = r.items.map(function (i) { return { file: i.file, subject: i.subject, short: i.short, html: i.html }; });
+            NOW = new Date(); live = { target: r.target, warning: r.warning };
+            rebuild(); st.sel = 0; st.q = ''; st.user = 'all'; st.sort = null; render();
+        }).catch(function (e) { live = { err: e.message }; render(); });
+    }
+
     sources = (window.AF_ALERT_HTML || []).slice();
     rebuild();
     window.AFAlerts = { render: render };
+    loadLive();
 })();

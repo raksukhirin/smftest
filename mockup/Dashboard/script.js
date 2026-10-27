@@ -122,7 +122,16 @@ function render() {
   $('#subBar').innerHTML = st.mod === 'ops'
     ? DATA.ops.modes.map(m => `<button class="sub-tab ${m === st.mode ? 'active' : ''}" data-mode="${m}">${m === 'All' ? 'Overview' : m}</button>`).join('')
     : '';
-  $('#view').innerHTML = { ops: viewOps, acc: viewAcc, mkt: viewMkt }[st.mod]();
+  const apr = st.mod === 'apr';
+  document.body.classList.toggle('apr-mode', apr);
+  $('#aprHost').hidden = !apr;
+  $('#view').hidden = apr;
+  if (apr) {
+    // created on first visit, then only hidden: the Approval page keeps its own state (open request, filters) between tab switches
+    if (!$('#aprFrame')) $('#aprHost').innerHTML = '<iframe id="aprFrame" title="Approval" src="../ApprovalFlow/index.html?embed=1"></iframe>';
+  } else {
+    $('#view').innerHTML = { ops: viewOps, acc: viewAcc, mkt: viewMkt }[st.mod]();
+  }
   try { localStorage.setItem('smfDash', JSON.stringify(st)); } catch (e) {}
 }
 document.addEventListener('click', e => {
@@ -131,8 +140,27 @@ document.addEventListener('click', e => {
   if (t.dataset.mod) st.mod = t.dataset.mod; else st.mode = t.dataset.mode;
   render();
 });
-$('#btnRefresh').onclick = render;
+/* ---------- live data: only inside SMFDash.Web (WebView2 host injects window.SMF; a plain browser keeps the demo data) ---------- */
+async function loadLive() {
+  if (!window.SMF) return;
+  const tag = $('#dataTag');
+  try {
+    const a = await SMF.call('acc'), A = DATA.acc, L = a.live;
+    if (L.bank) { A.banks = a.banks; A.kpis[0] = a.kpis[0]; }
+    if (L.ar) { A.ar = a.ar; A.kpis[1] = a.kpis[1]; A.topAR = a.topAR; }
+    if (L.ap) { A.ap = a.ap; A.kpis[2] = a.kpis[2]; A.dueAP = a.dueAP; }
+    tag.textContent = '[Accounting LIVE · other widgets DEMO]'; tag.title = a.target + (a.error ? ' — ' + a.error : '');
+    tag.className = a.error ? 'text-amber-600' : 'text-emerald-600';
+  } catch (e) { tag.textContent = '[DEMO DATA — ' + e.message + ']'; tag.className = 'text-slate-400'; }
+  render();
+}
+if (window.SMF) {
+  $('#btnSettings').hidden = false;
+  $('#btnSettings').onclick = async () => { const r = await SMF.call('settings'); if (r.saved) loadLive(); };
+}
+$('#btnRefresh').onclick = () => { render(); loadLive(); };
 $('#period').onchange = render;
 $('#branch').onchange = render;
 try { Object.assign(st, JSON.parse(localStorage.getItem('smfDash') || '{}')); } catch (e) {}
 render();
+loadLive();

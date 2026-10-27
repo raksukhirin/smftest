@@ -1,0 +1,19 @@
+SMF Dashboard (Web)
+
+1. Unzip the whole folder anywhere (e.g. C:\SMFDash.Web). Keep the files together.
+2. Double-click SMFDash.Web.exe.
+3. Press "Settings" (top right) -> Server / Database / User / Password -> Test -> Save.
+   The program only reads data (SELECT). The connection is stored encrypted in SMFDash.ini
+   next to the program and works only on this PC and Windows login - set it up on every PC.
+
+Requirements
+- Windows 10 / 11 (64-bit or 32-bit) with .NET Framework 4.x (included in Windows).
+- Microsoft Edge WebView2 Runtime. Windows 11 and recent Windows 10 already have it.
+  If the program says it is missing, install the "Evergreen Standalone Installer" from
+  https://developer.microsoft.com/microsoft-edge/webview2/
+- No internet is needed to run the program (fonts and styles are included).
+- Network access to the SQL Server.
+
+Files
+- web\            the screens (HTML) - do not delete
+- SMFDash.ini     settings of this PC (connection stored encrypted); do not copy it to other PCs

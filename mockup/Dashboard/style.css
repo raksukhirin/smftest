@@ -6,6 +6,13 @@
 .mod-tab.active { background: #0369a1; color: #fff; }
 .mod-tab[data-mod=acc].active { background: #047857; }
 .mod-tab[data-mod=mkt].active { background: #7c3aed; }
+.mod-tab[data-mod=apr].active { background: #4338ca; }
+
+/* Approval = the ApprovalFlow page in an iframe, kept alive between tab switches */
+#aprFrame { display: block; width: 100%; height: calc(100vh - 61px); border: 0; background: #f1f5f9; }
+[hidden] { display: none !important; }
+body.apr-mode footer { display: none; }
+body.apr-mode .dash-only { display: none; }
 
 .sub-tab { padding: 3px 12px; font-size: 12px; font-weight: 500; color: #475569; border-radius: 999px; border: 1px solid transparent; }
 .sub-tab:hover { background: #f1f5f9; }

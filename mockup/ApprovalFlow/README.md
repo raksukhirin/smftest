@@ -4,6 +4,8 @@ UI layout for approving SMF requests on the web (desktop and phone). Static HTML
 
 Based on the current system: the request form in SMF (VB6 "Update Timeline": DocNo, Deadline, Remark, files, Send Request) and the web pages *Approval Requests* / *Timeline* (list with APP./REJ., Wait, Working Step, Remark, Attached, Deadline; per-document step timeline with progress %).
 
+**In the Dashboard:** `mockup\Dashboard` has an **Approval** tab that shows this page in an iframe (`index.html?embed=1` hides this page's own top bar on wide screens). The frame is created on first visit and only hidden afterwards, so the open request / filters survive tab switches. Serve the `mockup` folder (not just `Dashboard`) so `../ApprovalFlow` resolves — `launch.json` → `smf-dashboard-mockup` (port 8771, open `/Dashboard/`).
+
 ## Layout
 | Area | What it does |
 |---|---|

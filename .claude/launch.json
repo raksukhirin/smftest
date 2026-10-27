@@ -76,13 +76,13 @@
     {
       "name": "smf-dashboard-mockup",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8771", "--directory", "mockup/Dashboard"],
+      "runtimeArgs": ["-m", "http.server", "8771", "--directory", "mockup"],
       "port": 8771
     },
     {
       "name": "approvalflow-mockup",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8772", "--directory", "mockup/ApprovalFlow"],
+      "runtimeArgs": ["-m", "http.server", "8772", "--directory", "mockup"],
       "port": 8772
     }
   ]

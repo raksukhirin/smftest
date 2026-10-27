@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SMF Dashboard — Mockup</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="../vendor/tailwind.js"></script>
+    <link rel="stylesheet" href="../vendor/inter.css">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-slate-100 text-slate-800">
@@ -16,7 +16,7 @@
             <div class="w-8 h-8 rounded-lg bg-sky-700 text-white flex items-center justify-center font-bold">S</div>
             <div>
                 <div class="text-[10px] uppercase tracking-wider text-slate-500">SMF Freight</div>
-                <div class="font-semibold text-sm leading-none">Dashboard <span class="text-slate-400">[DEMO DATA]</span></div>
+                <div class="font-semibold text-sm leading-none">Dashboard <span id="dataTag" class="text-slate-400">[DEMO DATA]</span></div>
             </div>
         </div>
 
@@ -24,24 +24,29 @@
             <button data-mod="ops" class="mod-tab">Operations</button>
             <button data-mod="acc" class="mod-tab">Accounting</button>
             <button data-mod="mkt" class="mod-tab">Marketing</button>
+            <button data-mod="apr" class="mod-tab">Approval</button>
         </nav>
 
         <div class="ml-auto flex items-center gap-2 text-xs">
-            <select id="period" class="field">
-                <option value="mtd">This month</option>
-                <option value="qtd">This quarter</option>
-                <option value="ytd">Year to date</option>
-            </select>
-            <select id="branch" class="field">
-                <option>All branches</option><option>BKK</option><option>LCB</option><option>CNX</option>
-            </select>
-            <button id="btnRefresh" class="btn-secondary">↻ Refresh</button>
+            <span class="dash-only flex items-center gap-2">
+                <select id="period" class="field">
+                    <option value="mtd">This month</option>
+                    <option value="qtd">This quarter</option>
+                    <option value="ytd">Year to date</option>
+                </select>
+                <select id="branch" class="field">
+                    <option>All branches</option><option>BKK</option><option>LCB</option><option>CNX</option>
+                </select>
+                <button id="btnRefresh" class="btn-secondary">↻ Refresh</button>
+            </span>
+            <button id="btnSettings" class="btn-secondary" hidden>⚙ Settings</button>
         </div>
     </div>
     <div id="subBar" class="px-5 pb-2 flex items-center gap-1"></div>
 </header>
 
 <main id="view" class="p-5 space-y-4 max-w-[1500px] mx-auto"></main>
+<div id="aprHost" hidden></div>
 
 <footer class="text-center text-[11px] text-slate-400 py-4">Mockup — sample numbers only, not from SMF database</footer>
 
