@@ -9,7 +9,7 @@ SMF Dashboard (Web)
 Requirements
 - Windows 10 / 11 (64-bit or 32-bit) with .NET Framework 4.x (included in Windows).
 - Microsoft Edge WebView2 Runtime. Windows 11 and recent Windows 10 already have it.
-  If the program says it is missing, install the "Evergreen Standalone Installer" from
+  If it is missing the program offers to download and install it (needs internet, about 2 MB). Offline: install the "Evergreen Standalone Installer" from
   https://developer.microsoft.com/microsoft-edge/webview2/
 - No internet is needed to run the program (fonts and styles are included).
 - Network access to the SQL Server.

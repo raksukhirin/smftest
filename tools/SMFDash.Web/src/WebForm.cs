@@ -53,6 +53,7 @@ namespace SMFDash
             try
             {
                 if (!Directory.Exists(Path.Combine(_ui, "Dashboard"))) throw new DirectoryNotFoundException("Web UI folder not found: " + Path.Combine(_ui, "Dashboard") + "\r\nUse  SMFDash.Web.exe /ui <folder that holds Dashboard and ApprovalFlow>");
+                if (!await EnsureRuntime()) { Close(); return; }
                 string data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SMFDash.Web");
                 var env = await CoreWebView2Environment.CreateAsync(null, data);
                 await _wv.EnsureCoreWebView2Async(env);
@@ -72,6 +73,52 @@ namespace SMFDash
             {
                 MessageBox.Show(this, ex.Message + "\r\n\r\nThe Microsoft Edge WebView2 Runtime is required (Windows 11 has it; otherwise install the Evergreen runtime).", "SMFDash.Web", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        // ---- WebView2 Runtime: check at start, offer to install it (Microsoft's own "Evergreen Bootstrapper", downloaded only after the user agrees) ----
+        const string BootstrapperUrl = "https://go.microsoft.com/fwlink/p/?LinkId=2124703";
+        const string ManualUrl = "https://developer.microsoft.com/microsoft-edge/webview2/";
+
+        static bool HasRuntime()
+        {
+            try { return !string.IsNullOrEmpty(CoreWebView2Environment.GetAvailableBrowserVersionString()); }
+            catch { return false; }
+        }
+
+        async Task<bool> EnsureRuntime()
+        {
+            if (HasRuntime()) return true;
+            var ask = MessageBox.Show(this, "SMF Dashboard needs the Microsoft Edge WebView2 Runtime, which is not installed on this PC.\r\n\r\nDownload it from Microsoft and install it now?\r\n(about 2 MB download, needs an internet connection; Windows may ask for permission)",
+                "SMFDash.Web", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (ask != DialogResult.Yes) { Manual(); return false; }
+            string file = Path.Combine(Path.GetTempPath(), "MicrosoftEdgeWebview2Setup.exe");
+            try
+            {
+                Text = "SMF Dashboard (Web) - installing WebView2 Runtime ...";
+                System.Net.ServicePointManager.SecurityProtocol |= (System.Net.SecurityProtocolType)3072;   // TLS 1.2
+                using (var wc = new System.Net.WebClient()) await wc.DownloadFileTaskAsync(BootstrapperUrl, file);
+                int code = await Task.Run(() =>
+                {
+                    var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file, "/silent /install") { UseShellExecute = true });
+                    p.WaitForExit(); return p.ExitCode;
+                });
+                Text = "SMF Dashboard (Web)";
+                if (code == 0 && HasRuntime()) return true;
+                MessageBox.Show(this, "The installer finished with code " + code + " and the runtime is still not available.", "SMFDash.Web", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
+            {
+                Text = "SMF Dashboard (Web)";
+                MessageBox.Show(this, "Could not download or run the installer:\r\n" + ex.Message, "SMFDash.Web", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            finally { try { File.Delete(file); } catch { } }
+            Manual();
+            return false;
+        }
+
+        void Manual()
+        {
+            MessageBox.Show(this, "Install the \"Evergreen Standalone Installer\" of the WebView2 Runtime from:\r\n" + ManualUrl + "\r\n\r\nthen start SMF Dashboard again.", "SMFDash.Web", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         void OnMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
