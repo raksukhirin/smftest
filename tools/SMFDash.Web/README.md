@@ -26,6 +26,11 @@ The host injects `window.SMF.call(cmd)` into every page (a plain browser has no 
 | `info` | configured, target, approval user, alert display settings | - |
 | `acc` | Accounting figures as `LiveData.LoadAcc` (bank balances, AR / AP aging, top receivables, payables due) with a `live` flag per part | Dashboard > Accounting (live parts replace the demo ones; header says "Accounting LIVE · other widgets DEMO") |
 | `alerts` | `SMALERTDEF` + `AL_*` views as the mail-style HTML (same as `LiveAlerts`) | Approval > Alerts ("LIVE · server / db", **Reload from DB**) |
+| `menu` | `TCMenu` (SUB_SYSNAME<>'0', by Sequence) | Approval sidebar |
+| `workflow` | `TCStep` (no group rows) per module / document type + approvers from `TCGroupAuth` | Approval stepper / Timeline matrix |
+| `approvals` | `TCDetail` ORDER BY REQNO DESC joined to `TCHead` | Approval list / detail / Timeline |
 | `settings` | opens the Settings dialog | Dashboard header |
+
+`menu`, `workflow` and `approvals` read the database named in `SMCOMPANY.TIMELINECFG` (4th `\|` part, see `TimelineDb.cs`; the connection string never leaves the host). Approve / Reject in the page are preview only (not written to the DB).
 
 Only pages of `https://smfdash.local/` may talk to the host (`OnMessage` checks the origin). Not live yet: Operations, Marketing, the Approval requests / Timeline (still the demo data in `ApprovalFlow\data.js`), cash flow / GL.

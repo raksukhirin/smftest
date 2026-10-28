@@ -19,7 +19,7 @@
         <div class="w-8 h-8 rounded-lg bg-indigo-700 text-white flex items-center justify-center font-bold">✓</div>
         <div class="leading-tight">
             <div class="text-[10px] uppercase tracking-wider text-slate-500">SMF</div>
-            <div class="font-semibold text-sm">Approval Workflow <span class="text-slate-400">[DEMO]</span></div>
+            <div class="font-semibold text-sm">Approval Workflow <span id="srcTag" class="text-slate-400">[DEMO]</span></div>
         </div>
         <div class="ml-auto flex items-center gap-2 text-sm">
             <span id="meName" class="hidden sm:inline text-slate-600"></span>
@@ -35,9 +35,11 @@
         <nav id="modNav" class="px-2 space-y-0.5"></nav>
         <div class="side-h mt-4">Monitoring</div>
         <div class="px-2"><button id="navAlerts" class="nav-i"><span>🔔</span>Alerts<span id="alertN" class="n">0</span></button></div>
-        <div class="side-h mt-4">Other</div>
-        <div class="px-4 py-1.5 text-sm text-slate-400">Billing System</div>
-        <div class="px-4 py-1.5 text-sm text-slate-400">Payment System</div>
+        <div id="otherNav">
+            <div class="side-h mt-4">Other</div>
+            <div class="px-4 py-1.5 text-sm text-slate-400">Billing System</div>
+            <div class="px-4 py-1.5 text-sm text-slate-400">Payment System</div>
+        </div>
     </aside>
     <div id="scrim" class="scrim hidden"></div>
 
@@ -65,6 +67,7 @@
             <div id="fRow" class="flex flex-wrap items-center gap-2 mb-3">
                 <input id="q" class="field w-56" placeholder="Search Docno / customer …">
                 <span id="inboxF" class="contents">
+                    <select id="fDoc" class="field hidden" title="Document type"></select>
                     <select id="fStep" class="field"></select>
                     <select id="fMine" class="field">
                         <option value="mine">Waiting for me</option>
@@ -73,6 +76,7 @@
                     <label class="text-xs text-slate-500 flex items-center gap-1 ml-1"><input id="fLate" type="checkbox"> Overdue only</label>
                 </span>
                 <span id="tlF" class="contents hidden">
+                    <select id="tDoc" class="field hidden" title="Document type"></select>
                     <select id="tStatus" class="field">
                         <option value="active">In progress</option><option value="risk">At risk / stalled</option>
                         <option value="rej">Rejected</option><option value="done">Completed</option><option value="all">All</option>

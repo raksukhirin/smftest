@@ -141,7 +141,15 @@ document.addEventListener('click', e => {
   render();
 });
 /* ---------- live data: only inside SMFDash.Web (WebView2 host injects window.SMF; a plain browser keeps the demo data) ---------- */
+const FOOTER_OFFLINE = $('#compName').textContent;
+async function loadCompany() {   // header = SMCOMPANY.COMPID, footer = SMCOMPANY.NAME; not connected -> OFFLINE / the mockup footer
+  let id = 'OFFLINE', name = FOOTER_OFFLINE;
+  try { if (window.SMF) { const c = await SMF.call('company'); id = c.compId || id; name = c.name || name; } } catch (e) {}
+  $('#dataTag').textContent = '[' + id + ']'; $('#compName').textContent = name;
+  document.title = id === 'OFFLINE' ? 'SMF Dashboard — Mockup' : id + ' — Dashboard';
+}
 async function loadLive() {
+  loadCompany();
   if (!window.SMF) return;
   const tag = $('#dataTag');
   try {
@@ -149,9 +157,10 @@ async function loadLive() {
     if (L.bank) { A.banks = a.banks; A.kpis[0] = a.kpis[0]; }
     if (L.ar) { A.ar = a.ar; A.kpis[1] = a.kpis[1]; A.topAR = a.topAR; }
     if (L.ap) { A.ap = a.ap; A.kpis[2] = a.kpis[2]; A.dueAP = a.dueAP; }
-    tag.textContent = '[Accounting LIVE · other widgets DEMO]'; tag.title = a.target + (a.error ? ' — ' + a.error : '');
+    // the [COMPID] shows the state by colour (green = connected, amber = partly loaded); the tooltip is the server / database
+    tag.title = a.target;
     tag.className = a.error ? 'text-amber-600' : 'text-emerald-600';
-  } catch (e) { tag.textContent = '[DEMO DATA — ' + e.message + ']'; tag.className = 'text-slate-400'; }
+  } catch (e) { tag.title = ''; tag.className = 'text-slate-400'; }
   render();
 }
 if (window.SMF) {

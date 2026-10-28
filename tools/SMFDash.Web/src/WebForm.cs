@@ -16,6 +16,7 @@ namespace SMFDash
     {
         const string Host = "smfdash.local";
         readonly Db _db;
+        readonly TimelineDb _tl;
         readonly string _ui;
         readonly WebView2 _wv = new WebView2 { Dock = DockStyle.Fill };
         readonly JavaScriptSerializer _js = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
@@ -40,7 +41,7 @@ namespace SMFDash
 
         public WebForm(Db db, string uiRoot)
         {
-            _db = db; _ui = uiRoot;
+            _db = db; _ui = uiRoot; _tl = new TimelineDb(db);
             Text = "SMF Dashboard (Web)"; ClientSize = new System.Drawing.Size(1360, 860); MinimumSize = new System.Drawing.Size(1000, 640);
             StartPosition = FormStartPosition.CenterScreen;
             Controls.Add(_wv);
@@ -147,7 +148,7 @@ namespace SMFDash
             using (var f = new SettingsForm(_db.Ini))
             {
                 bool saved = f.ShowDialog(this) == DialogResult.OK;
-                if (saved) AlertSettings.Load(_db.Ini);
+                if (saved) { AlertSettings.Load(_db.Ini); _tl.Reset(); }
                 return new Dictionary<string, object> { { "saved", saved } };
             }
         }
@@ -161,6 +162,19 @@ namespace SMFDash
                         { "configured", _db.Configured }, { "target", _db.Configured ? _db.Target : "" },
                         { "user", _db.Ini.Get("Approval", "User", "TEST") },
                         { "warnDays", AlertSettings.WarnDays }, { "badDays", AlertSettings.BadDays }, { "hideEmpty", AlertSettings.HideEmpty }, { "refreshMin", AlertSettings.RefreshMin } };
+                case "company":   // header / footer of the page: SMCOMPANY.COMPID and .NAME (only these two columns; the table also holds connection strings)
+                {
+                    NeedDb();
+                    var c = _db.Query("SELECT TOP 1 COMPID, NAME FROM SMCOMPANY");
+                    if (c.Rows.Count == 0) throw new InvalidOperationException("SMCOMPANY is empty");
+                    return new Dictionary<string, object> { { "compId", Convert.ToString(c.Rows[0]["COMPID"]).Trim() }, { "name", Convert.ToString(c.Rows[0]["NAME"]).Trim() } };
+                }
+                case "menu":      // left menu of the Approval page
+                    return MenuItems();
+                case "workflow":  // steps per module / document type + who may approve
+                    return Workflow();
+                case "approvals": // requests (TCDETAIL, newest REQNO first) with the document head
+                    return Approvals();
                 case "alerts":
                     return Alerts();
                 case "acc":
@@ -171,6 +185,61 @@ namespace SMFDash
         }
 
         void NeedDb() { if (!_db.Configured) throw new InvalidOperationException("No database configured - press Settings"); }
+
+        // ---- Approval tables (database from SMCOMPANY.TIMELINECFG) ----
+        static string S(object o) { return o == null || o is DBNull ? "" : Convert.ToString(o).Trim(); }
+        static string Dt(object o) { return o is DateTime ? ((DateTime)o).ToString("yyyy-MM-dd'T'HH:mm") : ""; }
+
+        object MenuItems()
+        {
+            NeedDb();
+            var t = _tl.Query("SELECT MenuID, MenuName, SUB_SYSNAME, Icon, Sequence FROM TCMenu WHERE SUB_SYSNAME <> '0' AND ISNULL(Active, 1) = 1 ORDER BY Sequence, MenuID");
+            return new Dictionary<string, object> {
+                { "target", _tl.Target },
+                { "items", t.Rows.Cast<DataRow>().Select(r => new Dictionary<string, object> { { "id", S(r["SUB_SYSNAME"]) }, { "name", S(r["MenuName"]) }, { "icon", S(r["Icon"]) } }).ToList() } };
+        }
+
+        object Workflow()
+        {
+            NeedDb();
+            // group rows (STEPTYPE 'G', e.g. Carrier Doc) only head a block of sub-steps, they are not a step of their own
+            var st = _tl.Query("SELECT SUB_SYSNAME, DOCTYPE, STEPID, STEPSEQ, STEPDESC FROM TCSTEP WHERE ISNULL(STEPTYPE, '') <> 'G' ORDER BY SUB_SYSNAME, DOCTYPE, STEPSEQ, PMKEY");
+            var au = _tl.Query("SELECT SUB_SYSNAME, DOCTYPE, STEPID, APPLEVEL, USERID FROM TCGROUPAUTH WHERE ISNULL(APPLEVEL, 0) > 0 AND STATUSID = 0 ORDER BY SUB_SYSNAME, DOCTYPE, STEPID, APPLEVEL");
+            var who = new Dictionary<string, List<object>>();
+            foreach (DataRow r in au.Rows)
+            {
+                string k = S(r["SUB_SYSNAME"]) + "|" + S(r["DOCTYPE"]) + "|" + S(r["STEPID"]);
+                if (!who.ContainsKey(k)) who[k] = new List<object>();
+                who[k].Add(new Dictionary<string, object> { { "level", Convert.ToInt32(r["APPLEVEL"]) }, { "user", S(r["USERID"]) } });
+            }
+            return new Dictionary<string, object> {
+                { "steps", st.Rows.Cast<DataRow>().Select(r =>
+                    {
+                        string k = S(r["SUB_SYSNAME"]) + "|" + S(r["DOCTYPE"]) + "|" + S(r["STEPID"]);
+                        return new Dictionary<string, object> { { "mod", S(r["SUB_SYSNAME"]) }, { "type", S(r["DOCTYPE"]) }, { "id", Convert.ToInt32(r["STEPID"]) },
+                            { "name", S(r["STEPDESC"]) }, { "approvers", who.ContainsKey(k) ? who[k] : new List<object>() } };
+                    }).ToList() } };
+        }
+
+        object Approvals()
+        {
+            NeedDb();
+            var t = _tl.Query(
+                "SELECT TOP 3000 d.PMKEY, d.REQNO, d.SUB_SYSNAME, d.DOCTYPE, d.DOCNO, d.STEPID, d.REMARK, d.ACTBY, d.ACTDATE, d.CLOSINGDATE, " +
+                "d.ACTSTATUS01, d.APPBY01, d.APPDATE01, d.ACTSTATUS02, d.APPBY02, d.APPDATE02, d.ACTSTATUS03, d.APPBY03, d.APPDATE03, d.REJECTCOMMENTS, " +
+                "h.SALE, h.JOBTYPE, h.CUSTOMER, h.VENDOR, h.JOBNO " +
+                "FROM TCDETAIL d LEFT JOIN TCHEAD h ON h.DOCNO = d.DOCNO AND h.DOCTYPE = d.DOCTYPE AND h.SUB_SYSNAME = d.SUB_SYSNAME " +
+                "ORDER BY d.REQNO DESC, d.PMKEY DESC");
+            Func<DataRow, string, object> lvl = (r, n) => new Dictionary<string, object> { { "status", S(r["ACTSTATUS" + n]) }, { "by", S(r["APPBY" + n]) }, { "at", Dt(r["APPDATE" + n]) } };
+            return new Dictionary<string, object> {
+                { "target", _tl.Target },
+                { "rows", t.Rows.Cast<DataRow>().Select(r => new Dictionary<string, object> {
+                    { "id", Convert.ToInt32(r["PMKEY"]) }, { "reqNo", r["REQNO"] is DBNull ? 0 : Convert.ToInt32(r["REQNO"]) },
+                    { "mod", S(r["SUB_SYSNAME"]) }, { "type", S(r["DOCTYPE"]) }, { "doc", S(r["DOCNO"]) }, { "stepId", Convert.ToInt32(r["STEPID"]) },
+                    { "remark", S(r["REMARK"]) }, { "by", S(r["ACTBY"]) }, { "at", Dt(r["ACTDATE"]) }, { "closed", Dt(r["CLOSINGDATE"]) },
+                    { "levels", new object[] { lvl(r, "01"), lvl(r, "02"), lvl(r, "03") } }, { "rejectComment", S(r["REJECTCOMMENTS"]) },
+                    { "sale", S(r["SALE"]) }, { "jobType", S(r["JOBTYPE"]) }, { "customer", S(r["CUSTOMER"]) }, { "vendor", S(r["VENDOR"]) }, { "jobNo", S(r["JOBNO"]) } }).ToList() } };
+        }
 
         object Alerts()
         {
