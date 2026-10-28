@@ -175,6 +175,8 @@ namespace SMFDash
                     return Workflow();
                 case "approvals": // requests (TCDETAIL, newest REQNO first) with the document head
                     return Approvals();
+                case "attachments": // SMCUSTDOC files of the documents above, with the link to open
+                    return Attachments();
                 case "alerts":
                     return Alerts();
                 case "acc":
@@ -239,6 +241,26 @@ namespace SMFDash
                     { "remark", S(r["REMARK"]) }, { "by", S(r["ACTBY"]) }, { "at", Dt(r["ACTDATE"]) }, { "closed", Dt(r["CLOSINGDATE"]) },
                     { "levels", new object[] { lvl(r, "01"), lvl(r, "02"), lvl(r, "03") } }, { "rejectComment", S(r["REJECTCOMMENTS"]) },
                     { "sale", S(r["SALE"]) }, { "jobType", S(r["JOBTYPE"]) }, { "customer", S(r["CUSTOMER"]) }, { "vendor", S(r["VENDOR"]) }, { "jobNo", S(r["JOBNO"]) } }).ToList() } };
+        }
+
+        // DOCLOCATE is either a full http(s) link (opened as it is) or a file name stored under  <site>/<folder>/COMNO/STEPID/STATUSID/<file>;
+        // anything else (e.g. D:\...\x.PDF, or a name without STEPID/STATUSID) cannot be opened from a web page: url stays empty.
+        object Attachments()
+        {
+            NeedDb();
+            string root = _tl.FileBase();
+            var t = _tl.Query("SELECT COMNO, STEPID, STATUSID, SEQNO, DOCLOCATE FROM SMCUSTDOC WHERE COMNO IN (SELECT DISTINCT DOCNO FROM TCDETAIL) ORDER BY COMNO, STEPID, SEQNO, PMKEY");
+            return new Dictionary<string, object> {
+                { "files", t.Rows.Cast<DataRow>().Select(r =>
+                    {
+                        string loc = S(r["DOCLOCATE"]), url = "", name = loc;
+                        bool link = loc.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || loc.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+                        if (link) { url = loc; name = loc.Split('?')[0].TrimEnd('/'); name = name.Substring(name.LastIndexOf('/') + 1); if (name == "") name = loc; }
+                        else if (root != "" && !(r["STEPID"] is DBNull) && !(r["STATUSID"] is DBNull) && loc != "" && loc.IndexOfAny(new[] { '\\', '/', ':' }) < 0)
+                            url = root + Uri.EscapeDataString(S(r["COMNO"])) + "/" + r["STEPID"] + "/" + r["STATUSID"] + "/" + Uri.EscapeDataString(loc);
+                        return new Dictionary<string, object> { { "doc", S(r["COMNO"]) }, { "stepId", r["STEPID"] is DBNull ? (object)null : Convert.ToInt32(r["STEPID"]) },
+                            { "seq", r["SEQNO"] is DBNull ? 0 : Convert.ToInt32(r["SEQNO"]) }, { "name", name }, { "link", link }, { "url", url } };
+                    }).ToList() } };
         }
 
         object Alerts()

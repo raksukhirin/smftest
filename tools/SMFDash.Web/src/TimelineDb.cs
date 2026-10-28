@@ -32,6 +32,15 @@ namespace SMFDash
             }
         }
 
+        /// <summary>Base of the attachment links: 3rd part (site) + 2nd part (folder) of SMCOMPANY.TIMELINECFG, with a trailing '/'. Empty when not configured.</summary>
+        public string FileBase()
+        {
+            var t = _main.Query("SELECT TOP 1 TIMELINECFG FROM SMCOMPANY");
+            string[] p = (t.Rows.Count == 0 ? "" : Convert.ToString(t.Rows[0][0])).Split('|');
+            if (p.Length < 3 || p[1].Trim() == "" || p[2].Trim() == "") return "";
+            return p[2].Trim().TrimEnd('/') + "/" + p[1].Trim().Trim('/') + "/";
+        }
+
         /// <summary>Server / database for display (no user, no password).</summary>
         public string Target
         {

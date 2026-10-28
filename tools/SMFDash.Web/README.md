@@ -29,6 +29,7 @@ The host injects `window.SMF.call(cmd)` into every page (a plain browser has no 
 | `menu` | `TCMenu` (SUB_SYSNAME<>'0', by Sequence) | Approval sidebar |
 | `workflow` | `TCStep` (no group rows) per module / document type + approvers from `TCGroupAuth` | Approval stepper / Timeline matrix |
 | `approvals` | `TCDetail` ORDER BY REQNO DESC joined to `TCHead` | Approval list / detail / Timeline |
+| `attachments` | `SMCUSTDOC` files (COMNO = document) with the link to open: a `DOCLOCATE` that starts with http(s) is used as it is, a file name becomes `<TIMELINECFG 3rd part>/<2nd part>/COMNO/STEPID/STATUSID/<file>`; local paths (`D:\...`) or rows without STEPID have no link | Approval detail > Attachments (this step's files first, then the other files of the document) |
 | `settings` | opens the Settings dialog | Dashboard header |
 
 `menu`, `workflow` and `approvals` read the database named in `SMCOMPANY.TIMELINECFG` (4th `\|` part, see `TimelineDb.cs`; the connection string never leaves the host). Approve / Reject in the page are preview only (not written to the DB).

@@ -264,7 +264,17 @@
             return '<div class="' + c + '"><b>' + esc(h.action) + '</b> · ' + String(h.step).padStart(2, '0') + ' ' + esc((steps(r)[h.step - 1] || { name: '' }).name) +
                 '<div class="sub">' + esc(h.by) + ' · ' + fmt(h.at) + '</div>' + (h.remark ? '<div class="mt-0.5">“' + esc(h.remark) + '”</div>' : '') + '</div>';
         }).join('');
-        var files = r.files.length ? r.files.map(function (f) {
+        function liveFile(f) {   // a real SMCUSTDOC file: opens in the default browser when it has a link (target=_blank is handled by the host)
+            var ic = '<span class="ic">' + (/\.pdf$/i.test(f.name) ? '📄' : /\.xlsx?$/i.test(f.name) ? '📊' : f.link ? '🔗' : '🖼️') + '</span><span class="flex-1 truncate" title="' + esc(f.name) + '">' + esc(f.name) + '</span>';
+            var stp = f.stepId == null ? '' : '<span class="sub">step ' + f.stepId + '</span>';
+            return f.url ? '<a href="' + esc(f.url) + '" target="_blank" rel="noopener" class="file">' + ic + stp + '<span class="text-indigo-600 font-semibold">Open</span></a>'
+                : '<div class="file" title="Stored as a local path / without step, cannot be opened from here">' + ic + stp + '<span class="sub">no link</span></div>';
+        }
+        var files = live ? (r.files.length || r.otherFiles.length
+            ? r.files.map(liveFile).join('') + (r.files.length ? '' : '<div class="sub">No file on this step</div>') +
+              (r.otherFiles.length ? '<div class="sub mt-2 mb-1">Other files of this document</div>' + r.otherFiles.map(liveFile).join('') : '')
+            : '<div class="sub">No attachments</div>')
+        : r.files.length ? r.files.map(function (f) {
             return '<a href="#" class="file" data-file="' + esc(f.name) + '"><span class="ic">' + (/\.pdf$/i.test(f.name) ? '📄' : /\.xlsx?$/i.test(f.name) ? '📊' : '🖼️') + '</span><span class="flex-1 truncate">' + esc(f.name) + '</span><span class="sub">' + f.kb + ' KB</span><span class="text-indigo-600 font-semibold">View</span></a>';
         }).join('') : '<div class="sub">No attachments</div>';
 
@@ -289,7 +299,7 @@
                 '<div class="sect">Document</div><dl class="kv"><dt>Shipper</dt><dd>' + esc(r.sum.shipper) + '</dd><dt>Consignee</dt><dd>' + esc(r.sum.consignee) + '</dd>' +
                     '<dt>Route</dt><dd>' + esc(r.sum.pol) + ' → ' + esc(r.sum.pod) + '</dd><dt>Job type</dt><dd>' + esc(r.sum.jobType) + '</dd><dt>Sale</dt><dd>' + esc(r.sum.sale) + '</dd>' +
                     (live ? '<dt>Customer</dt><dd>' + esc(r.sum.customer) + '</dd><dt>Vendor</dt><dd>' + esc(r.sum.vendor) + '</dd><dt>Job No</dt><dd>' + esc(r.sum.jobNo) + '</dd>' : '') + '</dl>' +
-                    (live ? '<div class="sub mt-1">Mockup (not in the DB yet): deadline · attachments · shipper / consignee / route</div>' : '') +
+                    (live ? '<div class="sub mt-1">Mockup (not in the DB yet): deadline · shipper / consignee / route</div>' : '') +
                 '<div class="sect">History</div><div class="hist">' + hist + '</div>' +
             '</div><div class="d-foot">' + foot + '</div>';
 
@@ -362,8 +372,10 @@
     }
     function liveLoad() {
         if (!window.SMF) return;
-        Promise.all([SMF.call('info'), SMF.call('menu'), SMF.call('workflow'), SMF.call('approvals')]).then(function (a) {
-            var info = a[0], menu = a[1], wf = a[2], ap = a[3];
+        Promise.all([SMF.call('info'), SMF.call('menu'), SMF.call('workflow'), SMF.call('approvals'),
+                      SMF.call('attachments').catch(function () { return { files: [] }; })]).then(function (a) {   // attachments are optional: a failure only leaves the lists empty
+            var info = a[0], menu = a[1], wf = a[2], ap = a[3], att = {};
+            a[4].files.forEach(function (f) { (att[f.doc] = att[f.doc] || []).push(f); });
             ME = info.user || ME; NOW = new Date();
             MODS = menu.items.map(function (m) { return { id: m.id, name: m.name, icon: iconOf(m.icon) }; });
             WF = {}; var idx = {};
@@ -393,7 +405,9 @@
                     hist.push({ step: o.no, action: l.status, by: l.by, at: l.at || x.at, remark: l.status === 'Rejected' ? x.rejectComment : '' });
                 });
                 return { id: x.id, reqNo: x.reqNo, doc: x.doc, module: x.mod, type: x.type, step: o.no, status: o.status, requestedBy: x.by, requestedAt: x.at,
-                         deadline: '', remark: o.status === 'Rejected' && x.rejectComment ? x.rejectComment : x.remark, files: [],
+                         deadline: '', remark: o.status === 'Rejected' && x.rejectComment ? x.rejectComment : x.remark,
+                         files: (att[x.doc] || []).filter(function (f) { return f.stepId === x.stepId; }),          // files of this request's step
+                         otherFiles: (att[x.doc] || []).filter(function (f) { return f.stepId !== x.stepId; }),
                          sum: { shipper: '', consignee: '', pol: '', pod: '', jobType: x.jobType, sale: x.sale, customer: x.customer, vendor: x.vendor, jobNo: x.jobNo },
                          history: hist, doneSet: done, cells: c };
             });
