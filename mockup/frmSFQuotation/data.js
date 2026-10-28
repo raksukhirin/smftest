@@ -2,12 +2,12 @@ window.SFQ_SEED =
 {
     "_note": "Sea Freight Quotation mock data. JSON shape mirrors frmSFQuotation.frm DB tables: AFQHEAD (header) + SFQRATE (FCL freight, EXPTYPE=1) + AFQDETAIL (LCL=EXPTYPE 2 → localCharges, Shipping=EXPTYPE 3 → shippingCharges, Transport=EXPTYPE 4 → transportCharges). JobClass=IM|EX. DocStat=Open|Approved|Deleted. See mapping.md for column-by-column mapping.",
     "company": {
-        "Name": "H.I.T. INTERCON CO., LTD.",
-        "Address": "1 Handle Inter Group Building, Bangna - Trad Soi 21 (Yaek 11), Debaratna Road, Bangna Nuea,",
-        "Address2": "Bangna, Bangkok 10260",
-        "Tel": "66 (0) 2393-2300 (auto lines)",
-        "Fax": "66 (0) 2393-7307-10",
-        "Logo": "HIT"
+        "Name": "DEMO FREIGHT CORP CO., LTD.",
+        "Address": "99/16 Moo 17, LumLukka",
+        "Address2": "Pathumthani 12150",
+        "Tel": "66 (0) 2192-3467 (auto lines)",
+        "Fax": "",
+        "Logo": "favicon.svg"
     },
     "_mastersNote": "Inline masters reduced to `agents` only. customers + salesPeople + approvers are loaded at runtime from masters/customers.json and masters/employees.json. Seed quotations bind to real codes from those files.",
     "masters": {

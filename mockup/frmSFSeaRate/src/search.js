@@ -11,7 +11,7 @@ window.RC.search = (function () {
         if (onAddNew) _onAddNew = onAddNew;
 
         $$('.tab').forEach(t => t.onclick = () => switchTab(t.dataset.tab));
-        $('#searchBtn').onclick  = runSearch;
+        $('#searchBtn').onclick  = () => { RC.detail.close(); runSearch(); };
         $('#clearBtn').onclick   = clearSearch;
         $('#reloadFilter').onclick = populateFilterList;
         $('#reloadPort').onclick = populatePortList;

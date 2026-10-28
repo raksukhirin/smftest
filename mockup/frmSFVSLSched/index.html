@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vessel Schedule — Search</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="layout">
+
+    <!-- ===== Left: search + voyage list ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <h2>⚓ Vessel Schedule</h2>
+            <div class="sub">ค้นหาเที่ยวเรือ / Voyage Search [DEMO]</div>
+        </div>
+
+        <div class="filters">
+            <div>
+                <label class="f-label">Search</label>
+                <input id="fText" class="f-input" placeholder="Vessel, voyage, carrier, service…">
+            </div>
+            <div class="row2">
+                <div>
+                    <label class="f-label">Carrier</label>
+                    <input id="fCarrier" class="f-input" list="carrierFilterDL" placeholder="All — type code/name">
+                </div>
+                <div>
+                    <label class="f-label">Schedule</label>
+                    <select id="fSchedule" class="f-select">
+                        <option value="">All</option>
+                        <option>On Schedule</option>
+                        <option>Delayed</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row2">
+                <div>
+                    <label class="f-label">POL (Origin)</label>
+                    <input id="fPol" class="f-input" list="portFilterDL" placeholder="All">
+                </div>
+                <div>
+                    <label class="f-label">POD (Dest.)</label>
+                    <input id="fPod" class="f-input" list="portFilterDL" placeholder="All">
+                </div>
+            </div>
+            <div class="row2">
+                <div>
+                    <label class="f-label">ETD From</label>
+                    <input id="fEtdFrom" type="date" class="f-input">
+                </div>
+                <div>
+                    <label class="f-label">ETD To</label>
+                    <input id="fEtdTo" type="date" class="f-input">
+                </div>
+            </div>
+            <div class="f-actions">
+                <button id="btnClear" class="btn-clear">Clear filters</button>
+                <span class="result-count"><span id="resultCount">0</span> voyages</span>
+            </div>
+        </div>
+
+        <datalist id="carrierFilterDL"></datalist>
+        <datalist id="portFilterDL"></datalist>
+
+        <div id="voyageList" class="voyage-list"></div>
+    </aside>
+
+    <!-- ===== Main: selected voyage detail ===== -->
+    <main class="main" id="detailRoot">
+        <div class="empty-state">Select a voyage from the left to view its schedule.</div>
+    </main>
+</div>
+
+<!-- Inline seed so it runs on file://; state.js falls back to fetch('data.json'). -->
+<script src="data.js"></script>
+<script src="src/utils.js?v=2"></script>
+<script src="src/state.js?v=2"></script>
+<script src="src/search.js?v=2"></script>
+<script src="src/detail.js?v=2"></script>
+<script src="src/app.js?v=2"></script>
+</body>
+</html>

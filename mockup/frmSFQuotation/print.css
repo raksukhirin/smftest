@@ -78,6 +78,7 @@ body {
     line-height: 1;
     font-family: 'Roboto', sans-serif;
 }
+.logo-img { width: 56px; height: 56px; object-fit: contain; }
 .logo-globe { font-size: 22pt; line-height: 1; color: #2563eb; }
 .logo-name {
     font-size: 7pt;

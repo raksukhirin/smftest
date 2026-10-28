@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Port Master — SF (frmOPPort instance)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="input.css">
+</head>
+<body>
+<div class="layout">
+
+    <!-- ===== Left: port list ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <h2>📍 Port Master</h2>
+            <div class="sub">frmOPPort · instance = <b style="color:#7dd3fc">PortType SF</b>
+                <br><a href="index.html" style="color:#7dd3fc">↗ Search</a>
+                &nbsp;<a href="input.html" style="color:#7dd3fc">↗ Voyage</a>
+                &nbsp;<a href="vessel.html" style="color:#7dd3fc">↗ Vessels</a>
+                &nbsp;<a href="business.html" style="color:#7dd3fc">↗ Business</a></div>
+        </div>
+        <div class="filters">
+            <input id="vSearch" class="f-input" placeholder="Filter code / name / country…">
+            <div class="f-actions">
+                <button id="btnNew" class="btn-clear" style="background:#16a34a;border-color:#16a34a;color:#fff">+ New Port</button>
+                <button id="btnExport" class="btn-clear" title="Download data.json">⬇ Export</button>
+                <button id="btnReset" class="btn-clear" title="Restore seed (clears saved changes)">↺ Reset</button>
+            </div>
+            <div class="result-count"><span id="vCount">0</span> ports
+                <span id="dirtyFlag" style="color:#fbbf24;display:none">· ● unsaved</span></div>
+        </div>
+        <div id="portList" class="voyage-list"></div>
+    </aside>
+
+    <!-- ===== Main: port form ===== -->
+    <main class="main" id="formRoot">
+        <div class="empty-state">Select a port to edit, or click <b>+ New Port</b>.</div>
+    </main>
+</div>
+
+<template id="tplForm">
+    <div class="header">
+        <div style="display:flex;align-items:center;gap:10px">
+            <h1 id="fTitle" style="margin:0">New Port</h1>
+            <span id="fMode" class="pill pill-info">NEW</span>
+            <div style="margin-left:auto;display:flex;gap:8px">
+                <button id="btnCopy" class="btn-sm btn-secondary">📋 Copy</button>
+                <button id="btnDelete" class="btn-sm btn-danger">🗑 Delete</button>
+                <button id="btnSave" class="btn-sm btn-primary">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <section class="panel">
+        <h3>📍 Port Details <span class="count">PORTTYPE = SF</span></h3>
+        <div class="form-grid">
+            <label class="fld"><span class="req">Port Code</span>
+                <input data-h="portCode" class="inp mono" maxlength="20" placeholder="e.g. THBKK" style="text-transform:uppercase"></label>
+            <label class="fld" style="grid-column:span 2"><span class="req">Port Name</span>
+                <input data-h="portName" class="inp" placeholder="e.g. Bangkok"></label>
+
+            <label class="fld"><span>Country Code</span>
+                <input data-h="countryCode" class="inp" maxlength="10" placeholder="e.g. TH" style="text-transform:uppercase"></label>
+            <label class="fld"><span>Country Name</span>
+                <input data-h="country" class="inp" placeholder="e.g. Thailand"></label>
+            <label class="fld"><span>Time Zone <small style="color:#94a3b8">(model-only)</small></span>
+                <input data-h="timezone" class="inp" placeholder="e.g. Asia/Bangkok"></label>
+
+            <label class="fld"><span>Status</span>
+                <select data-h="status" class="inp"><option>Active</option><option>Inactive</option></select></label>
+            <div class="fld derived"><span>Port ID</span><div id="dId" class="val mono">—</div></div>
+            <div class="fld derived"><span>Used by voyages?</span><div id="dUsed" class="val">—</div></div>
+        </div>
+        <div class="hint">PortType ล็อกเป็น <b>SF</b> (Sea Freight). คีย์จริงใน OPPORT = (PORTTYPE, PORTCODE);
+            ฟอร์มนี้ตัดฟิลด์ Airport/Warehouse ที่เป็นของ AF/TS ออก. Time Zone ไม่มีใน OPPORT — เพิ่มไว้สำหรับโมเดล voyage.</div>
+    </section>
+</template>
+
+<div id="toast" class="toast" style="display:none"><span id="toastMsg"></span></div>
+
+<script src="data.js"></script>
+<script src="src/input/util.js"></script>
+<script src="src/input/store.js"></script>
+<script src="src/input/port-app.js"></script>
+</body>
+</html>

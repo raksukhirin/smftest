@@ -1,0 +1,117 @@
+/* data.js — Inline seed (window.SEED_DATA) so the mockup runs on file:// with no
+ * HTTP server. Identical payload to data.json; state.js falls back to
+ * fetch('data.json') when served over http://. Edit BOTH when changing seed. */
+window.SEED_DATA =
+{
+    "_note": "Vessel Schedule mock data. JSON shape mirrors frmSFSched.frm DB table SFVSED (schedule rows) + masters (SFVESSEL vessels, ports, carriers). Key = DETID. Dates are ISO (yyyy-mm-dd); the UI renders them in Buddhist era (yyyy+543) to match the legacy form. ARRDATE/ARRDAY/DEPDAY are derived (DEPDATE + TRANSIT) but stored for parity with the VB6 form. See mapping.md for field-by-field mapping.",
+    "company": {
+        "CompanyID": "DEMO",
+        "Name": "DEMO COMPANY"
+    },
+    "masters": {
+        "ports": [
+            { "PortCode": "THLCH", "PortName": "LAEM CHABANG", "Country": "THAILAND" },
+            { "PortCode": "THBKK", "PortName": "BANGKOK", "Country": "THAILAND" },
+            { "PortCode": "SGSIN", "PortName": "SINGAPORE", "Country": "SINGAPORE" },
+            { "PortCode": "CNSHA", "PortName": "SHANGHAI", "Country": "CHINA" },
+            { "PortCode": "CNSZX", "PortName": "SHENZHEN", "Country": "CHINA" },
+            { "PortCode": "CNNGB", "PortName": "NINGBO", "Country": "CHINA" },
+            { "PortCode": "HKHKG", "PortName": "HONG KONG", "Country": "HONG KONG" },
+            { "PortCode": "JPYOK", "PortName": "YOKOHAMA", "Country": "JAPAN" },
+            { "PortCode": "USLAX", "PortName": "LOS ANGELES", "Country": "USA" },
+            { "PortCode": "NLRTM", "PortName": "ROTTERDAM", "Country": "NETHERLANDS" }
+        ],
+        "vessels": [
+            { "Vessel": "CHINA SEA LAND", "Callsign": "9V1234", "VslType": "V" },
+            { "Vessel": "NORTH WORK SEA", "Callsign": "9V5678", "VslType": "V" },
+            { "Vessel": "EVER GIVEN", "Callsign": "H3RC", "VslType": "V" },
+            { "Vessel": "EVER ACE", "Callsign": "VRPF8", "VslType": "V" },
+            { "Vessel": "ONE TRUST", "Callsign": "3FQR9", "VslType": "V" },
+            { "Vessel": "HANSA FLENSBURG", "Callsign": "V7AB2", "VslType": "V" },
+            { "Vessel": "WAN HAI 805", "Callsign": "9V9012", "VslType": "V" },
+            { "Vessel": "MAERSK SELETAR", "Callsign": "OYGR2", "VslType": "V" },
+            { "Vessel": "11111", "Callsign": "", "VslType": "V" },
+            { "Vessel": "22222", "Callsign": "", "VslType": "V" }
+        ],
+        "carriers": [
+            { "LinerNo": "L001", "LinerName": "WAN HAI LINES LTD" },
+            { "LinerNo": "L002", "LinerName": "MAERSK LINE  A/S C/O MAERSK LINE(THAILAND) LTD." },
+            { "LinerNo": "L003", "LinerName": "EVERGREEN SHIPPING (THAILAND) CO., LTD." },
+            { "LinerNo": "L004", "LinerName": "ONE NETWORK EXPRESS (THAILAND) LTD." },
+            { "LinerNo": "L005", "LinerName": "HAPAG-LLOYD (THAILAND) CO., LTD." }
+        ]
+    },
+    "schedules": [
+        {
+            "DETID": "00000000000000000004", "LINERNO": "L001", "LINERNAME": "WAN HAI LINES LTD",
+            "VESSEL": "CHINA SEA LAND", "V_VOY": "S367",
+            "DEPDATE": "2026-06-08", "DEPDAY": "MON", "TRANSIT": 20, "ARRDATE": "2026-06-28", "ARRDAY": "SUN",
+            "LOADPORT": "THLCH", "LOADPORTNAME": "LAEM CHABANG", "FINALPORT": "CNSHA", "FINALPORTNAME": "SHANGHAI",
+            "REMARK": "", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-01", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000003", "LINERNO": "L002", "LINERNAME": "MAERSK LINE  A/S C/O MAERSK LINE(THAILAND) LTD.",
+            "VESSEL": "NORTH WORK SEA", "V_VOY": "S456",
+            "DEPDATE": "2026-06-08", "DEPDAY": "MON", "TRANSIT": 15, "ARRDATE": "2026-06-23", "ARRDAY": "TUE",
+            "LOADPORT": "THBKK", "LOADPORTNAME": "BANGKOK", "FINALPORT": "SGSIN", "FINALPORTNAME": "SINGAPORE",
+            "REMARK": "", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-01", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000005", "LINERNO": "L003", "LINERNAME": "EVERGREEN SHIPPING (THAILAND) CO., LTD.",
+            "VESSEL": "EVER GIVEN", "V_VOY": "S101",
+            "DEPDATE": "2026-06-10", "DEPDAY": "WED", "TRANSIT": 7, "ARRDATE": "2026-06-17", "ARRDAY": "WED",
+            "LOADPORT": "THLCH", "LOADPORTNAME": "LAEM CHABANG", "FINALPORT": "JPYOK", "FINALPORTNAME": "YOKOHAMA",
+            "REMARK": "Weekly service", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-02", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000006", "LINERNO": "L004", "LINERNAME": "ONE NETWORK EXPRESS (THAILAND) LTD.",
+            "VESSEL": "ONE TRUST", "V_VOY": "S202",
+            "DEPDATE": "2026-06-12", "DEPDAY": "FRI", "TRANSIT": 5, "ARRDATE": "2026-06-17", "ARRDAY": "WED",
+            "LOADPORT": "THBKK", "LOADPORTNAME": "BANGKOK", "FINALPORT": "HKHKG", "FINALPORTNAME": "HONG KONG",
+            "REMARK": "", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-02", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000007", "LINERNO": "L005", "LINERNAME": "HAPAG-LLOYD (THAILAND) CO., LTD.",
+            "VESSEL": "HANSA FLENSBURG", "V_VOY": "S303",
+            "DEPDATE": "2026-06-15", "DEPDAY": "MON", "TRANSIT": 28, "ARRDATE": "2026-07-13", "ARRDAY": "MON",
+            "LOADPORT": "THLCH", "LOADPORTNAME": "LAEM CHABANG", "FINALPORT": "NLRTM", "FINALPORTNAME": "ROTTERDAM",
+            "REMARK": "Long haul EU", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-03", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000008", "LINERNO": "L001", "LINERNAME": "WAN HAI LINES LTD",
+            "VESSEL": "WAN HAI 805", "V_VOY": "S368",
+            "DEPDATE": "2026-06-11", "DEPDAY": "THU", "TRANSIT": 4, "ARRDATE": "2026-06-15", "ARRDAY": "MON",
+            "LOADPORT": "THLCH", "LOADPORTNAME": "LAEM CHABANG", "FINALPORT": "SGSIN", "FINALPORTNAME": "SINGAPORE",
+            "REMARK": "", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-03", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000009", "LINERNO": "L002", "LINERNAME": "MAERSK LINE  A/S C/O MAERSK LINE(THAILAND) LTD.",
+            "VESSEL": "MAERSK SELETAR", "V_VOY": "S457",
+            "DEPDATE": "2026-06-09", "DEPDAY": "TUE", "TRANSIT": 18, "ARRDATE": "2026-06-27", "ARRDAY": "SAT",
+            "LOADPORT": "THBKK", "LOADPORTNAME": "BANGKOK", "FINALPORT": "USLAX", "FINALPORTNAME": "LOS ANGELES",
+            "REMARK": "Trans-Pacific", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-04", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000010", "LINERNO": "L003", "LINERNAME": "EVERGREEN SHIPPING (THAILAND) CO., LTD.",
+            "VESSEL": "EVER ACE", "V_VOY": "S102",
+            "DEPDATE": "2026-06-14", "DEPDAY": "SUN", "TRANSIT": 6, "ARRDATE": "2026-06-20", "ARRDAY": "SAT",
+            "LOADPORT": "CNSHA", "LOADPORTNAME": "SHANGHAI", "FINALPORT": "THLCH", "FINALPORTNAME": "LAEM CHABANG",
+            "REMARK": "Import leg", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2026-06-04", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000002", "LINERNO": "", "LINERNAME": "MAERSK  SEALAND THS",
+            "VESSEL": "22222", "V_VOY": "",
+            "DEPDATE": "2021-06-29", "DEPDAY": "TUE", "TRANSIT": 30, "ARRDATE": "2021-07-29", "ARRDAY": "THU",
+            "LOADPORT": "THBKK", "LOADPORTNAME": "BANGKOK", "FINALPORT": "CNSZX", "FINALPORTNAME": "SHENZHEN",
+            "REMARK": "", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2021-06-29", "LOCK": 1735689600000
+        },
+        {
+            "DETID": "00000000000000000001", "LINERNO": "", "LINERNAME": "WANHAI LINE",
+            "VESSEL": "11111", "V_VOY": "",
+            "DEPDATE": "2021-06-29", "DEPDAY": "TUE", "TRANSIT": 15, "ARRDATE": "2021-07-14", "ARRDAY": "WED",
+            "LOADPORT": "THLCH", "LOADPORTNAME": "LAEM CHABANG", "FINALPORT": "SGSIN", "FINALPORTNAME": "SINGAPORE",
+            "REMARK": "", "USERID": "ADMIN", "GROUPID": "OP", "LASTUPD": "2021-06-29", "LOCK": 1735689600000
+        }
+    ]
+}
+;

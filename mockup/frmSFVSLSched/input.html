@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vessel Schedule — Voyage Entry (frmSFSched v2)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="input.css">
+</head>
+<body>
+<div class="layout">
+
+    <!-- ===== Left: voyage list ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <h2>⚓ Voyage Entry</h2>
+            <div class="sub">frmSFSched v2 · master-detail [DEMO]
+                &nbsp;·&nbsp;<a href="index.html" style="color:#7dd3fc">↗ Search</a>
+                &nbsp;<a href="vessel.html" style="color:#7dd3fc">↗ Vessels</a>
+                &nbsp;<a href="business.html" style="color:#7dd3fc">↗ Business</a>
+                &nbsp;<a href="port.html" style="color:#7dd3fc">↗ Ports</a></div>
+        </div>
+        <div class="filters">
+            <input id="vSearch" class="f-input" placeholder="Filter vessel / voyage / carrier…">
+            <div class="f-actions">
+                <button id="btnNew" class="btn-clear" style="background:#16a34a;border-color:#16a34a;color:#fff">+ New Voyage</button>
+                <button id="btnExport" class="btn-clear" title="Download data.json">⬇ Export</button>
+                <button id="btnReset" class="btn-clear" title="Restore seed data (clears saved changes)">↺ Reset</button>
+            </div>
+            <div class="result-count"><span id="vCount">0</span> voyages
+                <span id="dirtyFlag" style="color:#fbbf24;display:none">· ● unsaved</span></div>
+        </div>
+        <div id="voyageList" class="voyage-list"></div>
+    </aside>
+
+    <!-- ===== Main: header + sub-grids ===== -->
+    <main class="main" id="formRoot">
+        <div class="empty-state">Select a voyage to edit, or click <b>+ New Voyage</b>.</div>
+    </main>
+</div>
+
+<!-- Form template (cloned by app) -->
+<template id="tplForm">
+    <div class="header">
+        <div style="display:flex;align-items:center;gap:10px">
+            <h1 id="fTitle" style="margin:0">New Voyage</h1>
+            <span id="fMode" class="pill pill-info">NEW</span>
+            <div style="margin-left:auto;display:flex;gap:8px">
+                <button id="btnCopy" class="btn-sm btn-secondary">📋 Copy</button>
+                <button id="btnDelete" class="btn-sm btn-danger">🗑 Delete</button>
+                <button id="btnSave" class="btn-sm btn-primary">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header fields -->
+    <section class="panel">
+        <h3>🚢 Voyage Header</h3>
+        <div class="form-grid">
+            <label class="fld"><span class="req">Carrier</span>
+                <input data-h="carrierId" class="inp" list="carrierDatalist" placeholder="type code / name…"></label>
+            <label class="fld"><span class="req">Vessel</span>
+                <input data-h="vesselId" class="inp" list="vesselDatalist" placeholder="type vessel…"></label>
+            <label class="fld"><span>IMO No</span>
+                <input data-h="imo" class="inp" readonly></label>
+            <datalist id="carrierDatalist"></datalist>
+            <datalist id="vesselDatalist"></datalist>
+
+            <label class="fld"><span class="req">Voyage No</span>
+                <input data-h="voyageNo" class="inp" placeholder="001E"></label>
+            <label class="fld"><span>Direction</span>
+                <select data-h="direction" class="inp"><option>Export</option><option>Import</option></select></label>
+            <label class="fld"><span>Service Lane</span>
+                <select data-h="serviceLaneId" class="inp"><option value="">—</option></select></label>
+
+            <label class="fld"><span>Schedule Status</span>
+                <select data-h="scheduleStatus" class="inp"><option>On Schedule</option><option>Delayed</option></select></label>
+            <label class="fld"><span>Booking Status</span>
+                <select data-h="bookingStatus" class="inp"><option>Open</option><option>Closed</option></select></label>
+            <div class="fld"></div>
+
+            <!-- derived (read-only) -->
+            <div class="fld derived"><span>POL (auto)</span><div id="dPol" class="val mono">—</div></div>
+            <div class="fld derived"><span>POD (auto)</span><div id="dPod" class="val mono">—</div></div>
+            <div class="fld derived"><span>ETD → ETA · Transit (auto)</span><div id="dWhen" class="val">—</div></div>
+        </div>
+    </section>
+
+    <!-- Port rotation -->
+    <section class="panel">
+        <h3>📍 Port Rotation <span class="count" id="rotCount">0</span>
+            <button id="btnAddPort" class="btn-sm btn-secondary" style="margin-left:auto">+ Add Call</button></h3>
+        <table class="edit-table">
+            <thead><tr>
+                <th style="width:42px">Seq</th><th style="width:200px">Port</th>
+                <th style="width:130px">Move Type</th><th>ETA</th><th>ETD</th>
+                <th>Terminal</th><th style="width:70px">Berth</th>
+                <th style="width:120px">Status</th><th style="width:34px"></th>
+            </tr></thead>
+            <tbody id="rotBody"></tbody>
+        </table>
+        <datalist id="portDatalist"></datalist>
+        <div class="hint">POL = first <b>Load</b>, POD = last <b>Discharge</b>; ETD/ETA &amp; Transit derive from these calls.
+            พิมพ์รหัส/ชื่อท่าในคอลัมน์ Port เพื่อค้นหา</div>
+    </section>
+
+    <!-- Cut-offs -->
+    <section class="panel">
+        <h3>⏱️ Cut-offs <span class="count" id="coCount">0</span>
+            <button id="btnAddCut" class="btn-sm btn-secondary" style="margin-left:auto">+ Add Cut-off</button></h3>
+        <table class="edit-table">
+            <thead><tr>
+                <th style="width:150px">Type</th><th style="width:210px">Date / Time</th>
+                <th style="width:120px">Status</th><th>Remark</th><th style="width:34px"></th>
+            </tr></thead>
+            <tbody id="coBody"></tbody>
+        </table>
+    </section>
+</template>
+
+<!-- Toast -->
+<div id="toast" class="toast" style="display:none"><span id="toastMsg"></span></div>
+
+<script src="data.js"></script>
+<script src="src/input/util.js?v=4"></script>
+<script src="src/input/store.js?v=4"></script>
+<script src="src/input/app.js?v=4"></script>
+</body>
+</html>

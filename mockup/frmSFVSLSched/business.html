@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business File — Carrier (frmSMBusiness instance)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="input.css">
+</head>
+<body>
+<div class="layout">
+
+    <!-- ===== Left: business list ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <h2>🏢 Business File</h2>
+            <div class="sub">frmSMBusiness · instance = <b style="color:#7dd3fc">Carrier (SEALINE)</b>
+                <br><a href="index.html" style="color:#7dd3fc">↗ Search</a>
+                &nbsp;<a href="input.html" style="color:#7dd3fc">↗ Voyage</a>
+                &nbsp;<a href="vessel.html" style="color:#7dd3fc">↗ Vessels</a>
+                &nbsp;<a href="port.html" style="color:#7dd3fc">↗ Ports</a></div>
+        </div>
+        <div class="filters">
+            <input id="vSearch" class="f-input" placeholder="Filter name / liner code / SCAC…">
+            <div class="f-actions">
+                <button id="btnNew" class="btn-clear" style="background:#16a34a;border-color:#16a34a;color:#fff">+ New Carrier</button>
+                <button id="btnExport" class="btn-clear" title="Download data.json">⬇ Export</button>
+                <button id="btnReset" class="btn-clear" title="Restore seed (clears saved changes)">↺ Reset</button>
+            </div>
+            <div class="result-count"><span id="vCount">0</span> carriers
+                <span id="dirtyFlag" style="color:#fbbf24;display:none">· ● unsaved</span></div>
+        </div>
+        <div id="bizList" class="voyage-list"></div>
+    </aside>
+
+    <!-- ===== Main: business form ===== -->
+    <main class="main" id="formRoot">
+        <div class="empty-state">Select a carrier to edit, or click <b>+ New Carrier</b>.</div>
+    </main>
+</div>
+
+<template id="tplForm">
+    <div class="header">
+        <div style="display:flex;align-items:center;gap:10px">
+            <h1 id="fTitle" style="margin:0">New Carrier</h1>
+            <span id="fMode" class="pill pill-info">NEW</span>
+            <div style="margin-left:auto;display:flex;gap:8px">
+                <button id="btnCopy" class="btn-sm btn-secondary">📋 Copy</button>
+                <button id="btnDelete" class="btn-sm btn-danger">🗑 Delete</button>
+                <button id="btnSave" class="btn-sm btn-primary">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Identity + carrier-specific (SEALINE) -->
+    <section class="panel">
+        <h3>🏢 Identity &amp; Carrier <span class="count">VENDCLASS = SEALINE</span></h3>
+        <div class="form-grid">
+            <label class="fld"><span class="req">Name</span>
+                <input data-h="comName" class="inp" placeholder="e.g. Ocean Network Express"></label>
+            <label class="fld"><span>Latin Name</span>
+                <input data-h="comNameLatin" class="inp"></label>
+            <label class="fld"><span>Vendor Class</span>
+                <input data-h="vendClass" class="inp" value="SEALINE" readonly title="instance นี้ล็อกเป็น SEALINE"></label>
+
+            <label class="fld"><span>Liner Code</span>
+                <input data-h="linerCode" class="inp" placeholder="e.g. ONE"></label>
+            <label class="fld"><span>SCAC</span>
+                <input data-h="scac" class="inp" maxlength="4" placeholder="4 chars"></label>
+            <label class="fld"><span>Short Code</span>
+                <input data-h="shortCode" class="inp"></label>
+
+            <label class="fld"><span>EDI / Paperless ID</span>
+                <input data-h="ediCode" class="inp"></label>
+            <label class="fld"><span>Business Group</span>
+                <input data-h="busGrp" class="inp"></label>
+            <label class="fld"><span>Status</span>
+                <select data-h="status" class="inp"><option>Active</option><option>Inactive</option></select></label>
+        </div>
+    </section>
+
+    <!-- Address / contact -->
+    <section class="panel">
+        <h3>📍 Address &amp; Contact</h3>
+        <div class="form-grid">
+            <label class="fld" style="grid-column:span 2"><span>Address 1</span>
+                <input data-h="address1" class="inp"></label>
+            <label class="fld"><span>Country</span>
+                <input data-h="country" class="inp"></label>
+            <label class="fld"><span>Postal Code</span>
+                <input data-h="post" class="inp"></label>
+            <label class="fld"><span>Tax ID</span>
+                <input data-h="taxId" class="inp"></label>
+            <label class="fld"><span>Contact</span>
+                <input data-h="contact" class="inp"></label>
+
+            <label class="fld"><span>Tel</span>
+                <input data-h="tel" class="inp"></label>
+            <label class="fld"><span>Fax</span>
+                <input data-h="fax" class="inp"></label>
+            <label class="fld"><span>Email</span>
+                <input data-h="email" class="inp"></label>
+            <label class="fld"><span>Web Site</span>
+                <input data-h="website" class="inp"></label>
+            <div class="fld derived"><span>Business Code</span><div id="dId" class="val mono">—</div></div>
+        </div>
+        <label class="fld" style="margin-top:12px"><span>Notes</span>
+            <textarea data-h="notes" class="inp" rows="2"></textarea></label>
+        <div class="hint" id="usedHint"></div>
+    </section>
+</template>
+
+<div id="toast" class="toast" style="display:none"><span id="toastMsg"></span></div>
+
+<script src="data.js"></script>
+<script src="src/input/util.js"></script>
+<script src="src/input/store.js"></script>
+<script src="src/input/business-app.js"></script>
+</body>
+</html>

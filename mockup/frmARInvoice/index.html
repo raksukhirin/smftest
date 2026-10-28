@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outbound Billing Entry — frmARInvoice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.svg">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- ===== Top bar ===== -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="max-w-[1500px] mx-auto px-6 py-3 flex items-center gap-4">
+            <div class="flex items-center gap-2">
+                <div id="modeLogo" class="w-8 h-8 rounded-lg bg-rose-600 text-white flex items-center justify-center font-bold text-xs">AR</div>
+                <div>
+                    <div id="modeSubtitle" class="text-xs uppercase tracking-wider text-slate-500">SMP · A/R Billing</div>
+                    <div id="modeTitle" class="font-semibold text-sm leading-none">Outbound Billing Entry</div>
+                </div>
+            </div>
+
+            <div class="flex-1 max-w-md ml-4 relative">
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">⌕</span>
+                    <input id="searchInput" type="text" placeholder="Search Doc No / Customer…" autocomplete="off"
+                           class="w-full pl-9 pr-3 py-2 text-sm bg-slate-100 rounded-lg border border-transparent focus:bg-white focus:border-rose-500 focus:outline-none">
+                </div>
+                <div id="searchDropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-40 max-h-80 overflow-y-auto"></div>
+            </div>
+
+            <nav class="flex items-center gap-1 text-sm">
+                <button class="nav-btn" id="navFirst" title="First">«</button>
+                <button class="nav-btn" id="navPrev"  title="Previous">‹</button>
+                <span class="text-xs text-slate-500 px-2 tabular-nums" id="navCounter">1 / 1</span>
+                <button class="nav-btn" id="navNext"  title="Next">›</button>
+                <button class="nav-btn" id="navLast"  title="Last">»</button>
+            </nav>
+
+            <div class="flex items-center gap-2 ml-auto">
+                <button class="btn-secondary" id="newBtn" title="New entry">+ New</button>
+                <button class="btn-ghost" title="Reset to seed data" id="resetSeedBtn">↺</button>
+                <button class="btn-primary" id="saveBtn">💾 Save</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== Read-only banner ===== -->
+    <div id="readonlyBanner" class="readonly-banner">🔒 <span id="readonlyText">This document is locked.</span></div>
+
+    <!-- ===== Banner ===== -->
+    <section class="bg-white border-b border-slate-200">
+        <div class="max-w-[1500px] mx-auto px-6 py-3 flex flex-wrap items-center gap-x-8 gap-y-3">
+            <div>
+                <div class="text-xs uppercase tracking-wider text-slate-500">Book No</div>
+                <div class="text-sm font-semibold mt-0.5" id="bannerBookNo">—</div>
+            </div>
+            <div class="border-l border-slate-200 pl-8">
+                <div class="text-xs uppercase tracking-wider text-slate-500">Doc No</div>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-lg font-bold text-rose-700 tabular-nums" id="bannerDocNo">—</span>
+                    <span class="status-pill status-open" id="statusPill">● Open</span>
+                    <span class="status-pill status-close" id="postPill" title="Posting status">Not posted</span>
+                    <span class="text-xs text-amber-600 font-semibold ml-1 hidden" id="dirtyFlag" title="Unsaved changes">● Unsaved</span>
+                </div>
+            </div>
+            <div class="border-l border-slate-200 pl-8">
+                <div class="text-xs uppercase tracking-wider text-slate-500" id="bannerCustLabel">Customer</div>
+                <div class="text-sm font-medium mt-0.5" id="bannerCust">—</div>
+            </div>
+            <div class="ml-auto text-xs text-slate-500">
+                <span id="lastModified">—</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Page rail (Pg.1 – Pg.5) ===== -->
+    <section class="bg-white border-b border-slate-200">
+        <div class="max-w-[1500px] mx-auto px-6">
+            <div class="flex gap-1 overflow-x-auto" id="pageRail">
+                <button class="page-tab is-active" data-page="1">Pg.1 · General</button>
+                <button class="page-tab" data-page="2">Pg.2 · Invoice address</button>
+                <button class="page-tab" data-page="3">Pg.3 · Descriptions</button>
+                <button class="page-tab" data-page="4">Pg.4 · Sales / agent</button>
+                <button class="page-tab" data-page="5">Pg.5 · Attachments</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Main content ===== -->
+    <main class="max-w-[1500px] mx-auto px-6 py-5 pb-40 space-y-5">
+
+        <!-- ===================== PAGE 1 — GENERAL ===================== -->
+        <div class="page-panel" data-page="1">
+            <section class="card">
+                <div class="card-head flex-wrap gap-2">
+                    <div class="flex gap-1" id="subTabs">
+                        <button class="sub-tab is-active" data-subtab="general">General</button>
+                        <button class="sub-tab" data-subtab="other">Other option</button>
+                        <button class="sub-tab" data-subtab="tax">Tax invoice</button>
+                        <button class="sub-tab" data-subtab="wt">Withholding tax</button>
+                    </div>
+                    <div class="flex items-center gap-3 ml-auto">
+                        <label class="chk"><input type="checkbox" name="Checked"> Checked</label>
+                        <label class="chk"><input type="checkbox" id="ifFlag"> [I/F]</label>
+                        <button class="btn-secondary text-xs" id="exportBtn">Export</button>
+                    </div>
+                </div>
+
+                <!-- General sub-panel -->
+                <div class="sub-panel" data-subtab="general">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
+                        <div class="field">
+                            <label class="label">Entry No</label>
+                            <input class="input tabular-nums" name="EntryNo" type="number">
+                        </div>
+                        <div class="field">
+                            <label class="label">Doc. Type</label>
+                            <select class="input" name="DocType" id="docTypeSel"></select>
+                        </div>
+                        <div class="field">
+                            <label class="label required">Doc. No.</label>
+                            <input class="input font-mono" name="InvNo">
+                        </div>
+                        <div class="field">
+                            <label class="label">Status</label>
+                            <input class="input" name="DocStat" disabled>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Job Ref #</label>
+                            <input class="input font-mono" name="JobNo">
+                        </div>
+                        <div class="field">
+                            <label class="label">HB/L Ref #</label>
+                            <input class="input font-mono" name="HblRef">
+                        </div>
+                        <div class="field">
+                            <label class="label">Cust. Group</label>
+                            <select class="input" name="CustGroup">
+                                <option>Local</option>
+                                <option>Oversea</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label class="label">Refer. Inv</label>
+                            <input class="input font-mono" name="RefInvNo">
+                        </div>
+
+                        <div class="field-with-lookup col-span-2">
+                            <label class="label required" id="custFieldLabel">Customer</label>
+                            <div class="lookup-row">
+                                <input class="input lookup-code" name="CustCode" placeholder="Code">
+                                <button type="button" class="lookup-btn" id="custLookupBtn" title="Lookup">⌕</button>
+                                <input class="input lookup-name" name="CustName" placeholder="Customer name">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label class="label">Job Group</label>
+                            <input class="input" name="JobGroup">
+                        </div>
+                        <div class="field">
+                            <label class="label">Inv. Date</label>
+                            <input type="date" class="input" name="InvDate">
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Term</label>
+                            <select class="input" name="TermCode" id="termSel"></select>
+                        </div>
+                        <div class="field">
+                            <label class="label">VAT Group</label>
+                            <select class="input" name="VatCode" id="vatSel"></select>
+                        </div>
+                        <div class="field">
+                            <label class="label">Due Date</label>
+                            <input type="date" class="input" name="DueDate">
+                        </div>
+                        <div class="field">
+                            <label class="label">G/L Date</label>
+                            <input type="date" class="input" name="GLDate">
+                        </div>
+
+                        <div class="field">
+                            <label class="label required">Currency</label>
+                            <select class="input" name="SrcCurr" id="currSel"></select>
+                        </div>
+                        <div class="field">
+                            <label class="label">Exchg. Rate</label>
+                            <input type="number" step="0.000001" class="input text-right tabular-nums" name="ExcRate">
+                        </div>
+                        <div class="field">
+                            <label class="label">Ref. C/Q #</label>
+                            <input class="input font-mono" name="RefCQ">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="field">
+                                <label class="label">Period</label>
+                                <input class="input tabular-nums" name="FisPerd">
+                            </div>
+                            <div class="field">
+                                <label class="label">Year</label>
+                                <input class="input tabular-nums" name="FisYear">
+                            </div>
+                        </div>
+
+                        <div class="field col-span-2 md:col-span-4">
+                            <label class="label">Description <span class="text-rose-500 font-normal normal-case">(F2-Save)</span></label>
+                            <input class="input" name="InvDesc">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other option sub-panel -->
+                <div class="sub-panel hidden" data-subtab="other">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="field">
+                            <label class="label">Appoint Date</label>
+                            <input type="date" class="input" name="AppointDate">
+                        </div>
+                        <div class="field">
+                            <label class="label">Bill Placement Date</label>
+                            <input type="date" class="input" name="BillNoteDate">
+                        </div>
+                        <div class="field">
+                            <label class="label">Other Ref.</label>
+                            <input class="input" name="OtherRef">
+                        </div>
+                        <div class="field">
+                            <label class="label">Pay Type</label>
+                            <input class="input" name="PayType" placeholder="—">
+                        </div>
+                        <div class="field">
+                            <label class="label">Dept. No</label>
+                            <input class="input" name="DeptNo" placeholder="—">
+                        </div>
+                        <div class="field">
+                            <label class="label">Advance Amount</label>
+                            <input type="number" step="0.01" class="input text-right tabular-nums" name="AdvAmt">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tax invoice sub-panel -->
+                <div class="sub-panel hidden" data-subtab="tax">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="field">
+                            <label class="label">Tax Inv. No</label>
+                            <input class="input font-mono" name="TaxInvNo">
+                        </div>
+                        <div class="field">
+                            <label class="label">Receipt No (R/C)</label>
+                            <input class="input font-mono" name="RCDocNo">
+                        </div>
+                        <div class="field">
+                            <label class="label">Ref. G/L #</label>
+                            <input class="input font-mono" name="GLDocNo" disabled>
+                        </div>
+                        <div class="field md:col-span-3">
+                            <label class="label">Tax Description</label>
+                            <textarea class="input" name="rem.TaxDesc" rows="2"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Withholding tax sub-panel -->
+                <div class="sub-panel hidden" data-subtab="wt">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="field">
+                            <label class="label">W/T Name</label>
+                            <input class="input" name="rem.WTName">
+                        </div>
+                        <div class="field">
+                            <label class="label">W/T Tax ID</label>
+                            <input class="input font-mono" name="rem.WTTaxID" maxlength="13">
+                        </div>
+                        <div class="field">
+                            <label class="label">W/T Code</label>
+                            <select class="input" name="rem.WTCode" id="wtSel"></select>
+                        </div>
+                        <div class="field">
+                            <label class="label">W/T Address</label>
+                            <input class="input" name="rem.WTAddr">
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== PAGE 2 — INVOICE ADDRESS ===================== -->
+        <div class="page-panel hidden" data-page="2">
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="card-title">🏢 Invoice address & tax payer</h2>
+                    <button class="btn-secondary text-xs ml-auto" id="loadAddrBtn">↧ Load from customer</button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="field">
+                        <label class="label">Invoice Address</label>
+                        <textarea class="input" name="rem.ComAdd" rows="4"></textarea>
+                    </div>
+                    <div class="field">
+                        <label class="label">Tax Description</label>
+                        <textarea class="input" name="rem.TaxDesc2" rows="4"></textarea>
+                    </div>
+                    <div class="field md:col-span-2">
+                        <label class="label">Invoice Name</label>
+                        <input class="input" name="rem.InvName">
+                    </div>
+                    <div class="field">
+                        <label class="label">Branch</label>
+                        <input class="input font-mono" name="rem.Branch" placeholder="00000">
+                    </div>
+                    <div class="field">
+                        <label class="label">Tax ID</label>
+                        <input class="input font-mono" name="rem.TaxID" maxlength="13">
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== PAGE 3 — DESCRIPTIONS ===================== -->
+        <div class="page-panel hidden" data-page="3">
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="card-title">📝 Descriptions</h2>
+                    <span class="text-xs text-rose-500 ml-auto">ARInvRem.Descrip1 · max 2,000 chars</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="field">
+                        <label class="label">Description 1 <span class="normal-case font-normal text-slate-400">(printed line items)</span></label>
+                        <textarea class="input font-mono" name="rem.Descrip1" rows="4" placeholder="1.&#10;2.&#10;3."></textarea>
+                    </div>
+                    <div class="field">
+                        <label class="label">Description 2</label>
+                        <textarea class="input" name="rem.Descrip2" rows="2"></textarea>
+                    </div>
+                    <div class="field">
+                        <label class="label">Description 3</label>
+                        <textarea class="input" name="rem.Descrip3" rows="2"></textarea>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== PAGE 4 — SALES / AGENT (A/R) · REQ BY / REQUISITION (A/P) ===================== -->
+        <div class="page-panel hidden" data-page="4">
+            <section class="card">
+                <div class="card-head"><h2 class="card-title" id="pg4Title">🧑‍💼 Sales person &amp; agent</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="field">
+                        <label class="label" id="saleCodeLabel">Sale Person Code</label>
+                        <input class="input font-mono" name="SaleCode">
+                    </div>
+                    <div class="field md:col-span-2">
+                        <label class="label" id="saleNameLabel">Sale Person Name</label>
+                        <input class="input" name="SaleName">
+                    </div>
+
+                    <!-- A/P only: ใบเบิกจากวงเงิน (Requisition from credit line / CSREQH) -->
+                    <div class="field md:col-span-3 hidden" id="reqNoField">
+                        <label class="label">ใบเบิกจากวงเงิน <span class="normal-case font-normal text-slate-400">(Requisition · CSREQH)</span></label>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <select class="input sm:max-w-md" name="ReqNo" id="reqNoSel"></select>
+                            <span id="reqFundInfo" class="text-xs text-slate-500 self-center"></span>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">ADV. to Agent</label>
+                        <input class="input" name="AgentNo">
+                    </div>
+                    <div class="field">
+                        <label class="label">Agent Currency</label>
+                        <input class="input" name="TransCurr">
+                    </div>
+                    <div class="field">
+                        <label class="label">Transfer Amt.</label>
+                        <input type="number" step="0.01" class="input text-right tabular-nums" name="TransCurrAmt">
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== PAGE 5 — ATTACHMENTS ===================== -->
+        <div class="page-panel hidden" data-page="5">
+            <section class="card">
+                <div class="card-head">
+                    <h2 class="card-title">📎 Document attachments</h2>
+                    <div class="flex gap-2 ml-auto">
+                        <button class="btn-secondary text-xs" id="selDocBtn">Select Doc. »</button>
+                        <button class="btn-secondary text-xs" id="pasteLinkBtn">Paste Link »</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <table class="w-full text-sm border border-slate-200 rounded-lg overflow-hidden">
+                            <thead>
+                                <tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-b">
+                                    <th class="px-3 py-2">File Location</th>
+                                    <th class="px-2 py-2 w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="docListTbody">
+                                <tr><td colspan="2" class="text-center text-slate-400 py-6 text-sm">No attachments — this is a UI placeholder (FTP/HTTP upload disabled in mockup).</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="field">
+                        <label class="label">Preview / Note</label>
+                        <textarea class="input font-mono text-xs" rows="6" placeholder="Document preview area (mockup placeholder)…"></textarea>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ===================== LINE ITEMS (always visible) ===================== -->
+        <section class="card">
+            <div class="card-head flex-wrap gap-3">
+                <h2 class="card-title">📋 Line items</h2>
+                <div class="flex flex-wrap gap-2 ml-auto">
+                    <button type="button" class="btn-secondary text-xs" id="refAdvBtn" title="Reference advance billing / job charges">↧ Ref. job charges</button>
+                    <button type="button" class="btn-secondary text-xs" id="addDetailBtn">+ Add Line</button>
+                    <button type="button" class="btn-ghost text-xs text-red-600" id="clearDetailBtn">Clear All</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="detailTable">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-y">
+                            <th class="px-2 py-2 w-8">#</th>
+                            <th class="px-2 py-2 w-24">Item Type</th>
+                            <th class="px-2 py-2 w-28">Service Code</th>
+                            <th class="px-2 py-2 min-w-[180px]">Description</th>
+                            <th class="px-2 py-2 w-28">Account</th>
+                            <th class="px-2 py-2 w-20">UOM</th>
+                            <th class="px-2 py-2 text-right w-20">Qty</th>
+                            <th class="px-2 py-2 text-right w-24">Price</th>
+                            <th class="px-2 py-2 text-center w-20">VAT</th>
+                            <th class="px-2 py-2 text-right w-28">Amount</th>
+                            <th class="px-2 py-2 text-right w-24">VAT Amt</th>
+                            <th class="px-2 py-2 text-right w-28">Total</th>
+                            <th class="px-2 py-2 w-10"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailTbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ===================== TOTALS MATRIX (always visible) ===================== -->
+        <section class="card">
+            <div class="flex flex-wrap items-start gap-4">
+                <div class="flex flex-col gap-2">
+                    <div class="text-xs"><span class="text-slate-500">Job Status:</span> <span class="font-semibold text-rose-600" id="jobStatus">Open</span></div>
+                    <div class="field" style="width:170px">
+                        <label class="label">Ref. Advance Billing</label>
+                        <input type="number" step="0.01" class="input text-right tabular-nums" name="RefAdvAmt" value="0.00">
+                    </div>
+                </div>
+                <div class="flex-1 min-w-[420px] overflow-x-auto">
+                    <table class="totals-matrix">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th class="text-amber-600">ADVANCE</th>
+                                <th>GROSS</th>
+                                <th>VAT</th>
+                                <th>TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="row-lbl">Currency Amount <span id="totCurrLbl" class="text-slate-400">(THB)</span></td>
+                                <td class="tabular-nums" id="srcAdv">0.00</td>
+                                <td class="tabular-nums" id="srcGross">0.00</td>
+                                <td class="tabular-nums" id="srcVat">0.00</td>
+                                <td class="tabular-nums font-semibold" id="srcTot">0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="row-lbl">THB Amount</td>
+                                <td class="tabular-nums" id="thbAdv">0.00</td>
+                                <td class="tabular-nums" id="thbGross">0.00</td>
+                                <td class="tabular-nums" id="thbVat">0.00</td>
+                                <td class="tabular-nums font-semibold text-rose-700" id="thbTot">0.00</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ===== Sticky bottom action bar ===== -->
+    <footer class="fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 shadow-lg z-30">
+        <div class="max-w-[1500px] mx-auto px-6 py-3 flex flex-wrap items-center gap-2">
+            <button class="btn-success" id="confirmBtn">✓ Confirm</button>
+            <button class="btn-secondary" id="approveBtn">Approve</button>
+            <button class="btn-secondary" id="postBtn">Post G/L</button>
+            <button class="btn-secondary" id="subTransBtn" title="Update operation sub-transactions">Update Sub-Transactions</button>
+            <button class="btn-danger" id="cancelBtn">Ø Cancel</button>
+
+            <div class="hidden lg:flex items-center text-xs text-slate-500 mx-3">
+                <span class="text-slate-400 mr-2">By:</span>
+                <span id="footerEditInfo">—</span>
+            </div>
+
+            <div class="ml-auto flex items-center gap-2">
+                <button class="btn-secondary" id="printBtn">🖨 Print</button>
+                <button class="btn-primary" id="saveBtn2">💾 Save</button>
+                <button class="btn-ghost" id="closeBtn">Close</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ===== Toast ===== -->
+    <div id="toast" class="fixed bottom-24 right-6 z-50 hidden">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2">
+            <span id="toastIcon">✓</span>
+            <span id="toastMsg">Saved</span>
+        </div>
+    </div>
+
+    <!-- ===== Confirm dialog ===== -->
+    <div id="dialog" class="fixed inset-0 z-50 bg-slate-900/50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-5" onclick="event.stopPropagation()">
+            <h3 id="dlgTitle" class="font-semibold text-lg mb-2"></h3>
+            <p id="dlgMsg" class="text-sm text-slate-600 mb-5"></p>
+            <div class="flex justify-end gap-2">
+                <button id="dlgCancel" class="btn-secondary">Cancel</button>
+                <button id="dlgConfirm" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Customer lookup modal ===== -->
+    <div id="lookupModal" class="fixed inset-0 z-50 bg-slate-900/50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-xl p-5" onclick="event.stopPropagation()">
+            <h3 class="font-semibold text-lg mb-3">Select customer</h3>
+            <input id="lookupSearch" class="input mb-3" placeholder="Filter by code or name…">
+            <div class="border border-slate-200 rounded-lg max-h-80 overflow-y-auto">
+                <table class="w-full text-sm">
+                    <tbody id="lookupTbody"></tbody>
+                </table>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button id="lookupClose" class="btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Error summary modal ===== -->
+    <div id="errorModal" class="fixed inset-0 z-50 bg-slate-900/50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-lg p-5" onclick="event.stopPropagation()">
+            <h3 class="font-semibold text-lg mb-2 text-red-700">⚠ Cannot save — please fix the following</h3>
+            <p class="text-sm text-slate-600 mb-2"><span id="errCount">0</span> validation issue(s) found:</p>
+            <ul id="errorList" class="error-modal-list"></ul>
+            <div class="flex justify-end">
+                <button id="errOk" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inline seed (window.ARINV_SEED) so the page works via file:// where fetch('data.json') is blocked.
+         script.js prefers window.ARINV_SEED, then falls back to fetch('data.json'). -->
+    <script src="data.js?v=4"></script>
+    <script src="script.js?v=5"></script>
+</body>
+</html>

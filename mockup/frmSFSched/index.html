@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vessel Schedule — Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <!-- ===== Top bar ===== -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div class="px-5 py-2.5 flex items-center gap-3">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-sky-700 text-white flex items-center justify-center font-bold">⚓</div>
+                <div>
+                    <div class="text-[10px] uppercase tracking-wider text-slate-500">Sea Freight</div>
+                    <div class="font-semibold text-sm leading-none">Vessel Schedules <span class="text-slate-400">[DEMO]</span></div>
+                </div>
+            </div>
+
+            <div class="ml-6 flex items-center gap-3 text-xs text-slate-500">
+                <span>Schedules: <span id="recCount" class="font-semibold text-slate-700 tabular-nums">0</span></span>
+                <span>•</span>
+                <span>Shown: <span id="recShown" class="font-semibold text-slate-700 tabular-nums">0</span></span>
+                <span id="dirtyFlag" class="hidden text-amber-600 font-semibold">● Unsaved</span>
+            </div>
+
+            <div class="ml-auto flex items-center gap-2">
+                <button class="btn-ghost text-xs" id="exportBtn" title="Download data.json">⬇ Export JSON</button>
+                <button class="btn-ghost text-xs" id="resetBtn" title="Reload seed data">↺ Reset Seed</button>
+                <button class="btn-secondary text-xs" id="newBtn">+ New Schedule</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== Search bar (matches screenshots) ===== -->
+    <section class="bg-sky-50/40 border-b border-slate-200">
+        <div class="px-5 py-2.5">
+            <div class="flex flex-wrap items-start gap-x-6 gap-y-3">
+
+                <!-- Mode toggle + criteria -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <button class="mode-toggle is-active" id="modeLocation" data-mode="LOCATION">
+                            <span class="ico">🔎</span> SEARCH BY LOCATION
+                        </button>
+                        <button class="mode-toggle" id="modeVessel" data-mode="VESSEL">
+                            <span class="ico">🚢</span> SEARCH BY VESSEL
+                        </button>
+                    </div>
+
+                    <!-- LOCATION criteria -->
+                    <div id="paneLocation" class="space-y-1.5">
+                        <div class="grid grid-cols-[80px_minmax(150px,1fr)_120px_minmax(160px,1fr)] gap-2 items-center">
+                            <span class="label-orange">ORIGIN</span>
+                            <select id="origCountry" class="input-sm"></select>
+                            <input id="origPortCode" class="input-sm mono uppercase" placeholder="PORT CODE" list="portCodeList">
+                            <input id="origPortName" class="input-sm" placeholder="PORT NAME" readonly>
+                        </div>
+                        <div class="grid grid-cols-[80px_minmax(150px,1fr)_120px_minmax(160px,1fr)] gap-2 items-center">
+                            <span class="label-orange">DESTINATION</span>
+                            <select id="destCountry" class="input-sm"></select>
+                            <input id="destPortCode" class="input-sm mono uppercase" placeholder="PORT CODE" list="portCodeList">
+                            <input id="destPortName" class="input-sm" placeholder="PORT NAME" readonly>
+                        </div>
+                    </div>
+
+                    <!-- VESSEL criteria -->
+                    <div id="paneVessel" class="hidden">
+                        <div class="grid grid-cols-[80px_minmax(320px,1fr)_auto] gap-2 items-center">
+                            <span class="label-blue">VESSEL</span>
+                            <input id="vesselSearch" class="input-sm" placeholder="ALL" list="vesselList">
+                            <button id="reloadVessel" class="icon-btn" title="Reload vessel list">↻</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ID + Search By + window -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="label-blue w-8">ID :</span>
+                        <input id="idSearch" class="input-sm font-mono w-52" placeholder="DETID">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="label-green w-20">Search By :</span>
+                        <select id="searchBy" class="input-sm w-32 bg-yellow-100">
+                            <option value="DEP">Departure</option>
+                            <option value="ARR">Arrival</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-1.5">
+                            <span class="label-blue">Start Date :</span>
+                            <input type="checkbox" id="startDateChk" class="chk">
+                            <input type="date" id="startDate" class="input-sm w-36" disabled>
+                        </label>
+                        <label class="flex items-center gap-1.5">
+                            <span class="label-blue">Weeks Out :</span>
+                            <select id="weeksOut" class="input-sm w-20">
+                                <option>1</option><option>2</option><option>3</option>
+                                <option selected>4</option><option>6</option><option>8</option><option>12</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="flex items-center gap-2 pt-0.5">
+                        <button class="btn-secondary text-xs" id="clearBtn">CLR SCREEN</button>
+                        <button class="btn-primary text-xs" id="searchBtn">SEARCH --&gt;&gt;</button>
+                    </div>
+                </div>
+
+                <!-- Right: filter tabs (Date | Port | Carrier) -->
+                <div class="w-[380px]">
+                    <div class="filter-tabs">
+                        <button class="filter-tab is-active" data-ftab="Date">Date</button>
+                        <button class="filter-tab" data-ftab="Port">Port</button>
+                        <button class="filter-tab" data-ftab="Carrier">Carrier</button>
+                    </div>
+
+                    <!-- Date panel: DEPART / ARRIVE × day-of-week -->
+                    <div class="filter-panel" data-fpanel="Date">
+                        <table class="dow-grid">
+                            <thead>
+                                <tr>
+                                    <th class="row-lbl"></th>
+                                    <th>M</th><th>T</th><th>W</th><th>TH</th><th>F</th><th>SA</th><th>S</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr data-dow="DEP">
+                                    <td class="row-lbl" style="color:#1e40af">DEPART</td>
+                                    <td><input type="checkbox" data-d="MON" checked></td>
+                                    <td><input type="checkbox" data-d="TUE" checked></td>
+                                    <td><input type="checkbox" data-d="WED" checked></td>
+                                    <td><input type="checkbox" data-d="THU" checked></td>
+                                    <td><input type="checkbox" data-d="FRI" checked></td>
+                                    <td><input type="checkbox" data-d="SAT" checked></td>
+                                    <td><input type="checkbox" data-d="SUN" checked></td>
+                                </tr>
+                                <tr data-dow="ARR">
+                                    <td class="row-lbl" style="color:#0369a1">ARRIVE</td>
+                                    <td><input type="checkbox" data-d="MON" checked></td>
+                                    <td><input type="checkbox" data-d="TUE" checked></td>
+                                    <td><input type="checkbox" data-d="WED" checked></td>
+                                    <td><input type="checkbox" data-d="THU" checked></td>
+                                    <td><input type="checkbox" data-d="FRI" checked></td>
+                                    <td><input type="checkbox" data-d="SAT" checked></td>
+                                    <td><input type="checkbox" data-d="SUN" checked></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Port panel: checklist -->
+                    <div class="filter-panel hidden" data-fpanel="Port">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] text-slate-500">Origin or destination port</span>
+                            <button class="text-[10px] text-sky-700 hover:underline" data-checkall="Port">Toggle all</button>
+                        </div>
+                        <div class="checklist" id="portChecklist"></div>
+                    </div>
+
+                    <!-- Carrier panel: checklist -->
+                    <div class="filter-panel hidden" data-fpanel="Carrier">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-[10px] text-slate-500">Carrier / liner</span>
+                            <button class="text-[10px] text-sky-700 hover:underline" data-checkall="Carrier">Toggle all</button>
+                        </div>
+                        <div class="checklist" id="carrierChecklist"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- shared datalists -->
+    <datalist id="portCodeList"></datalist>
+    <datalist id="vesselList"></datalist>
+
+    <!-- ===== Main split ===== -->
+    <main id="mainSplit" class="px-5 py-4 flex gap-4">
+
+        <!-- Left: schedule grid -->
+        <div id="leftPane" class="flex-1 min-w-0">
+            <section class="card p-0 overflow-hidden">
+                <div class="grid-toolbar">
+                    <span class="card-title text-sm">🗓️ Schedule List</span>
+                    <span class="ml-3 text-xs text-slate-500">Double-click a row to edit</span>
+                    <button id="addRowBtn" class="btn-secondary text-xs ml-3">+ Add Schedule</button>
+                    <span class="ml-auto text-xs text-slate-500" id="gridStatus">—</span>
+                </div>
+                <div class="grid-scroll" style="max-height: calc(100vh - 230px);">
+                    <table class="data-table" id="schedTable">
+                        <thead>
+                            <tr>
+                                <th>Carrier</th>
+                                <th>Depart</th>
+                                <th>Day</th>
+                                <th class="text-right">Transit Times</th>
+                                <th>Arrive</th>
+                                <th>Day</th>
+                                <th>Vessel</th>
+                                <th>Voy</th>
+                                <th>Origin</th>
+                                <th>Destination</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedTbody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- Right: detail edit panel (hidden by default) -->
+        <aside id="detailPane" class="card p-0 overflow-hidden hidden flex-col" style="width: 420px; flex-shrink: 0;">
+            <div class="card-head px-4 py-2.5 mb-0">
+                <h2 class="card-title text-sm">📝 Schedule Detail</h2>
+                <span id="detailMode" class="status-pill status-open ml-2">VIEW</span>
+                <button id="closeDetailBtn" class="ml-auto btn-ghost text-xs" title="Hide panel">✕</button>
+            </div>
+
+            <div class="detail-body overflow-y-auto px-4 py-3 space-y-3 flex-1">
+                <!-- CARRIER -->
+                <div class="field">
+                    <label class="lbl required">CARRIER</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="LINERNO" placeholder="Code">
+                        <button class="lookup-btn" data-lookup="CARRIER" title="Lookup Carrier">🔍</button>
+                        <input class="input-sm lookup-name" data-field="LINERNAME" placeholder="Carrier name">
+                    </div>
+                </div>
+
+                <!-- VESSEL + VOYAGE -->
+                <div class="grid grid-cols-12 gap-2">
+                    <div class="col-span-8 field">
+                        <label class="lbl required">VESSEL</label>
+                        <div class="lookup-row">
+                            <button class="lookup-btn" data-lookup="VESSEL" title="Lookup Vessel" style="border-left:1px solid #cbd5e1;border-radius:5px 0 0 5px">🔍</button>
+                            <input class="input-sm lookup-name" data-field="VESSEL" placeholder="Vessel name">
+                        </div>
+                    </div>
+                    <div class="col-span-4 field">
+                        <label class="lbl">VOYAGE</label>
+                        <input class="input-sm uppercase" data-field="V_VOY" placeholder="S001">
+                    </div>
+                </div>
+
+                <!-- DEPART + DAY -->
+                <div class="grid grid-cols-12 gap-2">
+                    <div class="col-span-7 field">
+                        <label class="lbl required">DEPARTURE</label>
+                        <input type="date" class="input-sm" data-field="DEPDATE">
+                    </div>
+                    <div class="col-span-5 field">
+                        <label class="lbl">DAY</label>
+                        <input class="input-sm bg-slate-100 text-center" data-field="DEPDAY" readonly>
+                    </div>
+                </div>
+
+                <!-- TRANSIT -->
+                <div class="field">
+                    <label class="lbl required">TRANSIT TIME (DAYS)</label>
+                    <input type="number" min="0" class="input-sm text-right" data-field="TRANSIT" placeholder="0">
+                </div>
+
+                <!-- ARRIVE + DAY (derived) -->
+                <div class="grid grid-cols-12 gap-2">
+                    <div class="col-span-7 field">
+                        <label class="lbl">ARRIVAL <span class="text-[9px] text-slate-400">(auto)</span></label>
+                        <input type="date" class="input-sm bg-slate-100" data-field="ARRDATE" readonly>
+                    </div>
+                    <div class="col-span-5 field">
+                        <label class="lbl">DAY</label>
+                        <input class="input-sm bg-slate-100 text-center" data-field="ARRDAY" readonly>
+                    </div>
+                </div>
+
+                <!-- LOAD PORT -->
+                <div class="field">
+                    <label class="lbl port required">LOAD PORT (ORIGIN)</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="LOADPORT" placeholder="Code">
+                        <button class="lookup-btn" data-lookup="PORT" data-target="LOAD" title="Lookup Port">🔍</button>
+                        <input class="input-sm lookup-name" data-field="LOADPORTNAME" placeholder="Port name" readonly>
+                    </div>
+                </div>
+
+                <!-- FINAL PORT -->
+                <div class="field">
+                    <label class="lbl port required">FINAL PORT (DESTINATION)</label>
+                    <div class="lookup-row">
+                        <input class="input-sm lookup-code" data-field="FINALPORT" placeholder="Code">
+                        <button class="lookup-btn" data-lookup="PORT" data-target="FINAL" title="Lookup Port">🔍</button>
+                        <input class="input-sm lookup-name" data-field="FINALPORTNAME" placeholder="Port name" readonly>
+                    </div>
+                </div>
+
+                <!-- BY / LAST UPD -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="field">
+                        <label class="lbl">BY</label>
+                        <input class="input-sm" data-field="USERID" readonly>
+                    </div>
+                    <div class="field">
+                        <label class="lbl">LAST UPD</label>
+                        <input type="date" class="input-sm" data-field="LASTUPD">
+                    </div>
+                </div>
+
+                <!-- Remark -->
+                <div class="field">
+                    <label class="lbl">REMARK</label>
+                    <textarea rows="2" class="input-sm" data-field="REMARK"></textarea>
+                </div>
+
+                <!-- DETID -->
+                <div class="field">
+                    <label class="lbl">ID (DETID)</label>
+                    <input class="input-sm font-mono bg-slate-100" data-field="DETID" readonly>
+                </div>
+            </div>
+
+            <div class="detail-actions">
+                <button class="btn-ghost text-xs" id="hideBtn" title="ซ่อน detail panel">::: Hide :::</button>
+                <button class="btn-danger text-xs" id="deleteBtn">🗑 Delete</button>
+                <button class="btn-secondary text-xs" id="copyBtn">📋 Copy</button>
+                <button class="btn-primary text-xs" id="saveBtn" disabled>💾 Save</button>
+            </div>
+        </aside>
+    </main>
+
+    <!-- ===== Toast ===== -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 hidden">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg text-sm flex items-center gap-2">
+            <span id="toastIcon">✓</span>
+            <span id="toastMsg">Saved</span>
+        </div>
+    </div>
+
+    <!-- ===== Confirm dialog ===== -->
+    <div id="dialog" class="fixed inset-0 z-50 bg-slate-900/50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-5" onclick="event.stopPropagation()">
+            <h3 id="dlgTitle" class="font-semibold text-lg mb-2"></h3>
+            <p id="dlgMsg" class="text-sm text-slate-600 mb-5"></p>
+            <div class="flex justify-end gap-2">
+                <button id="dlgCancel" class="btn-secondary text-xs">Cancel</button>
+                <button id="dlgConfirm" class="btn-primary text-xs">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Lookup modal ===== -->
+    <div id="lookupModal" class="fixed inset-0 z-50 bg-slate-900/50 hidden items-center justify-center">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[80vh] flex flex-col" onclick="event.stopPropagation()">
+            <div class="px-4 py-3 border-b flex items-center gap-2">
+                <h3 id="lookupTitle" class="font-semibold text-sm">Lookup</h3>
+                <input id="lookupSearch" class="input-sm ml-2 flex-1" placeholder="Search...">
+                <button id="lookupClose" class="btn-ghost text-xs">✕</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-2">
+                <table class="data-table" id="lookupTable">
+                    <thead id="lookupThead"></thead>
+                    <tbody id="lookupTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inline seed (window.SEED_DATA) — lets the app work on file:// without an
+         HTTP server. state.js falls back to fetch('data.json') over http://. -->
+    <script src="data.js"></script>
+
+    <!-- Modular code under src/ — plain scripts (NOT ES modules), loaded in
+         dependency order. Each file attaches to window.VS.<name>.
+         See README.md → "How modules talk" for the namespace map. -->
+    <script src="src/utils.js"></script>
+    <script src="src/state.js"></script>
+    <script src="src/ui.js"></script>
+    <script src="src/grid.js"></script>
+    <script src="src/detail.js"></script>
+    <script src="src/lookup.js"></script>
+    <script src="src/search.js"></script>
+    <script src="src/crud.js"></script>
+    <script src="src/app.js"></script>
+</body>
+</html>

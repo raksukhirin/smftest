@@ -1,0 +1,26 @@
+เตรียมออกแบบ หน้าจอ Sea Freight : Vessel Schedule เริ่มจาก 
+อ่าน code frmSFSched.frm ก่อน ว่าได้อะไรบ้าง
+แล้วจะส่ง UI ให้ออกแบบ ตามไป ครับ
+
+ออกแบบหน้าจอใหม่สำหรับ Vessel Schedule
+ตามภาพ 1-2
+ในรูปแบบ html+css+js 
+เพื่อ preview mockupและ mapping field สำหรับ store ลง mockup json 
+จาก frmSFSched.frm สร้างไปเป็น 
+mockup data .json ให้หน้าจอ html+css+js+json 
+ไว้ที่ \mockup\frmSFSched
+เพื่อให้สามารถ เพิ่มลบ แก้ไขได้
+
+pack ไฟล์ทั้งหมด และ ตัวอย่างโค้ดเป็น module base เพื่อให้ developer นำไปใช้งานต่อได้ 
+แล้ว push to github
+
+------------------------------------------------------------------------
+
+สำหรับ chat ใหม่
+ถ้าจะทำเมนูถัดไป (เช่น quotation, job, voucher) เริ่มได้เลย 
+
+— แค่บอกชื่อ .frm แล้วผมจะ:
+อ่านไฟล์ VB6 ฟอร์มนั้นก่อน
+สรุป controls / data tables / business logic
+รอ UI mockup ภาพจากคุณ
+สร้างไฟล์ mockup/frmXXX/ ตาม pattern เดียวกัน

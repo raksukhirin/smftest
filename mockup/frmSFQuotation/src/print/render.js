@@ -14,7 +14,10 @@ window.SFQ_PRINT.render = (function () {
         $('coAddress').textContent  = company?.Address || '';
         $('coAddress2').textContent = company?.Address2 || '';
         $('coTel').textContent      = company?.Tel || '';
-        $('coFax').textContent      = company?.Fax || '';
+        const fax = company?.Fax || '';
+        $('coFax').textContent = fax;
+        const faxWrap = document.getElementById('coFaxWrap');
+        if (faxWrap) faxWrap.style.display = fax ? '' : 'none';
 
         $('docTitleH1').textContent = q.DocClass === 'EX'
             ? 'SEA FREIGHT EXPORT QUOTATION'

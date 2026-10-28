@@ -398,10 +398,6 @@
                         <input class="input" name="CtcName">
                     </div>
                     <div class="field col-span-2">
-                        <label class="label">Commodity</label>
-                        <input class="input" name="Commodity">
-                    </div>
-                    <div class="field col-span-2">
                         <label class="label">Remark</label>
                         <textarea class="input" rows="2" name="Remark"></textarea>
                     </div>
@@ -458,6 +454,375 @@
                 <div class="ctn-stat"><div class="ctn-stat-label">45'</div><div class="ctn-stat-num" id="ctn45">0</div></div>
             </div>
         </section>
+
+        <!-- ===== Page 2 — Booking & House B/L (hidden until Pg.2 tab) ===== -->
+        <section class="card hidden" id="bookingSection">
+            <div class="card-head flex-wrap gap-3">
+                <h2 class="card-title">📑 Booking &amp; HB/L</h2>
+                <div class="flex flex-wrap items-center gap-2 ml-auto text-xs text-slate-500">
+                    <span class="bv-chip">Job <span id="bkJobNo" class="font-mono font-semibold text-slate-700">—</span></span>
+                    <span class="bv-chip">Booking <span id="bkBookCount" class="font-semibold text-emerald-700">0</span></span>
+                    <span class="bv-chip">HB/L <span id="bkHblCount" class="font-semibold text-indigo-700">0</span></span>
+                </div>
+            </div>
+
+            <!-- Sale Booking -->
+            <div class="bv-subtitle flex items-center gap-2 flex-wrap">
+                <span class="bv-dot bg-emerald-500"></span> Sale Booking
+                <div class="ml-auto flex items-center gap-2">
+                    <button type="button" class="btn-ghost text-xs">📋 List All [Confirmed] Booking</button>
+                    <button type="button" class="btn-secondary text-xs">+ Add New Booking</button>
+                    <button type="button" class="btn-secondary text-xs">✎ Edit Booking</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm bv-table">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-y">
+                            <th class="px-2 py-2 w-8">✕</th>
+                            <th class="px-2 py-2 w-36">Book Ref #</th>
+                            <th class="px-2 py-2 w-28">ETD Date</th>
+                            <th class="px-2 py-2 w-24">Status</th>
+                            <th class="px-2 py-2">Booking No</th>
+                            <th class="px-2 py-2 w-28">Order No</th>
+                            <th class="px-2 py-2 w-36">Sale Person</th>
+                            <th class="px-2 py-2">Shipper</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingTbody"></tbody>
+                </table>
+            </div>
+
+            <!-- House B/L and Mark -->
+            <div class="bv-subtitle mt-5 flex items-center gap-2 flex-wrap">
+                <span class="bv-dot bg-indigo-500"></span> House B/L and Mark
+                <div class="ml-auto flex items-center gap-2">
+                    <button type="button" class="btn-ghost text-xs">📋 List Free HB/L</button>
+                    <button type="button" class="btn-secondary text-xs">+ Add New HB/L</button>
+                    <button type="button" class="btn-secondary text-xs">✎ Edit HB/L</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm bv-table">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-y">
+                            <th class="px-2 py-2 w-8">✕</th>
+                            <th class="px-2 py-2 w-10">#</th>
+                            <th class="px-2 py-2 w-32">B/L Ref #</th>
+                            <th class="px-2 py-2 w-32">Booking Ref#</th>
+                            <th class="px-2 py-2 w-24">Status</th>
+                            <th class="px-2 py-2 w-24">[F5]: Active</th>
+                            <th class="px-2 py-2 w-24">[F6]: Paid</th>
+                            <th class="px-2 py-2 w-24">Doc Type</th>
+                            <th class="px-2 py-2 w-16">Term</th>
+                            <th class="px-2 py-2">B/L No</th>
+                            <th class="px-2 py-2 w-36">Sale Person</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hblTbody"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ===== Page 3 — Revenue & Cost (hidden until Pg.3 tab) ===== -->
+        <section class="card hidden" id="revenueSection">
+            <div class="card-head flex-wrap gap-3">
+                <h2 class="card-title">💰 Revenue &amp; Cost</h2>
+                <div class="flex flex-wrap items-center gap-2 ml-auto text-xs text-slate-500">
+                    <span class="bv-chip">Selling <span id="rcSellTotal" class="font-semibold text-emerald-700">0.00</span></span>
+                    <span class="bv-chip">Costing <span id="rcCostTotal" class="font-semibold text-rose-700">0.00</span></span>
+                    <span class="bv-chip">Profit <span id="rcProfit" class="font-semibold text-indigo-700">0.00</span></span>
+                </div>
+            </div>
+
+            <!-- Filter bar (display-only mockup) -->
+            <div class="rc-filter">
+                <label class="rc-fl"><span class="rc-fl-lbl text-rose-600">HB/L REF#</span><input class="rc-fl-in" value="SHOW ALL" readonly></label>
+                <label class="rc-fl"><span class="rc-fl-lbl">B/L No</span><input class="rc-fl-in" placeholder="—"></label>
+                <label class="rc-fl"><span class="rc-fl-lbl">Booking Ref#</span><input class="rc-fl-in" placeholder="—"></label>
+                <label class="rc-fl"><span class="rc-fl-lbl">Status</span><input class="rc-fl-in" placeholder="—"></label>
+                <label class="rc-fl"><span class="rc-fl-lbl text-rose-600">DOC TYPE</span>
+                    <select class="rc-fl-in"><option>ALL</option><option>Allocated</option><option>Direct</option></select>
+                </label>
+                <label class="rc-fl"><span class="rc-fl-lbl">Shipper</span><input class="rc-fl-in" placeholder="—"></label>
+                <label class="rc-fl"><span class="rc-fl-lbl">Consignee</span><input class="rc-fl-in" placeholder="—"></label>
+            </div>
+
+            <!-- Mode tabs (display-only mockup) -->
+            <div class="rc-modes">
+                <button type="button" class="rc-mode is-active">General Mode</button>
+                <button type="button" class="rc-mode">Sale Adjustment</button>
+                <button type="button" class="rc-mode">Agency Agreement</button>
+                <button type="button" class="rc-mode">Other Option</button>
+                <div class="ml-auto flex flex-wrap gap-2">
+                    <button type="button" class="btn-secondary text-xs">+ Add Local Billing</button>
+                    <button type="button" class="btn-secondary text-xs">+ Add Local Voucher</button>
+                    <button type="button" class="btn-ghost text-xs">Copy INV</button>
+                </div>
+            </div>
+
+            <!-- SELLING -->
+            <h3 class="bv-subtitle"><span class="bv-dot bg-emerald-500"></span> SELLING <span class="bv-src">REV</span></h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm bv-table rc-table">
+                    <thead><tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-y">
+                        <th class="px-2 py-2 w-20">Code</th>
+                        <th class="px-2 py-2">Description</th>
+                        <th class="px-2 py-2 w-10">P/C</th>
+                        <th class="px-2 py-2 w-10">D/C</th>
+                        <th class="px-2 py-2 w-12">TY</th>
+                        <th class="px-2 py-2 w-14">Curr</th>
+                        <th class="px-2 py-2 text-right w-20">Ex.Rate</th>
+                        <th class="px-2 py-2 w-12">Unit</th>
+                        <th class="px-2 py-2 text-right w-12">Qty</th>
+                        <th class="px-2 py-2 text-right w-20">Price</th>
+                        <th class="px-2 py-2 text-right w-24">THB Gross</th>
+                        <th class="px-2 py-2 text-right w-14">VAT%</th>
+                        <th class="px-2 py-2 w-10 text-center">I/O</th>
+                        <th class="px-2 py-2 text-right w-14">WT%</th>
+                        <th class="px-2 py-2 text-right w-20">Gross</th>
+                        <th class="px-2 py-2 text-right w-16">Vat</th>
+                        <th class="px-2 py-2 text-right w-24">Total</th>
+                        <th class="px-2 py-2 w-28">Doc No</th>
+                    </tr></thead>
+                    <tbody id="sellingTbody"></tbody>
+                    <tfoot><tr class="bg-slate-50 text-xs font-semibold text-slate-600 border-t">
+                        <td colspan="10" class="px-2 py-2 text-right">Totals</td>
+                        <td class="px-2 py-2 text-right tabular-nums" id="sellThbTotal">0.00</td>
+                        <td colspan="5"></td>
+                        <td class="px-2 py-2 text-right tabular-nums" id="sellGrandTotal">0.00</td>
+                        <td></td>
+                    </tr></tfoot>
+                </table>
+            </div>
+
+            <!-- COSTING -->
+            <h3 class="bv-subtitle mt-5"><span class="bv-dot bg-rose-500"></span> COSTING <span class="bv-src bv-src-ap">COS</span></h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm bv-table rc-table">
+                    <thead><tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-y">
+                        <th class="px-2 py-2 w-20">Code</th>
+                        <th class="px-2 py-2">Description</th>
+                        <th class="px-2 py-2 w-10">P/C</th>
+                        <th class="px-2 py-2 w-10">D/C</th>
+                        <th class="px-2 py-2 w-12">TY</th>
+                        <th class="px-2 py-2 w-14">Curr</th>
+                        <th class="px-2 py-2 text-right w-20">Ex.Rate</th>
+                        <th class="px-2 py-2 w-12">Unit</th>
+                        <th class="px-2 py-2 text-right w-12">Qty</th>
+                        <th class="px-2 py-2 text-right w-20">Price</th>
+                        <th class="px-2 py-2 text-right w-24">THB Gross</th>
+                        <th class="px-2 py-2 text-right w-14">VAT%</th>
+                        <th class="px-2 py-2 w-10 text-center">I/O</th>
+                        <th class="px-2 py-2 text-right w-14">WT%</th>
+                        <th class="px-2 py-2 text-right w-20">Gross</th>
+                        <th class="px-2 py-2 text-right w-16">Vat</th>
+                        <th class="px-2 py-2 text-right w-24">Total</th>
+                        <th class="px-2 py-2 w-28">Doc No</th>
+                    </tr></thead>
+                    <tbody id="costingTbody"></tbody>
+                    <tfoot><tr class="bg-slate-50 text-xs font-semibold text-slate-600 border-t">
+                        <td colspan="10" class="px-2 py-2 text-right">Totals</td>
+                        <td class="px-2 py-2 text-right tabular-nums" id="costThbTotal">0.00</td>
+                        <td colspan="5"></td>
+                        <td class="px-2 py-2 text-right tabular-nums" id="costGrandTotal">0.00</td>
+                        <td></td>
+                    </tr></tfoot>
+                </table>
+            </div>
+        </section>
+
+        <!-- ===== Page 4 — Option & Summary (hidden until Pg.4 tab) =====
+             Field mapping verified against VB6 frmSFJob.frm:
+               Option 1/2/3/6 → OPTION1/2/3/6 · Option 4/5 → OPTION4/5 (memo) · Commodity → COMMODITY (memo)
+               Cust's Inv. No → REFCSJOB · Internal Ref# → INTERNALREFERENCE · Optional Dept → cmbDem (OPTION4)
+               Total CTNs → CTN20/CTN40/CTN40HC/CTN45 (+ *TY) · Job Summary → GW/NW/CBM/REVTON/PKGQTY/PKGUNIT/PKGWORD
+               Profit Summary (computed) COLLECT=CC / PREPAID=PP for EX:
+                 1.Revenue SUMREVCC/PP · 2.Cost SUMCOSTCC/PP · 3.Gross SUMGROSS · 4.Handling SUMHANDCC/PP
+                 5.Incentive SUMINCENCC/PP · Net Margin SUMMARGIN · Profit Shared SUMPROFIT / PCNPROFIT% · cmbProfit=Agent/AC View -->
+        <section class="card hidden" id="optionSection">
+            <div class="card-head flex-wrap gap-3">
+                <h2 class="card-title">📄 Option &amp; Summary</h2>
+                <div class="flex flex-wrap items-center gap-2 ml-auto text-xs text-slate-500">
+                    <span class="bv-chip">Job <span id="opJobNo" class="font-mono font-semibold text-slate-700">—</span></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- ===== Left: Printing Options ===== -->
+                <div>
+                    <h3 class="bv-subtitle"><span class="bv-dot bg-sky-500"></span> Printing Options</h3>
+                    <div class="space-y-2.5">
+                        <div class="field-row"><label class="op-lbl">Option 1</label><input class="input" name="Option1"></div>
+                        <div class="field-row"><label class="op-lbl">Option 2</label><input class="input" name="Option2"></div>
+                        <div class="field-row"><label class="op-lbl">Option 3</label><input class="input" name="Option3"></div>
+                        <div class="field-row items-start"><label class="op-lbl mt-1">Option 4</label><textarea class="input" rows="2" name="Option4"></textarea></div>
+                        <div class="field-row items-start"><label class="op-lbl mt-1">Option 5</label><textarea class="input" rows="2" name="Option5"></textarea></div>
+                        <div class="field-row items-start"><label class="op-lbl mt-1">Commodity</label><textarea class="input" rows="2" name="Commodity"></textarea></div>
+                        <div class="field-row"><label class="op-lbl">Option 6</label><input class="input" name="Option6"></div>
+                        <div class="field-row"><label class="op-lbl">Cust's Inv. No</label><input class="input" name="RefCsJob"></div>
+                        <div class="field-row">
+                            <label class="op-lbl text-rose-600">Internal Ref#</label>
+                            <input class="input" name="InternalRef">
+                            <label class="op-lbl op-lbl-sm text-amber-600 ml-2">Optional Dept</label>
+                            <select class="input" name="OptDept">
+                                <option value="">—</option>
+                                <option value="EXPORT">EXPORT</option>
+                                <option value="IMPORT">IMPORT</option>
+                                <option value="LOGISTICS">LOGISTICS</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Total CTNs by size -->
+                    <div class="op-ctn">
+                        <table class="w-full text-sm">
+                            <thead><tr class="text-xs text-slate-500">
+                                <th class="text-left py-1"></th><th class="py-1">20'</th><th class="py-1">40'</th>
+                                <th class="py-1">40'HQ</th><th class="py-1">45'</th><th class="py-1 text-indigo-600">Total</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td class="op-lbl py-1">Total CTNs</td>
+                                    <td class="px-1"><input class="input text-center tabular-nums" type="number" name="Ctn20"></td>
+                                    <td class="px-1"><input class="input text-center tabular-nums" type="number" name="Ctn40"></td>
+                                    <td class="px-1"><input class="input text-center tabular-nums" type="number" name="Ctn40HC"></td>
+                                    <td class="px-1"><input class="input text-center tabular-nums" type="number" name="Ctn45"></td>
+                                    <td class="px-1"><input class="input text-center tabular-nums font-semibold bg-slate-50" id="opTotCtn" readonly></td>
+                                </tr>
+                                <tr>
+                                    <td class="op-lbl py-1">CTN Type</td>
+                                    <td class="px-1"><select class="input" name="Ctn20Ty"><option value=""></option><option>GP</option><option>HC</option><option>RF</option><option>OT</option><option>FR</option></select></td>
+                                    <td class="px-1"><select class="input" name="Ctn40Ty"><option value=""></option><option>GP</option><option>HC</option><option>RF</option><option>OT</option><option>FR</option></select></td>
+                                    <td class="px-1"><select class="input" name="Ctn40HCTy"><option value=""></option><option>GP</option><option>HC</option><option>RF</option><option>OT</option><option>FR</option></select></td>
+                                    <td class="px-1"><select class="input" name="Ctn45Ty"><option value=""></option><option>GP</option><option>HC</option><option>RF</option><option>OT</option><option>FR</option></select></td>
+                                    <td class="px-1 text-center"><button type="button" class="btn-ghost text-xs" id="opClearCtn">&gt;&gt; Clear</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ===== Right: XML Ref + Profit Summary + Job Summary ===== -->
+                <div class="space-y-5">
+                    <!-- XML Reference -->
+                    <div class="field-row">
+                        <label class="op-lbl text-emerald-700">XML Reference</label>
+                        <input class="input font-mono text-xs" name="XmlRef">
+                        <button type="button" class="btn-secondary text-xs ml-1">Import</button>
+                        <button type="button" class="btn-secondary text-xs">Export</button>
+                    </div>
+
+                    <!-- Profit Summary -->
+                    <div>
+                        <div class="bv-subtitle flex items-center gap-2 flex-wrap">
+                            <span class="bv-dot bg-indigo-500"></span> Profit Summary
+                            <select class="input op-view ml-auto" name="ProfitView">
+                                <option>Agent View</option>
+                                <option>A/C View</option>
+                            </select>
+                        </div>
+                        <table class="w-full text-sm op-profit">
+                            <thead><tr class="text-xs text-slate-500">
+                                <th class="text-left py-1">Currency <span id="opCurr" class="font-mono font-semibold text-slate-700">—</span></th>
+                                <th class="py-1 text-right text-emerald-700">COLLECT</th>
+                                <th class="py-1 text-right text-sky-700">PREPAID</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr><td class="op-pl">1. Revenue</td><td class="op-amt" id="opRevCC">0.00</td><td class="op-amt" id="opRevPP">0.00</td></tr>
+                                <tr><td class="op-pl">2. Cost</td><td class="op-amt" id="opCostCC">0.00</td><td class="op-amt" id="opCostPP">0.00</td></tr>
+                                <tr class="op-sep"><td class="op-pl font-semibold">3. Gross Profit (Loss)</td><td></td><td class="op-amt font-semibold" id="opGross">0.00</td></tr>
+                                <tr><td class="op-pl">4. Handling</td><td class="op-amt" id="opHandCC">0.00</td><td class="op-amt" id="opHandPP">0.00</td></tr>
+                                <tr><td class="op-pl">5. Incentive</td><td class="op-amt" id="opIncenCC">0.00</td><td class="op-amt" id="opIncenPP">0.00</td></tr>
+                                <tr class="op-sep"><td class="op-pl font-semibold text-indigo-700">Net Margin = (3) − (4) − (5)</td><td></td><td class="op-amt font-semibold" id="opMargin">0.00</td></tr>
+                                <tr>
+                                    <td class="op-pl">Profit Shared
+                                        <input class="input op-pct tabular-nums" name="ProfitShared" type="number" step="0.01"> %
+                                    </td>
+                                    <td></td><td class="op-amt" id="opProfit">0.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Job Summary -->
+                    <div>
+                        <div class="bv-subtitle flex items-center gap-2 flex-wrap">
+                            <span class="bv-dot bg-amber-500"></span> Job Summary
+                            <button type="button" class="btn-secondary text-xs ml-auto" id="opReSummary">Re-Summary Vol. from HB/L</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-x-6 gap-y-2.5">
+                            <div class="field-row"><label class="op-lbl">Total G.W.</label><input class="input text-right tabular-nums" type="number" name="Gw"></div>
+                            <div class="field-row"><label class="op-lbl">Total N.W.</label><input class="input text-right tabular-nums" type="number" name="Nw"></div>
+                            <div class="field-row"><label class="op-lbl">Total CBM</label><input class="input text-right tabular-nums" type="number" name="Cbm"></div>
+                            <div class="field-row"><label class="op-lbl">Rev Tons</label><input class="input text-right tabular-nums" type="number" name="RevTon"></div>
+                            <div class="field-row"><label class="op-lbl">Total Pkgs</label><input class="input text-right tabular-nums" type="number" name="PkgQty"></div>
+                            <div class="field-row"><label class="op-lbl">Pkg Unit</label><input class="input" name="PkgUnit"></div>
+                            <div class="field-row col-span-2"><label class="op-lbl">Pkgs in word</label><input class="input text-slate-500" name="PkgWord"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== Page 5 — Billing & Voucher (hidden until Pg.5 tab) ===== -->
+        <section class="card hidden" id="billingSection">
+            <div class="card-head flex-wrap gap-3">
+                <h2 class="card-title">🧾 Billing &amp; Voucher</h2>
+                <div class="flex flex-wrap items-center gap-2 ml-auto text-xs text-slate-500">
+                    <span class="bv-chip">Job <span id="bvJobNo" class="font-mono font-semibold text-slate-700">—</span></span>
+                    <span class="bv-chip">A/R <span id="bvBillCount" class="font-semibold text-emerald-700">0</span></span>
+                    <span class="bv-chip">A/P <span id="bvVouCount" class="font-semibold text-indigo-700">0</span></span>
+                    <span class="text-slate-400">· คลิกเลขที่เอกสารเพื่อเปิด (A/R→Outbound · A/P→Inbound)</span>
+                </div>
+            </div>
+
+            <!-- Billing Listing (A/R) -->
+            <h3 class="bv-subtitle"><span class="bv-dot bg-emerald-500"></span> Billing Listing <span class="bv-src">A/R</span></h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm bv-table">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-y">
+                            <th class="px-2 py-2 w-12">TY</th>
+                            <th class="px-2 py-2">Invoice No</th>
+                            <th class="px-2 py-2 w-24">Receipt No</th>
+                            <th class="px-2 py-2 w-24">Customer</th>
+                            <th class="px-2 py-2">Customer Name</th>
+                            <th class="px-2 py-2 w-24">Inv Date</th>
+                            <th class="px-2 py-2 w-20">G/L Period</th>
+                            <th class="px-2 py-2 w-24">Doc Status</th>
+                            <th class="px-2 py-2 w-28">A/C Status</th>
+                            <th class="px-2 py-2 text-right w-28">Total</th>
+                            <th class="px-2 py-2 w-14">Curr</th>
+                        </tr>
+                    </thead>
+                    <tbody id="billingTbody"></tbody>
+                </table>
+            </div>
+
+            <!-- Voucher Listing (A/P) -->
+            <h3 class="bv-subtitle mt-5"><span class="bv-dot bg-indigo-500"></span> Voucher Listing <span class="bv-src bv-src-ap">A/P</span></h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm bv-table">
+                    <thead>
+                        <tr class="text-left text-xs uppercase tracking-wider text-slate-500 bg-slate-50 border-y">
+                            <th class="px-2 py-2 w-12">TY</th>
+                            <th class="px-2 py-2">Invoice No</th>
+                            <th class="px-2 py-2 w-24">Payment No</th>
+                            <th class="px-2 py-2 w-24">Vendor</th>
+                            <th class="px-2 py-2">Vendor Name</th>
+                            <th class="px-2 py-2 w-24">Inv Date</th>
+                            <th class="px-2 py-2 w-20">G/L Period</th>
+                            <th class="px-2 py-2 w-24">Doc Status</th>
+                            <th class="px-2 py-2 w-28">A/C Status</th>
+                            <th class="px-2 py-2 text-right w-28">Total</th>
+                            <th class="px-2 py-2 w-14">Curr</th>
+                        </tr>
+                    </thead>
+                    <tbody id="voucherTbody"></tbody>
+                </table>
+            </div>
+        </section>
     </main>
 
     <!-- Sticky bottom action bar -->
@@ -500,6 +865,9 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Inline seed (window.SFJOBEX_SEED) so the page works via file:// where fetch('data.json') is blocked.
+         ?v= query busts browser cache (esp. Edge) when these files change — bump on each data/code update. -->
+    <script src="data.js?v=8"></script>
+    <script src="script.js?v=9"></script>
 </body>
 </html>

@@ -9,7 +9,7 @@
     const $  = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 
-    const STORAGE_KEY = 'outbound_jobs_v1';
+    const STORAGE_KEY = 'outbound_jobs_v8';
 
     // ===== State =====
     let state = { jobs: [], currentIndex: 0 };
@@ -41,14 +41,21 @@
 
     async function seedFromJson() {
         try {
-            const res = await fetch('data.json', { cache: 'no-store' });
-            if (!res.ok) throw new Error('data.json not reachable');
-            const data = await res.json();
-            state.jobs = Array.isArray(data.jobs) ? data.jobs : [];
+            // Prefer inline seed (window.SFJOBEX_SEED from data.js — works via file://),
+            // then fall back to fetch('data.json') when served over http.
+            let data;
+            if (window.SFJOBEX_SEED && Array.isArray(window.SFJOBEX_SEED.jobs)) {
+                data = window.SFJOBEX_SEED;
+            } else {
+                const res = await fetch('data.json', { cache: 'no-store' });
+                if (!res.ok) throw new Error('data.json not reachable');
+                data = await res.json();
+            }
+            state.jobs = Array.isArray(data.jobs) ? structuredClone(data.jobs) : [];
             state.currentIndex = 0;
             persist();
         } catch (err) {
-            console.warn('Could not load data.json — starting empty.', err);
+            console.warn('Could not load seed — starting empty.', err);
             state = { jobs: [blankJob()], currentIndex: 0 };
             persist();
         }
@@ -123,8 +130,319 @@
         paintHeaderForm();
         paintBanner();
         paintContainers();
+        paintBooking();
+        paintRevenue();
+        paintOption();
+        paintBilling();
         paintNav();
         setDirty(false);
+    }
+
+    // ===== Page 4 — Option & Summary =====
+    // Profit Summary is COMPUTED from the selling/costing charge lines, mirroring
+    // frmSFJob.frm CalProfit (Agent View): group by PCType into COLLECT(CC)/PREPAID(PP),
+    // ExpCode HAN→Handling, INC→Incentive, PRO→Profit Shared, else Revenue/Cost.
+    // For EX jobs COLLECT column = CC, PREPAID column = PP (no swap).
+    function paintOption() {
+        const job = currentJob();
+        const jn = $('#opJobNo'); if (jn) jn.textContent = job?.JobNo || '—';
+        const cu = $('#opCurr');  if (cu) cu.textContent = job?.JobCurr || '—';
+
+        // Total CTN box (read-only, like cTxt(TOTCTN))
+        const totCtn = (+job?.Ctn20 || 0) + (+job?.Ctn40 || 0) + (+job?.Ctn40HC || 0) + (+job?.Ctn45 || 0);
+        const tc = $('#opTotCtn'); if (tc) tc.value = totCtn;
+
+        const p = computeProfit(job);
+        const set = (id, v) => { const el = $(id); if (el) el.textContent = fmtMoney(v); };
+        set('#opRevCC', p.revCC);   set('#opRevPP', p.revPP);
+        set('#opCostCC', p.costCC); set('#opCostPP', p.costPP);
+        set('#opGross', p.gross);
+        set('#opHandCC', p.handCC); set('#opHandPP', p.handPP);
+        set('#opIncenCC', p.incenCC); set('#opIncenPP', p.incenPP);
+        set('#opMargin', p.margin);
+        set('#opProfit', p.profitShared);
+        // negative margin/gross in red
+        ['#opGross', '#opMargin'].forEach(id => {
+            const el = $(id); if (!el) return;
+            const val = id === '#opGross' ? p.gross : p.margin;
+            el.classList.toggle('bv-neg', val < 0);
+        });
+    }
+
+    function computeProfit(job) {
+        const isEX = (job?.JobClass || 'EX') === 'EX';
+        const sell = job?.selling ?? [];
+        const cost = job?.costing ?? [];
+        const acc = { revCC: 0, revPP: 0, costCC: 0, costPP: 0,
+                      handCC: 0, handPP: 0, incenCC: 0, incenPP: 0, profitShared: 0 };
+        const amt = (r) => Number(r.ThbGross) || 0;            // Agent-view P/L amount (THB)
+        const isCC = (r) => (r.PC || '').toUpperCase() === 'CC';
+        const bucket = (r, kind) => {
+            const sfx = isCC(r) ? 'CC' : 'PP';
+            switch ((r.Code || '').toUpperCase()) {
+                case 'HAN': acc['hand' + sfx]  += amt(r); break;
+                case 'INC': acc['incen' + sfx] += amt(r); break;
+                case 'PRO': acc.profitShared   += amt(r); break;
+                default:    acc[kind + sfx]    += amt(r);
+            }
+        };
+        sell.forEach(r => bucket(r, 'rev'));
+        cost.forEach(r => bucket(r, 'cost'));
+
+        const gross  = (acc.revCC + acc.revPP) - (acc.costCC + acc.costPP);
+        const margin = gross - (acc.handCC + acc.handPP) - (acc.incenCC + acc.incenPP);
+        // For EX, display columns map directly; for IM they swap (mirrors VB6 IIf(EX,...)).
+        return isEX
+            ? { ...acc, gross, margin }
+            : { revCC: acc.revPP, revPP: acc.revCC, costCC: acc.costPP, costPP: acc.costCC,
+                handCC: acc.handPP, handPP: acc.handCC, incenCC: acc.incenPP, incenPP: acc.incenCC,
+                profitShared: acc.profitShared, gross, margin };
+    }
+
+    // "Re-Summary Vol. from HB/L" — recompute Job Summary from container rows
+    // (mirrors cmdSum: GW/NW/CBM/PKGQTY/REVTON/CTN counts re-derived).
+    function reSummarize() {
+        const job = currentJob();
+        if (!job) return;
+        const cs = job.containers ?? [];
+        let gw = 0, cbm = 0, pkg = 0;
+        const cnt = { Ctn20: 0, Ctn40: 0, Ctn40HC: 0, Ctn45: 0 };
+        const sizeKey = { "20'": 'Ctn20', "40'": 'Ctn40', "40'HC": 'Ctn40HC', "45'": 'Ctn45' };
+        cs.forEach(c => {
+            gw  += +c.Gw  || 0;
+            cbm += +c.Cbm || 0;
+            pkg += +c.PkgQty || 0;
+            const k = sizeKey[c.CtnSize];
+            if (k) cnt[k]++;
+        });
+        job.Gw = +gw.toFixed(5);
+        job.Nw = gw ? +(gw * 0.9).toFixed(5) : 0;
+        job.Cbm = +cbm.toFixed(5);
+        job.RevTon = (gw || cbm) ? Math.max(gw > cbm * 1000 ? +(gw / 1000).toFixed(3) : +cbm.toFixed(3), 1) : 0;
+        job.PkgQty = pkg;
+        job.PkgWord = pkg ? `(TOTAL : ${pkg} PACKAGES ONLY)` : '(TOTAL :  PACKAGES ONLY)';
+        Object.assign(job, cnt);
+        paintHeaderForm();
+        paintOption();
+        setDirty(true);
+        showToast('Job summary re-calculated from HB/L', '∑');
+    }
+
+    // ===== Page 3 — Revenue (SELLING) & Cost (COSTING) listings =====
+    function paintRevenue() {
+        const job = currentJob();
+        const sell = job?.selling ?? [];
+        const cost = job?.costing ?? [];
+        const sellTot = renderRcRows($('#sellingTbody'), sell, $('#sellThbTotal'), $('#sellGrandTotal'));
+        const costTot = renderRcRows($('#costingTbody'), cost, $('#costThbTotal'), $('#costGrandTotal'));
+        const st = $('#rcSellTotal'); if (st) st.textContent = fmtMoney(sellTot.total);
+        const ct = $('#rcCostTotal'); if (ct) ct.textContent = fmtMoney(costTot.total);
+        const pf = $('#rcProfit');
+        if (pf) {
+            const profit = sellTot.total - costTot.total;
+            pf.textContent = fmtMoney(profit);
+            pf.className = 'font-semibold ' + (profit < 0 ? 'text-rose-700' : 'text-indigo-700');
+        }
+    }
+
+    function renderRcRows(tbody, rows, thbCell, totalCell) {
+        let thbSum = 0, totSum = 0;
+        if (tbody) {
+            tbody.innerHTML = '';
+            if (!rows.length) {
+                tbody.innerHTML = `<tr><td colspan="18" class="bv-empty">— ไม่มีรายการ —</td></tr>`;
+            } else {
+                rows.forEach(r => {
+                    thbSum += Number(r.ThbGross) || 0;
+                    totSum += Number(r.Total) || 0;
+                    tbody.appendChild(rcRowEl(r));
+                });
+            }
+        }
+        if (thbCell)   thbCell.textContent   = fmtMoney(thbSum);
+        if (totalCell) totalCell.textContent = fmtMoney(totSum);
+        return { thb: thbSum, total: totSum };
+    }
+
+    function rcRowEl(r) {
+        const tr = document.createElement('tr');
+        const tyCls = r.TY === 'REV' ? 'bv-ty-ai' : 'bv-ty-dn';
+        const num = (v, dp = 2) => Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: dp, maximumFractionDigits: dp });
+        tr.innerHTML = `
+            <td class="rc-code">${escapeHtml(r.Code || '')}</td>
+            <td class="text-slate-600">${escapeHtml(r.Desc || '')}</td>
+            <td><span class="rc-pc">${escapeHtml(r.PC || '')}</span></td>
+            <td><span class="rc-dc">${escapeHtml(r.DC || '')}</span></td>
+            <td><span class="bv-ty ${tyCls}">${escapeHtml(r.TY || '')}</span></td>
+            <td class="text-slate-500">${escapeHtml(r.Curr || '')}</td>
+            <td class="text-right">${num(r.ExRate, 6)}</td>
+            <td class="text-slate-500">${escapeHtml(r.Unit || '')}</td>
+            <td class="text-right">${escapeHtml(String(r.Qty ?? ''))}</td>
+            <td class="text-right">${num(r.Price)}</td>
+            <td class="text-right text-slate-500">${num(r.ThbGross)}</td>
+            <td class="text-right">${escapeHtml(String(r.VatPct ?? 0))}</td>
+            <td class="text-center"><input type="checkbox" class="w-3.5 h-3.5 accent-indigo-500" ${r.IO ? 'checked' : ''} disabled></td>
+            <td class="text-right text-slate-500">${escapeHtml(String(r.WtPct ?? 0))}</td>
+            <td class="text-right">${num(r.Gross)}</td>
+            <td class="text-right text-slate-500">${num(r.Vat)}</td>
+            <td class="text-right font-semibold">${num(r.Total)}</td>
+            <td class="font-mono text-xs text-indigo-600">${escapeHtml(r.DocNo || '—')}</td>
+        `;
+        return tr;
+    }
+
+    // ===== Page 2 — Sale Booking & House B/L listings =====
+    function paintBooking() {
+        const job = currentJob();
+        const bookings = job?.booking ?? [];
+        const hbls     = job?.hbl ?? [];
+        const jn = $('#bkJobNo');     if (jn) jn.textContent = job?.JobNo || '—';
+        const bc = $('#bkBookCount'); if (bc) bc.textContent = bookings.length;
+        const hc = $('#bkHblCount');  if (hc) hc.textContent = hbls.length;
+        renderBookingRows($('#bookingTbody'), bookings);
+        renderHblRows($('#hblTbody'), hbls);
+    }
+
+    function renderBookingRows(tbody, rows) {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="8" class="bv-empty">— ไม่มีรายการ Booking สำหรับ job นี้ —</td></tr>`;
+            return;
+        }
+        rows.forEach(r => {
+            const tr = document.createElement('tr');
+            const statCls = { Open: 'bv-ac-ready', Confirmed: 'bv-ac-posted', Cancel: 'bv-ac-cancel' }[r.Status] || 'bv-ac-ready';
+            tr.innerHTML = `
+                <td class="text-center text-slate-300">✕</td>
+                <td class="font-mono text-xs font-semibold text-indigo-700">${escapeHtml(r.BookRef || '')}</td>
+                <td class="tabular-nums">${escapeHtml(formatDate(r.EtdDate) || '—')}</td>
+                <td><span class="bv-acstat ${statCls}">${escapeHtml(r.Status || '')}</span></td>
+                <td class="font-mono text-xs">${escapeHtml(r.BookingNo || '—')}</td>
+                <td class="text-slate-500">${escapeHtml(r.OrderNo || '—')}</td>
+                <td class="text-slate-600">${escapeHtml(r.SalePerson || '—')}</td>
+                <td class="text-slate-600 truncate">${escapeHtml(r.Shipper || '—')}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderHblRows(tbody, rows) {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="11" class="bv-empty">— ไม่มี House B/L สำหรับ job นี้ —</td></tr>`;
+            return;
+        }
+        rows.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            const statCls = { Open: 'bv-ac-ready', Complete: 'bv-ac-posted', Close: 'bv-ac-posted', Cancel: 'bv-ac-cancel' }[r.Status] || 'bv-ac-ready';
+            const docCls = r.DocType === 'Allocated' ? 'bv-ty-ai' : 'bv-ty-dn';
+            const yn = (v) => `<span class="${v === 'Yes' ? 'text-emerald-600 font-semibold' : 'text-slate-400'}">${escapeHtml(v || 'No')}</span>`;
+            tr.innerHTML = `
+                <td class="text-center text-slate-300">✕</td>
+                <td class="text-slate-400 tabular-nums">${r.No ?? i + 1}</td>
+                <td class="font-mono text-xs font-semibold text-indigo-700">${escapeHtml(r.BlRef || '')}</td>
+                <td class="font-mono text-xs text-slate-500">${escapeHtml(r.BookingRef || '')}</td>
+                <td><span class="bv-acstat ${statCls}">${escapeHtml(r.Status || '')}</span></td>
+                <td>${yn(r.Active)}</td>
+                <td>${yn(r.Paid)}</td>
+                <td><span class="bv-ty ${docCls}">${escapeHtml(r.DocType || '')}</span></td>
+                <td class="text-slate-500">${escapeHtml(r.Term || '')}</td>
+                <td class="font-mono text-xs">${escapeHtml(r.BlNo || '—')}</td>
+                <td class="text-slate-600">${escapeHtml(r.SalePerson || '—')}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ===== Page 5 — Billing (A/R) & Voucher (A/P) listings =====
+    const ARINVOICE_URL = '../frmARInvoice/index.html';
+    function paintBilling() {
+        const job = currentJob();
+        const bill = job?.billing ?? [];
+        const vou  = job?.voucher ?? [];
+        const jn = $('#bvJobNo'); if (jn) jn.textContent = job?.JobNo || '—';
+        const bc = $('#bvBillCount'); if (bc) bc.textContent = bill.length;
+        const vc = $('#bvVouCount'); if (vc) vc.textContent = vou.length;
+        renderBVRows($('#billingTbody'), bill, true);
+        renderBVRows($('#voucherTbody'), vou, false);
+    }
+
+    function renderBVRows(tbody, rows, isBilling) {
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        if (!rows.length) {
+            tbody.innerHTML = `<tr><td colspan="11" class="bv-empty">— ไม่มีรายการ${isBilling ? ' A/R' : ' A/P'} สำหรับ job นี้ —</td></tr>`;
+            return;
+        }
+        rows.forEach(r => tbody.appendChild(bvRowEl(r, isBilling)));
+    }
+
+    function bvRowEl(r, isBilling) {
+        const tr = document.createElement('tr');
+        const tyCls = { CN: 'bv-ty-cn', DN: 'bv-ty-dn', AI: 'bv-ty-ai' }[r.TY] || '';
+        const acCls = { 'Ready to Post': 'bv-ac-ready', 'Posted': 'bv-ac-posted', 'Cancel': 'bv-ac-cancel' }[r.AcStat] || 'bv-ac-ready';
+        const tot = Number(r.SrcTot) || 0;
+        const totCls = tot < 0 ? 'bv-amt bv-neg' : 'bv-amt';
+        // Both A/R invoice and A/P voucher numbers are clickable → open frmARInvoice deep-link
+        // (the form is instantiated for A/R or A/P, switched by SrcType).
+        const tip = r.linked ? (isBilling ? 'เปิดใน A/R (Outbound)' : 'เปิดใน A/P (Inbound)') : 'ไม่อยู่ในชุดข้อมูล mockup';
+        const invCell = `<a class="bv-invno bv-link" data-inv="${escapeHtml(r.InvNo)}" data-linked="${r.linked ? '1' : '0'}" title="${tip}">${escapeHtml(r.InvNo)}</a>`;
+        tr.innerHTML = `
+            <td><span class="bv-ty ${tyCls}">${escapeHtml(r.TY)}</span></td>
+            <td>${invCell}</td>
+            <td class="text-slate-400">${escapeHtml((isBilling ? r.RecNo : r.RecNo) || '—')}</td>
+            <td class="font-mono text-xs">${escapeHtml(r.Party || '')}</td>
+            <td class="text-slate-600">${escapeHtml(r.PartyName || '')}</td>
+            <td class="tabular-nums">${escapeHtml(formatDate(r.InvDate) || '')}</td>
+            <td class="tabular-nums text-slate-500">${escapeHtml(r.DocPerd || '')}</td>
+            <td>${escapeHtml(r.DocStat || '')}</td>
+            <td><span class="bv-acstat ${acCls}">${escapeHtml(r.AcStat || '')}</span></td>
+            <td class="${totCls}">${fmtMoney(tot)}</td>
+            <td class="text-slate-500">${escapeHtml(r.Curr || '')}</td>
+        `;
+        return tr;
+    }
+
+    function openInvoice(invNo, linked) {
+        const url = `${ARINVOICE_URL}?inv=${encodeURIComponent(invNo)}`;
+        if (!linked) {
+            showToast(`${invNo} ไม่อยู่ในชุดข้อมูล mockup — เปิดหน้า Invoice ให้ดูได้`, 'ℹ', 'warn');
+        }
+        window.open(url, 'arInvoiceWin');
+    }
+
+    // View switcher: some tabs replace the whole form with a dedicated section.
+    //   'booking' (Pg.2) → only the Booking & House B/L tables
+    //   'billing' (Pg.5) → only the Billing & Voucher tables
+    // Any other tab shows the form sections and hides those dedicated sections.
+    const TAB_SECTIONS = {
+        booking: 'bookingSection',
+        revenue: 'revenueSection',
+        option:  'optionSection',
+        billing: 'billingSection',
+    };
+    function setView(tab) {
+        // Keep name-bound fields shared across tabs (e.g. Commodity appears on both
+        // General and Option) consistent: flush DOM→state, then repaint state→DOM.
+        captureForm();
+        paintHeaderForm();
+        paintOption();
+
+        const targetSection = TAB_SECTIONS[tab] || null;   // section to show alone, or null = show form
+        const main = document.querySelector('main');
+        [...main.children].forEach(el => {
+            if (el.nodeType !== 1) return;
+            const isDedicated = Object.values(TAB_SECTIONS).includes(el.id);
+            if (isDedicated) {
+                el.classList.toggle('hidden', el.id !== targetSection);
+            } else {
+                // form sections: visible only when no dedicated section is active
+                el.classList.toggle('hidden', !!targetSection);
+            }
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function paintHeaderForm() {
@@ -216,6 +534,7 @@
         switch ((type || '').toUpperCase()) {
             case 'TRUCK': return '🚚';
             case 'SHIP':  return '⛴';
+            case 'SEA':   return '⛴';
             case 'AIR':   return '✈';
             default:      return '📦';
         }
@@ -235,6 +554,10 @@
         const d = new Date(s);
         if (isNaN(d)) return s;
         return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function fmtMoney(n) {
+        return Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function escapeHtml(s) {
@@ -548,14 +871,23 @@
             }
         });
 
-        // Tab clicks
+        // Tab clicks — "Billing & Voucher" (Pg.5) shows only its tables and hides the form sections;
+        // the other tabs show the form sections and hide the billing tables.
+        const tabTargets = { revenue: '#containerTable', booking: '#containerTable' };
         $$('.tab').forEach(btn => {
             btn.addEventListener('click', () => {
                 $$('.tab').forEach(b => b.classList.remove('is-active'));
                 btn.classList.add('is-active');
-                if (btn.dataset.tab !== 'general') {
-                    showToast(`Tab "${btn.textContent.trim().replace(/^\d+/, '').trim()}" — not implemented in mockup`, 'ℹ', 'warn');
-                }
+                setView(btn.dataset.tab);
+            });
+        });
+
+        // Billing/Voucher — click an A/R invoice number to open it in the frmARInvoice mockup.
+        ['#billingTbody', '#voucherTbody'].forEach(sel => {
+            const el = $(sel);
+            if (el) el.addEventListener('click', (e) => {
+                const a = e.target.closest('.bv-link');
+                if (a) openInvoice(a.dataset.inv, a.dataset.linked === '1');
             });
         });
 
@@ -605,6 +937,30 @@
                 setDirty(true);
             }
         });
+
+        // Page 4 — Option & Summary
+        const reBtn = $('#opReSummary');
+        if (reBtn) reBtn.addEventListener('click', reSummarize);
+        const clrCtn = $('#opClearCtn');
+        if (clrCtn) clrCtn.addEventListener('click', () => {
+            const job = currentJob();
+            if (!job) return;
+            ['Ctn20', 'Ctn40', 'Ctn40HC', 'Ctn45', 'Ctn20Ty', 'Ctn40Ty', 'Ctn40HCTy', 'Ctn45Ty']
+                .forEach(k => { job[k] = (k.endsWith('Ty') ? '' : 0); });
+            paintHeaderForm();
+            paintOption();
+            setDirty(true);
+        });
+        // Live Total-CTN box + profit-view repaint
+        $('#optionSection')?.addEventListener('input', (e) => {
+            const n = e.target.name;
+            if (['Ctn20', 'Ctn40', 'Ctn40HC', 'Ctn45'].includes(n)) {
+                const sum = ['Ctn20', 'Ctn40', 'Ctn40HC', 'Ctn45']
+                    .reduce((a, k) => a + (+document.querySelector(`[name="${k}"]`).value || 0), 0);
+                $('#opTotCtn').value = sum;
+            }
+        });
+        $('[name="ProfitView"]')?.addEventListener('change', () => { captureForm(); paintOption(); });
 
         // Lookup buttons → demo toast
         $$('.lookup-btn').forEach(b => {

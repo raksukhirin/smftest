@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vessel Master (frmSFVessel v2)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="input.css">
+</head>
+<body>
+<div class="layout">
+
+    <!-- ===== Left: vessel list ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-head">
+            <h2>🚢 Vessel Master</h2>
+            <div class="sub">frmSFVessel v2 [DEMO]
+                &nbsp;·&nbsp;<a href="index.html" style="color:#7dd3fc">↗ Search</a>
+                &nbsp;<a href="input.html" style="color:#7dd3fc">↗ Voyage</a>
+                &nbsp;<a href="business.html" style="color:#7dd3fc">↗ Business</a>
+                &nbsp;<a href="port.html" style="color:#7dd3fc">↗ Ports</a></div>
+        </div>
+        <div class="filters">
+            <input id="vSearch" class="f-input" placeholder="Filter vessel / IMO / carrier…">
+            <div class="f-actions">
+                <button id="btnNew" class="btn-clear" style="background:#16a34a;border-color:#16a34a;color:#fff">+ New Vessel</button>
+                <button id="btnExport" class="btn-clear" title="Download data.json">⬇ Export</button>
+                <button id="btnReset" class="btn-clear" title="Restore seed (clears saved changes)">↺ Reset</button>
+            </div>
+            <div class="result-count"><span id="vCount">0</span> vessels
+                <span id="dirtyFlag" style="color:#fbbf24;display:none">· ● unsaved</span></div>
+        </div>
+        <div id="vesselList" class="voyage-list"></div>
+    </aside>
+
+    <!-- ===== Main: vessel form ===== -->
+    <main class="main" id="formRoot">
+        <div class="empty-state">Select a vessel to edit, or click <b>+ New Vessel</b>.</div>
+    </main>
+</div>
+
+<template id="tplForm">
+    <div class="header">
+        <div style="display:flex;align-items:center;gap:10px">
+            <h1 id="fTitle" style="margin:0">New Vessel</h1>
+            <span id="fMode" class="pill pill-info">NEW</span>
+            <div style="margin-left:auto;display:flex;gap:8px">
+                <button id="btnCopy" class="btn-sm btn-secondary">📋 Copy</button>
+                <button id="btnDelete" class="btn-sm btn-danger">🗑 Delete</button>
+                <button id="btnSave" class="btn-sm btn-primary">💾 Save</button>
+            </div>
+        </div>
+    </div>
+
+    <section class="panel">
+        <h3>🚢 Vessel Details</h3>
+        <div class="form-grid">
+            <label class="fld"><span class="req">Vessel Name</span>
+                <input data-h="vesselName" class="inp" placeholder="e.g. MSC MAYA"></label>
+            <label class="fld"><span>Class</span>
+                <select data-h="vslType" class="inp">
+                    <option value="V">Vessel</option>
+                    <option value="F">Feeder</option>
+                </select></label>
+            <label class="fld"><span>Call Sign</span>
+                <input data-h="callsign" class="inp" placeholder="e.g. 9V1234"></label>
+
+            <label class="fld"><span>IMO No</span>
+                <input data-h="imoNo" class="inp" placeholder="IMO-0000000"></label>
+            <label class="fld"><span>Carrier (Owner)</span>
+                <input data-h="carrierId" class="inp" list="carrierDatalist" placeholder="type code / name…"></label>
+            <datalist id="carrierDatalist"></datalist>
+            <label class="fld"><span>Vessel Type</span>
+                <select data-h="vesselType" class="inp">
+                    <option>Container Ship</option><option>Feeder</option><option>Bulk Carrier</option>
+                    <option>Tanker</option><option>RoRo</option><option>General Cargo</option><option>Other</option>
+                </select></label>
+
+            <label class="fld"><span>Status</span>
+                <select data-h="status" class="inp"><option>Active</option><option>Inactive</option></select></label>
+            <div class="fld derived"><span>Vessel ID</span><div id="dId" class="val mono">—</div></div>
+            <div class="fld derived"><span>Used by voyages?</span><div id="dUsed" class="val">—</div></div>
+        </div>
+    </section>
+</template>
+
+<div id="toast" class="toast" style="display:none"><span id="toastMsg"></span></div>
+
+<script src="data.js"></script>
+<script src="src/input/util.js?v=2"></script>
+<script src="src/input/store.js?v=2"></script>
+<script src="src/input/vessel-app.js?v=2"></script>
+</body>
+</html>

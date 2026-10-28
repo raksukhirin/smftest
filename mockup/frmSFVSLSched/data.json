@@ -1,0 +1,470 @@
+{
+  "metadata": {
+    "module": "Vessel Schedule",
+    "version": "1.0.0",
+    "generatedFor": "SmartFreight",
+    "description": "Mockup data for Vessel Schedule screen including Carrier, Vessel, Voyage, VoyagePort, CutOff and Booking usage"
+  },
+  "carriers": [
+    {
+      "carrierId": "CAR-MSC",
+      "carrierCode": "MSC",
+      "carrierName": "Mediterranean Shipping Company",
+      "scacCode": "MSCU",
+      "status": "Active"
+    },
+    {
+      "carrierId": "CAR-ONE",
+      "carrierCode": "ONE",
+      "carrierName": "Ocean Network Express",
+      "scacCode": "ONEY",
+      "status": "Active"
+    },
+    {
+      "carrierId": "CAR-EVG",
+      "carrierCode": "EGLV",
+      "carrierName": "Evergreen Line",
+      "scacCode": "EGLV",
+      "status": "Active"
+    }
+  ],
+  "ports": [
+    {
+      "portId": "PORT-THBKK",
+      "portCode": "THBKK",
+      "portName": "Bangkok",
+      "countryCode": "TH",
+      "timezone": "Asia/Bangkok"
+    },
+    {
+      "portId": "PORT-THLCH",
+      "portCode": "THLCH",
+      "portName": "Laem Chabang",
+      "countryCode": "TH",
+      "timezone": "Asia/Bangkok"
+    },
+    {
+      "portId": "PORT-SGSIN",
+      "portCode": "SGSIN",
+      "portName": "Singapore",
+      "countryCode": "SG",
+      "timezone": "Asia/Singapore"
+    },
+    {
+      "portId": "PORT-IDJKT",
+      "portCode": "IDJKT",
+      "portName": "Jakarta",
+      "countryCode": "ID",
+      "timezone": "Asia/Jakarta"
+    },
+    {
+      "portId": "PORT-CNSHA",
+      "portCode": "CNSHA",
+      "portName": "Shanghai",
+      "countryCode": "CN",
+      "timezone": "Asia/Shanghai"
+    },
+    {
+      "portId": "PORT-HKHKG",
+      "portCode": "HKHKG",
+      "portName": "Hong Kong",
+      "countryCode": "HK",
+      "timezone": "Asia/Hong_Kong"
+    }
+  ],
+  "serviceLanes": [
+    {
+      "serviceLaneId": "SL-BKK-SIN-JKT",
+      "serviceCode": "BSJ",
+      "serviceName": "Bangkok Singapore Jakarta Service",
+      "tradeLane": "TH-SEA",
+      "defaultMode": "SEA",
+      "status": "Active"
+    },
+    {
+      "serviceLaneId": "SL-BKK-SIN-SHA",
+      "serviceCode": "BSS",
+      "serviceName": "Bangkok Singapore Shanghai Service",
+      "tradeLane": "TH-CN",
+      "defaultMode": "SEA",
+      "status": "Active"
+    },
+    {
+      "serviceLaneId": "SL-LCB-SIN-HKG",
+      "serviceCode": "LSH",
+      "serviceName": "Laem Chabang Singapore Hong Kong Service",
+      "tradeLane": "TH-HK",
+      "defaultMode": "SEA",
+      "status": "Active"
+    }
+  ],
+  "vessels": [
+    {
+      "vesselId": "VES-MSC-MAYA",
+      "vesselName": "MSC MAYA",
+      "imoNo": "IMO-000001",
+      "carrierId": "CAR-MSC",
+      "vesselType": "Container Ship",
+      "status": "Active"
+    },
+    {
+      "vesselId": "VES-ONE-HONOLULU",
+      "vesselName": "ONE HONOLULU",
+      "imoNo": "IMO-000002",
+      "carrierId": "CAR-ONE",
+      "vesselType": "Container Ship",
+      "status": "Active"
+    },
+    {
+      "vesselId": "VES-EVER-GIVEN",
+      "vesselName": "EVER GIVEN",
+      "imoNo": "IMO-000003",
+      "carrierId": "CAR-EVG",
+      "vesselType": "Container Ship",
+      "status": "Active"
+    }
+  ],
+  "voyages": [
+    {
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "vesselId": "VES-MSC-MAYA",
+      "carrierId": "CAR-MSC",
+      "serviceLaneId": "SL-BKK-SIN-JKT",
+      "voyageNo": "001E",
+      "direction": "Export",
+      "polPortId": "PORT-THBKK",
+      "podPortId": "PORT-IDJKT",
+      "etd": "2026-06-12T18:00:00+07:00",
+      "eta": "2026-06-18T09:00:00+07:00",
+      "transitDays": 6,
+      "bookingStatus": "Open",
+      "scheduleStatus": "On Schedule"
+    },
+    {
+      "voyageId": "VOY-ONE-HONOLULU-023W",
+      "vesselId": "VES-ONE-HONOLULU",
+      "carrierId": "CAR-ONE",
+      "serviceLaneId": "SL-BKK-SIN-SHA",
+      "voyageNo": "023W",
+      "direction": "Export",
+      "polPortId": "PORT-THBKK",
+      "podPortId": "PORT-CNSHA",
+      "etd": "2026-06-15T22:00:00+07:00",
+      "eta": "2026-06-24T11:00:00+08:00",
+      "transitDays": 9,
+      "bookingStatus": "Open",
+      "scheduleStatus": "Delayed"
+    },
+    {
+      "voyageId": "VOY-EVER-GIVEN-118E",
+      "vesselId": "VES-EVER-GIVEN",
+      "carrierId": "CAR-EVG",
+      "serviceLaneId": "SL-LCB-SIN-HKG",
+      "voyageNo": "118E",
+      "direction": "Export",
+      "polPortId": "PORT-THLCH",
+      "podPortId": "PORT-HKHKG",
+      "etd": "2026-06-20T16:00:00+07:00",
+      "eta": "2026-06-27T08:00:00+08:00",
+      "transitDays": 7,
+      "bookingStatus": "Open",
+      "scheduleStatus": "On Schedule"
+    }
+  ],
+  "voyagePorts": [
+    {
+      "voyagePortId": "VP-MSC-001E-001",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "sequenceNo": 1,
+      "portId": "PORT-THBKK",
+      "moveType": "Load",
+      "eta": null,
+      "etd": "2026-06-12T18:00:00+07:00",
+      "terminalName": "Bangkok Port Terminal",
+      "berth": "B1",
+      "status": "Scheduled"
+    },
+    {
+      "voyagePortId": "VP-MSC-001E-002",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "sequenceNo": 2,
+      "portId": "PORT-SGSIN",
+      "moveType": "Transshipment",
+      "eta": "2026-06-15T08:00:00+08:00",
+      "etd": "2026-06-16T02:00:00+08:00",
+      "terminalName": "PSA Singapore",
+      "berth": "S3",
+      "status": "Scheduled"
+    },
+    {
+      "voyagePortId": "VP-MSC-001E-003",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "sequenceNo": 3,
+      "portId": "PORT-IDJKT",
+      "moveType": "Discharge",
+      "eta": "2026-06-18T09:00:00+07:00",
+      "etd": null,
+      "terminalName": "Jakarta International Container Terminal",
+      "berth": "J2",
+      "status": "Scheduled"
+    },
+    {
+      "voyagePortId": "VP-ONE-023W-001",
+      "voyageId": "VOY-ONE-HONOLULU-023W",
+      "sequenceNo": 1,
+      "portId": "PORT-THBKK",
+      "moveType": "Load",
+      "eta": null,
+      "etd": "2026-06-15T22:00:00+07:00",
+      "terminalName": "Bangkok Port Terminal",
+      "berth": "B2",
+      "status": "Scheduled"
+    },
+    {
+      "voyagePortId": "VP-ONE-023W-002",
+      "voyageId": "VOY-ONE-HONOLULU-023W",
+      "sequenceNo": 2,
+      "portId": "PORT-SGSIN",
+      "moveType": "Transshipment",
+      "eta": "2026-06-19T10:00:00+08:00",
+      "etd": "2026-06-20T01:00:00+08:00",
+      "terminalName": "PSA Singapore",
+      "berth": "S5",
+      "status": "Delayed"
+    },
+    {
+      "voyagePortId": "VP-ONE-023W-003",
+      "voyageId": "VOY-ONE-HONOLULU-023W",
+      "sequenceNo": 3,
+      "portId": "PORT-CNSHA",
+      "moveType": "Discharge",
+      "eta": "2026-06-24T11:00:00+08:00",
+      "etd": null,
+      "terminalName": "Shanghai Yangshan Terminal",
+      "berth": "Y4",
+      "status": "Scheduled"
+    },
+    {
+      "voyagePortId": "VP-EVG-118E-001",
+      "voyageId": "VOY-EVER-GIVEN-118E",
+      "sequenceNo": 1,
+      "portId": "PORT-THLCH",
+      "moveType": "Load",
+      "eta": null,
+      "etd": "2026-06-20T16:00:00+07:00",
+      "terminalName": "Laem Chabang Terminal",
+      "berth": "C1",
+      "status": "Scheduled"
+    },
+    {
+      "voyagePortId": "VP-EVG-118E-002",
+      "voyageId": "VOY-EVER-GIVEN-118E",
+      "sequenceNo": 2,
+      "portId": "PORT-SGSIN",
+      "moveType": "Transshipment",
+      "eta": "2026-06-23T14:00:00+08:00",
+      "etd": "2026-06-24T03:00:00+08:00",
+      "terminalName": "PSA Singapore",
+      "berth": "S7",
+      "status": "Scheduled"
+    },
+    {
+      "voyagePortId": "VP-EVG-118E-003",
+      "voyageId": "VOY-EVER-GIVEN-118E",
+      "sequenceNo": 3,
+      "portId": "PORT-HKHKG",
+      "moveType": "Discharge",
+      "eta": "2026-06-27T08:00:00+08:00",
+      "etd": null,
+      "terminalName": "Hong Kong Kwai Tsing Terminal",
+      "berth": "H1",
+      "status": "Scheduled"
+    }
+  ],
+  "cutOffs": [
+    {
+      "cutOffId": "CO-MSC-001E-SI",
+      "voyagePortId": "VP-MSC-001E-001",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "cutOffType": "SI Closing",
+      "cutOffDateTime": "2026-06-09T12:00:00+07:00",
+      "status": "Closed",
+      "remark": "Shipping Instruction already closed"
+    },
+    {
+      "cutOffId": "CO-MSC-001E-VGM",
+      "voyagePortId": "VP-MSC-001E-001",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "cutOffType": "VGM Closing",
+      "cutOffDateTime": "2026-06-10T10:00:00+07:00",
+      "status": "Today",
+      "remark": "Urgent follow-up required"
+    },
+    {
+      "cutOffId": "CO-MSC-001E-CY",
+      "voyagePortId": "VP-MSC-001E-001",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "cutOffType": "CY Closing",
+      "cutOffDateTime": "2026-06-10T17:00:00+07:00",
+      "status": "Today",
+      "remark": "Container gate-in deadline"
+    },
+    {
+      "cutOffId": "CO-MSC-001E-CUSTOMS",
+      "voyagePortId": "VP-MSC-001E-001",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "cutOffType": "Customs Closing",
+      "cutOffDateTime": "2026-06-11T12:00:00+07:00",
+      "status": "Open",
+      "remark": "Export customs clearance deadline"
+    },
+    {
+      "cutOffId": "CO-ONE-023W-SI",
+      "voyagePortId": "VP-ONE-023W-001",
+      "voyageId": "VOY-ONE-HONOLULU-023W",
+      "cutOffType": "SI Closing",
+      "cutOffDateTime": "2026-06-12T12:00:00+07:00",
+      "status": "Open",
+      "remark": "SI pending"
+    },
+    {
+      "cutOffId": "CO-ONE-023W-CY",
+      "voyagePortId": "VP-ONE-023W-001",
+      "voyageId": "VOY-ONE-HONOLULU-023W",
+      "cutOffType": "CY Closing",
+      "cutOffDateTime": "2026-06-14T17:00:00+07:00",
+      "status": "Open",
+      "remark": "Container gate-in deadline"
+    },
+    {
+      "cutOffId": "CO-EVG-118E-SI",
+      "voyagePortId": "VP-EVG-118E-001",
+      "voyageId": "VOY-EVER-GIVEN-118E",
+      "cutOffType": "SI Closing",
+      "cutOffDateTime": "2026-06-17T12:00:00+07:00",
+      "status": "Open",
+      "remark": "SI pending"
+    },
+    {
+      "cutOffId": "CO-EVG-118E-CY",
+      "voyagePortId": "VP-EVG-118E-001",
+      "voyageId": "VOY-EVER-GIVEN-118E",
+      "cutOffType": "CY Closing",
+      "cutOffDateTime": "2026-06-19T16:00:00+07:00",
+      "status": "Open",
+      "remark": "Container gate-in deadline"
+    }
+  ],
+  "bookings": [
+    {
+      "bookingId": "BK-260601",
+      "bookingNo": "BK-260601",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "customerName": "ABC Trading Co., Ltd.",
+      "shipmentMode": "LCL",
+      "polPortId": "PORT-THBKK",
+      "podPortId": "PORT-IDJKT",
+      "cbm": 8.5,
+      "grossWeightKg": 2200,
+      "status": "Confirmed",
+      "siStatus": "Submitted",
+      "customsStatus": "Pending"
+    },
+    {
+      "bookingId": "BK-260602",
+      "bookingNo": "BK-260602",
+      "voyageId": "VOY-MSC-MAYA-001E",
+      "customerName": "Siam Export Co., Ltd.",
+      "shipmentMode": "LCL",
+      "polPortId": "PORT-THBKK",
+      "podPortId": "PORT-SGSIN",
+      "cbm": 3.2,
+      "grossWeightKg": 850,
+      "status": "Pending SI",
+      "siStatus": "Pending",
+      "customsStatus": "Not Started"
+    },
+    {
+      "bookingId": "BK-260603",
+      "bookingNo": "BK-260603",
+      "voyageId": "VOY-ONE-HONOLULU-023W",
+      "customerName": "Thai Fresh Logistics",
+      "shipmentMode": "FCL",
+      "containerType": "40HC",
+      "containerQty": 1,
+      "polPortId": "PORT-THBKK",
+      "podPortId": "PORT-CNSHA",
+      "cbm": 65.0,
+      "grossWeightKg": 12000,
+      "status": "Confirmed",
+      "siStatus": "Pending",
+      "customsStatus": "Not Started"
+    },
+    {
+      "bookingId": "BK-260604",
+      "bookingNo": "BK-260604",
+      "voyageId": "VOY-EVER-GIVEN-118E",
+      "customerName": "Eastern Parts Manufacturing",
+      "shipmentMode": "LCL",
+      "polPortId": "PORT-THLCH",
+      "podPortId": "PORT-HKHKG",
+      "cbm": 12.75,
+      "grossWeightKg": 3100,
+      "status": "Draft",
+      "siStatus": "Not Started",
+      "customsStatus": "Not Started"
+    }
+  ],
+  "uiViewModels": {
+    "vesselScheduleList": [
+      {
+        "voyageId": "VOY-MSC-MAYA-001E",
+        "vesselName": "MSC MAYA",
+        "voyageNo": "001E",
+        "carrierCode": "MSC",
+        "serviceName": "BKK-SIN-JKT",
+        "pol": "THBKK",
+        "pod": "IDJKT",
+        "etd": "2026-06-12T18:00:00+07:00",
+        "eta": "2026-06-18T09:00:00+07:00",
+        "transitDays": 6,
+        "nextCutOffType": "VGM Closing",
+        "nextCutOffDateTime": "2026-06-10T10:00:00+07:00",
+        "bookingStatus": "Open",
+        "scheduleStatus": "On Schedule"
+      },
+      {
+        "voyageId": "VOY-ONE-HONOLULU-023W",
+        "vesselName": "ONE HONOLULU",
+        "voyageNo": "023W",
+        "carrierCode": "ONE",
+        "serviceName": "BKK-SIN-SHA",
+        "pol": "THBKK",
+        "pod": "CNSHA",
+        "etd": "2026-06-15T22:00:00+07:00",
+        "eta": "2026-06-24T11:00:00+08:00",
+        "transitDays": 9,
+        "nextCutOffType": "SI Closing",
+        "nextCutOffDateTime": "2026-06-12T12:00:00+07:00",
+        "bookingStatus": "Open",
+        "scheduleStatus": "Delayed"
+      },
+      {
+        "voyageId": "VOY-EVER-GIVEN-118E",
+        "vesselName": "EVER GIVEN",
+        "voyageNo": "118E",
+        "carrierCode": "EGLV",
+        "serviceName": "LCB-SIN-HKG",
+        "pol": "THLCH",
+        "pod": "HKHKG",
+        "etd": "2026-06-20T16:00:00+07:00",
+        "eta": "2026-06-27T08:00:00+08:00",
+        "transitDays": 7,
+        "nextCutOffType": "SI Closing",
+        "nextCutOffDateTime": "2026-06-17T12:00:00+07:00",
+        "bookingStatus": "Open",
+        "scheduleStatus": "On Schedule"
+      }
+    ]
+  }
+}
