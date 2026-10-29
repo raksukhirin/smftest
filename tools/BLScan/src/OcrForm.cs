@@ -161,7 +161,15 @@ namespace BLScan
             picHost.Resize += (s, e) => FitPicture(picHost);
             tabImage.Controls.Add(picHost);
             txtLog = new TextBox { Dock = DockStyle.Fill, Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Font = new Font("Consolas", 9f), BackColor = Color.White };
+            var logBar = new Panel { Dock = DockStyle.Top, Height = 34, BackColor = Theme.Soft };
+            var btnClearLog = new Button { Text = "ล้าง Log", Width = 100, Height = 26, Anchor = AnchorStyles.Top | AnchorStyles.Right };
+            btnClearLog.Location = new Point(logBar.Width - 112, 4);
+            Theme.Style(btnClearLog, false);
+            btnClearLog.Click += (s, e) => txtLog.Clear();
+            logBar.Controls.Add(btnClearLog);
+            logBar.Resize += (s, e) => btnClearLog.Location = new Point(logBar.Width - 112, 4);
             tabLog.Controls.Add(txtLog);
+            tabLog.Controls.Add(logBar);
 
             var status = new StatusStrip();
             stDb = new ToolStripStatusLabel("DB: กำลังตรวจ…") { Spring = false, BorderSides = ToolStripStatusLabelBorderSides.Right };

@@ -42,7 +42,7 @@ namespace BLScan
             banner.Controls.Add(new Label { Text = "นำเข้า EDI", ForeColor = Color.White, Font = new Font("Segoe UI Semibold", 15f), AutoSize = true, Location = new Point(18, 6) });
             banner.Controls.Add(new Label { Text = "อ่านไฟล์ XML ของเอเจนต์ แล้วเพิ่ม House B/L ต่อท้ายงานที่มีอยู่ — ทดสอบก่อนเสมอ แล้วจึงนำเข้า", ForeColor = Color.FromArgb(200, 230, 213), AutoSize = true, Location = new Point(20, 38) });
 
-            var top = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(14, 12, 14, 4), WrapContents = true, BackColor = Color.White };
+            var top = new TableLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, ColumnCount = 5, RowCount = 1, Padding = new Padding(14, 10, 14, 2), BackColor = Color.White };
             txtFile = new TextBox { Width = 470, ReadOnly = true, BorderStyle = BorderStyle.FixedSingle, BackColor = Color.FromArgb(250, 252, 250), Margin = new Padding(0, 3, 6, 0) };
             btnBrowse = new Button { Text = "เลือกไฟล์ EDI…", Width = 120, Height = 30, Margin = new Padding(0, 0, 8, 0) }; Theme.Style(btnBrowse, false);
             btnBrowse.Click += (s, e) => Browse();
@@ -51,7 +51,15 @@ namespace BLScan
             txtJob.TextChanged += (s, e) => UpdateButtons();
             btnLoad = new Button { Text = "อ่านไฟล์", Width = 90, Height = 30 }; Theme.Style(btnLoad, false);
             btnLoad.Click += (s, e) => LoadFile();
-            top.Controls.AddRange(new Control[] { txtFile, btnBrowse, lblJob, txtJob, btnLoad });
+            // แถวแรก: ตารางคอลัมน์ตามขนาดจริง ทุกตัว Anchor ซ้ายอย่างเดียว = กึ่งกลางแนวตั้งเดียวกัน ไม่ขึ้นกับความสูงของ TextBox/DPI
+            int col = 0;
+            foreach (Control c in new Control[] { txtFile, btnBrowse, lblJob, txtJob, btnLoad })
+            {
+                top.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+                c.Anchor = AnchorStyles.Left;
+                c.Margin = new Padding(c == lblJob ? 18 : 0, 3, c == btnLoad ? 0 : 8, 3);
+                top.Controls.Add(c, col++, 0);
+            }
 
             var row2 = new FlowLayoutPanel { Dock = DockStyle.Fill, AutoSize = true, Padding = new Padding(14, 4, 14, 12), WrapContents = true, BackColor = Color.White };
             var lblTpl = new Label { Text = "Template", AutoSize = true, Margin = new Padding(0, 8, 6, 0), Font = new Font(Font, FontStyle.Bold), ForeColor = Theme.Text };
@@ -71,6 +79,7 @@ namespace BLScan
             btnImport.Click += (s, e) => Run(false);
             lblInfo = new Label { AutoSize = true, Margin = new Padding(16, 9, 0, 0), ForeColor = Color.FromArgb(90, 110, 98) };
             row2.Controls.AddRange(new Control[] { lblTpl, cmbTpl, btnCheck, lblCheck, chkJob, chkForce, btnDry, btnImport, lblInfo });
+            CenterRow(row2);
 
             grid = new DataGridView
             {
@@ -91,9 +100,32 @@ namespace BLScan
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 170));
-            foreach (Control c in new Control[] { banner, top, row2, grid, txtLog }) { c.Margin = new Padding(0); layout.Controls.Add(c); }
+            // กรอบข้อความด้านล่าง: แถบหัว "บันทึกการทำงาน" + ปุ่มล้างข้อความ
+            var logHost = new Panel { Dock = DockStyle.Fill, BackColor = Color.FromArgb(28, 40, 34) };
+            var logBar = new Panel { Dock = DockStyle.Top, Height = 38, BackColor = Color.FromArgb(38, 56, 46) };
+            logBar.Controls.Add(new Label { Text = "บันทึกการทำงาน", ForeColor = Color.FromArgb(190, 225, 205), AutoSize = true, Location = new Point(12, 9) });
+            var btnClearLog = new Button { Text = "ล้างข้อความ", Width = 120, Height = 28, Anchor = AnchorStyles.Top | AnchorStyles.Right, Font = new Font("Segoe UI", 9f) };
+            btnClearLog.Location = new Point(logBar.Width - 152, 5);
+            Theme.Style(btnClearLog, false);
+            btnClearLog.Click += (s, e) => txtLog.Clear();
+            logBar.Controls.Add(btnClearLog);
+            logBar.Resize += (s, e) => btnClearLog.Location = new Point(logBar.Width - 152, 5);
+            logHost.Controls.Add(txtLog);
+            logHost.Controls.Add(logBar);
+            foreach (Control c in new Control[] { banner, top, row2, grid, logHost }) { c.Margin = new Padding(0); layout.Controls.Add(c); }
             Controls.Add(layout);
             UpdateButtons();
+        }
+
+        /// <summary>จัดทุกตัวในแถวให้กึ่งกลางแนวตั้งเดียวกัน (สูงแถวละ 30)</summary>
+        static void CenterRow(FlowLayoutPanel panel)
+        {
+            foreach (Control c in panel.Controls)
+            {
+                int h = c.AutoSize ? c.GetPreferredSize(Size.Empty).Height : c.Height;
+                var m = c.Margin;
+                c.Margin = new Padding(m.Left, Math.Max(0, (30 - h) / 2), m.Right, 0);
+            }
         }
 
         void LoadTemplates()
