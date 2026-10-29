@@ -113,6 +113,7 @@ namespace BLScan
 
         public SettingsForm(Ini ini)
         {
+            Load += (s, e) => Theme.Apply(this);
             _ini = ini;
             Text = "ตั้งค่า";
             Font = new Font("Tahoma", 9f);

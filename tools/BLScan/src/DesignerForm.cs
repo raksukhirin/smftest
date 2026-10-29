@@ -101,6 +101,7 @@ namespace BLScan
 
         public DesignerForm(Ini ini, string templateFolder)
         {
+            Load += (s, e) => Theme.Apply(this);
             _ini = ini;
             folder = templateFolder;
             Text = "Template Designer — " + folder;

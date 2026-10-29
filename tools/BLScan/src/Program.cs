@@ -47,6 +47,14 @@ namespace BLScan
                 return grc;
             }
 
+            // BLScan.exe /edi <xml> [/job <JOBNO> [/dryrun | /import]] [/out <dir>] — อ่านไฟล์ EDI; ถ้าใส่ /job จะเตรียม/ทดสอบ/นำเข้า HB/L เข้างานนั้น
+            if (Arg(args, "/edi") != null)
+            {
+                int erc = RunEdiCli(args, ini);
+                WinRtOcr.ExitSafely(erc);
+                return erc;
+            }
+
             if (args.Any(a => a.Equals("/scan", StringComparison.OrdinalIgnoreCase)))
             {
                 int rc = RunCli(args, ini);
@@ -57,9 +65,9 @@ namespace BLScan
             try { SetProcessDPIAware(); } catch { }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            var form = new MainForm(ini);
             string file = args.FirstOrDefault(a => !a.StartsWith("/") && File.Exists(a));
-            if (file != null)
+            if (file == null) { Application.Run(new MainForm(ini)); WinRtOcr.ExitSafely(0); return 0; }
+            var form = new OcrForm(ini);
             {
                 form.SetSourceFile(Path.GetFullPath(file));
                 string doc = Arg(args, "/docno");
@@ -148,6 +156,62 @@ namespace BLScan
             sb.AppendLine("สรุป: ผ่าน " + pass + " · ไม่ผ่าน " + fail);
             File.WriteAllText(Path.Combine(outDir, "golden.txt"), sb.ToString(), new UTF8Encoding(true));
             return fail == 0 ? 0 : 1;
+        }
+
+        static int RunEdiCli(string[] args, Ini ini)
+        {
+            string file = Arg(args, "/edi"), job = (Arg(args, "/job") ?? "").Trim();
+            string outDir = Arg(args, "/out") ?? ".";
+            Directory.CreateDirectory(outDir);
+            var log = new StringBuilder();
+            int rc = 0;
+            var db = new Db(ini);
+            try
+            {
+                var tplErrs = new List<string>();
+                var tpls = EdiTemplate.LoadAll(Arg(args, "/ediTemplates") ?? EdiTemplate.Folder(ini), tplErrs);
+                EdiTemplate tpl = null;
+                string tplId = Arg(args, "/template");
+                if (tplId != null) { tpl = tpls.FirstOrDefault(t => t.Id.Equals(tplId, StringComparison.OrdinalIgnoreCase)); if (tpl == null) throw new InvalidOperationException("ไม่พบ Template EDI \"" + tplId + "\" (มี: " + string.Join(", ", tpls.Select(t => t.Id)) + ")"); }
+                var chk = EdiValidator.Check(file, tpl, tpls);
+                if (tpl == null) tpl = chk.Detected;
+                log.AppendLine("Template: " + (tpl != null ? tpl.Name : "(ทั่วไป)") + "  ตรวจรูปแบบ: " + (chk.Ok ? "ผ่าน" : "ไม่ผ่าน") + " (ผิดพลาด " + chk.Errors + ", เตือน " + chk.Warnings + ")");
+                foreach (var i in chk.Issues) log.AppendLine("  [" + i.Level + "] " + i.Message);
+                if (!chk.Ok) { File.WriteAllText(Path.Combine(outDir, "edi-log.txt"), log.ToString(), new UTF8Encoding(true)); return 2; }
+                var f = EdiParser.Parse(file, tpl);
+                log.AppendLine("ไฟล์: " + Path.GetFileName(file) + "  เรือ " + f.Vessel + " / " + f.Voyage + "  ETD " + f.Etd + "  ETA " + f.Eta + "  ตู้ " + f.Containers.Count + "  HB/L " + f.Bls.Count);
+                foreach (var p in f.Problems) log.AppendLine("ปัญหา: " + p);
+                foreach (var b in f.Bls)
+                {
+                    log.AppendLine("--- " + b.BlNo + " (id " + b.XmlId + ")");
+                    foreach (var k in new[] { "BLTYPE", "BLCOPY", "CHGTERM", "CYTERM", "ETD", "ISSUDATE", "ISSUPLACE", "PAYABLEAT", "RECPORT", "RECPORTNAME", "DISPORT", "DISPORTNAME", "FINALPORT", "PKGQTY", "PKGUNIT", "GW", "CBM" })
+                        log.AppendLine("  " + k.PadRight(14) + "= " + Fields.Val(b.V, k));
+                    foreach (var k in new[] { "S_ADD", "C_ADD", "N_ADD", "A_ADD", "CTNLIST", "MARKDESC", "GOODS" })
+                        log.AppendLine("  " + k.PadRight(14) + "= " + OneLine(Fields.Val(b.V, k)));
+                    foreach (var n in b.Notes) log.AppendLine("  NOTE " + n);
+                }
+                if (job != "")
+                {
+                    bool real = Flag(args, "/import");
+                    if (f.Problems.Count > 0) { rc = 2; }
+                    else if (!db.Configured) { log.AppendLine("ยังไม่ได้ตั้งค่า DB"); rc = 3; }
+                    else
+                    {
+                        var r = db.ImportEdi(f, job, ini.Get("App", "UserID", "BLSCAN"), !Flag(args, "/nojob"), !real, Flag(args, "/force"));
+                        log.AppendLine(); log.AppendLine(r.Message);
+                        foreach (var n in r.Notes) log.AppendLine("  " + n);
+                        foreach (var l in r.JobLines) log.AppendLine("  งาน: " + l);
+                        foreach (var x in r.Rows)
+                        {
+                            log.AppendLine("  " + x.Action.PadRight(12) + x.DocNo.PadRight(18) + x.BlNo);
+                            foreach (var n in x.Notes) log.AppendLine("      " + n);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) { log.AppendLine("ERROR " + db.Sanitize(ex.GetBaseException().Message)); rc = 1; }
+            File.WriteAllText(Path.Combine(outDir, "edi-log.txt"), log.ToString(), new UTF8Encoding(true));
+            return rc;
         }
 
         static string OneLine(string s) { return (s ?? "").TrimEnd('\r', '\n').Replace("\r\n", " | ").Replace("\n", " | "); }

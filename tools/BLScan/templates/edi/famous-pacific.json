@@ -1,0 +1,20 @@
+{
+  "id": "famous-pacific",
+  "name": "Famous Pacific Logistics",
+  "description": "ไฟล์ EDI จาก Famous Pacific Logistics — มี uncode (5 ตัว), noofpkgs, totalinwords",
+  "markers": ["cyclosingdate", "loadingport/uncode", "billoflading/noofpkgs", "billoflading/totalinwords", "billoflading/destination/uncode"],
+  "portCodeOrder": ["uncode", "code"],
+  "fields": { "PKGWORD": "totalinwords" },
+  "required": {
+    "job": ["vessel", "voyage", "etddate", "loadingport/name", "dischargeport/name"],
+    "container": ["containerno", "size"],
+    "bl": ["blno", "shipper/details", "releasemode", "ofppcc", "loadingportname", "dischargeportname", "deliveryplace"],
+    "alloc": ["kgs", "cbm", "pkgs/pkgs", "pkgs/unit"]
+  },
+  "recommended": {
+    "job": ["etadate", "liner/name", "loadingport/uncode", "dischargeport/uncode"],
+    "container": ["sealno"],
+    "bl": ["consignee/details", "notifyparty/details", "marksandnos", "descofgoods", "servicemodefrom", "servicemodeto", "issueplace", "issuedate", "onboarddate", "destination/uncode", "totalinwords"],
+    "alloc": []
+  }
+}

@@ -9,7 +9,7 @@ chcp 65001 >nul
 cd /d "%~dp0.."
 set CSC=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe
 if not exist "%CSC%" set CSC=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\csc.exe
-set REFS=-r:System.dll -r:System.Core.dll -r:System.Data.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:System.Security.dll -r:System.Web.Extensions.dll
+set REFS=-r:System.dll -r:System.Core.dll -r:System.Data.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:System.Security.dll -r:System.Web.Extensions.dll -r:System.Xml.dll -r:System.Xml.Linq.dll
 set PNG=%CD%\..\..\mockup\BL_OCR\XIAMEN-2609S_pages\XIAMEN-2609S_p29.png
 set T=%TEMP%\blscan_tests_%RANDOM%
 mkdir "%T%"

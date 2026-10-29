@@ -29,7 +29,7 @@ namespace BLScan
         public List<string> MarkChanges = new List<string>();
     }
 
-    public class Db
+    public partial class Db
     {
         readonly Ini _ini;
         public Db(Ini ini) { _ini = ini; }
@@ -219,7 +219,7 @@ namespace BLScan
         /// เติมรหัสที่ OCR ไม่มี: ท่า (จาก HBL อื่นของงานเดียวกัน → OPPORT), หน่วย (SMUOM), คู่ค้า (SMBUSINESS ตามชื่อ ไม่เจอ = N/A)
         /// คืนข้อความอธิบายสิ่งที่เติม/ที่เติมไม่ได้
         /// </summary>
-        public List<string> Enrich(Dictionary<string, string> v, string jobNo, Dictionary<string, string> existing)
+        public List<string> Enrich(Dictionary<string, string> v, string jobNo, Dictionary<string, string> existing, bool lookupPorts = true, bool lookupUnits = true)
         {
             existing = existing ?? new Dictionary<string, string>();
             var notes = new List<string>();
@@ -227,7 +227,7 @@ namespace BLScan
             {
                 // ท่า
                 var jobPorts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-                if (!string.IsNullOrWhiteSpace(jobNo))
+                if (lookupPorts && !string.IsNullOrWhiteSpace(jobNo))
                     using (var c = Cmd(cn, @"SELECT RECPORT,RECPORTNAME,LOADPORT,LOADPORTNAME,DISPORT,DISPORTNAME,DELPORT,DELPORTNAME,FINALPORT,FINALPORTNAME
                                               FROM SFHBL WHERE JOBNO=@j ORDER BY CASE WHEN DOCTYPE='Allocated' THEN 0 ELSE 1 END, DOCNO"))
                     {
@@ -241,7 +241,7 @@ namespace BLScan
                                     if (!jobPorts.TryGetValue(name, out cur) || (cur.Length != 5 && code.Length == 5)) jobPorts[name] = code;
                                 }
                     }
-                foreach (var p in new[] { "RECPORT", "LOADPORT", "DISPORT", "DELPORT", "FINALPORT" })
+                foreach (var p in lookupPorts ? new[] { "RECPORT", "LOADPORT", "DISPORT", "DELPORT", "FINALPORT" } : new string[0])
                 {
                     string name = Fields.Val(v, p + "NAME").Trim();
                     if (Fields.Val(v, p).Trim() != "" || name == "") continue;
@@ -282,7 +282,7 @@ namespace BLScan
                 }
 
                 // หน่วยบรรจุ
-                if (Fields.Val(v, "UNITCODE").Trim() == "" && Fields.Val(v, "PKGUNIT").Trim() != "")
+                if (lookupUnits && Fields.Val(v, "UNITCODE").Trim() == "" && Fields.Val(v, "PKGUNIT").Trim() != "")
                     using (var c = Cmd(cn, "SELECT TOP 1 UOMCODE FROM SMUOM WHERE UOMNAME=@n OR UOMCODE=@n ORDER BY CASE WHEN UOMNAME=@n THEN 0 ELSE 1 END"))
                     {
                         c.Parameters.Add("@n", SqlDbType.VarChar, 100).Value = Fields.Val(v, "PKGUNIT").Trim();
