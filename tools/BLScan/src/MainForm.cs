@@ -141,16 +141,19 @@ namespace BLScan
 
             // License To (อ่านจาก Smart.ini → APP.LIC ตอนเปิดโปรแกรม)
             var lic = LicenseInfo.Current;
-            var lblLicCap = new Label { Text = "LICENSE TO", Font = new Font("Segoe UI", 8.5f), ForeColor = Color.FromArgb(170, 220, 195), AutoSize = true, BackColor = Color.Transparent };
+            // ซื้อสิทธิ์ EDI แล้ว = "LICENSE TO  ชื่อบริษัท" / ยังไม่ซื้อ (หรือไม่พบ/อ่านลิขสิทธิ์ SMF ไม่ได้) = "Free License" (ตามด้วยชื่อบริษัทถ้าอ่านได้)
+            var lblLicCap = new Label { Text = lic.EdiAllowed ? "LICENSE TO" : "Free License", Font = new Font("Segoe UI", 10f), ForeColor = lic.EdiAllowed ? Color.FromArgb(170, 220, 195) : Color.FromArgb(255, 224, 150), AutoSize = true, BackColor = Color.Transparent };
             var lblLic = new Label
             {
-                Text = lic.Valid ? lic.Company : "ไม่พบลิขสิทธิ์ SMF บนเครื่องนี้",
-                Font = new Font("Segoe UI Semibold", 13f), ForeColor = lic.Valid ? Color.White : Color.FromArgb(255, 214, 120), AutoSize = true, BackColor = Color.Transparent
+                Text = lic.Valid ? lic.Company : "",
+                Font = new Font("Segoe UI Semibold", 13f), ForeColor = Color.White, AutoSize = true, BackColor = Color.Transparent
             };
             banner.Controls.Add(lblLicCap); banner.Controls.Add(lblLic);
-            // ใต้โลโก้ SMF DocLink ชิดซ้าย
-            lblLicCap.Location = new Point(35, 74);
-            lblLic.Location = new Point(34, 88);
+            // ใต้โลโก้ SMF DocLink ชิดซ้าย บรรทัดเดียวกัน: LICENSE TO  ชื่อบริษัท
+            int licY = 90;
+            lblLicCap.Location = new Point(35, licY + 4);
+            lblLic.Location = new Point(35 + lblLicCap.PreferredWidth + 6, licY);
+            lblLicCap.BringToFront(); lblLic.BringToFront();
 
             var footer = new Panel { Dock = DockStyle.Bottom, Height = 52, BackColor = Color.White };
             footer.Paint += (s, e) => { using (var p = new Pen(Theme.Line)) e.Graphics.DrawLine(p, 0, 0, footer.Width, 0); };
@@ -176,7 +179,7 @@ namespace BLScan
                 new[] { "ระบุเลขงาน → เพิ่ม HB/L ต่อท้ายอัตโนมัติ", "ตู้ / น้ำหนัก / CBM / Container List ครบ", "ทดสอบ Dry run ก่อนนำเข้าจริงเสมอ" }, "เปิดหน้านำเข้า EDI  →")
             { Dock = DockStyle.Fill, Margin = new Padding(14, 0, 0, 0) };
             edi.Open += (s, e) => OpenEdi();
-            if (!lic.EdiAllowed) edi.SetLocked(true, "ต้องมีสิทธิ์ใช้งาน — ติดต่อผู้ขาย");
+            if (!lic.EdiAllowed) edi.SetLocked(true, "ต้องมีสิทธิ์ใช้งาน");
             cards.Controls.Add(ocr, 0, 0);
             cards.Controls.Add(edi, 1, 0);
 
