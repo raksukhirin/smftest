@@ -153,6 +153,7 @@ namespace BLScan
         /// </summary>
         public EdiResult ImportEdi(EdiFile file, string jobNo, string userId, bool updateJob, bool dryRun, bool overwriteEdited = false)
         {
+            if (!LicenseInfo.Current.EdiAllowed) throw new InvalidOperationException("ไม่มีสิทธิ์ใช้งาน EDI — " + LicenseInfo.Current.Problem);
             jobNo = (jobNo ?? "").Trim();
             if (jobNo == "") throw new InvalidOperationException("ยังไม่ได้ระบุเลขงาน (JOBNO)");
             if (file.Problems.Count > 0) throw new InvalidOperationException("ไฟล์ EDI มีปัญหา: " + string.Join("; ", file.Problems));

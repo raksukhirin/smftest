@@ -26,6 +26,8 @@ namespace BLScan
             string exeDir = Path.GetDirectoryName(Application.ExecutablePath);
             string iniPath = Arg(args, "/ini") ?? Path.Combine(exeDir, "BLScan.ini");
             var ini = new Ini(iniPath);
+            string smartIni = ini.Get("License", "SmartIni");            // ปกติไม่ต้องตั้ง (ใช้ C:\SMARTPRO\SUPPORT\Smart.ini); ตั้งไว้เพื่อทดสอบ
+            if (!string.IsNullOrWhiteSpace(smartIni)) LicenseInfo.SmartIniPath = smartIni;
 
             // BLScan.exe /encryptini — เข้ารหัสรหัสผ่าน/ConnectionString ที่ยังเป็นข้อความธรรมดาใน ini (ไม่มีหน้าจอ; exit 0 = สำเร็จ)
             if (Flag(args, "/encryptini"))
@@ -160,6 +162,12 @@ namespace BLScan
 
         static int RunEdiCli(string[] args, Ini ini)
         {
+            if (!LicenseInfo.Current.EdiAllowed)
+            {
+                Directory.CreateDirectory(Arg(args, "/out") ?? ".");
+                File.WriteAllText(Path.Combine(Arg(args, "/out") ?? ".", "edi-log.txt"), "ไม่มีสิทธิ์ใช้งาน EDI: " + LicenseInfo.Current.Problem + "\r\n", new UTF8Encoding(true));
+                return 5;
+            }
             string file = Arg(args, "/edi"), job = (Arg(args, "/job") ?? "").Trim();
             string outDir = Arg(args, "/out") ?? ".";
             Directory.CreateDirectory(outDir);

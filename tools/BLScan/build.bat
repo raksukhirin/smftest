@@ -10,7 +10,10 @@ if not exist "%CSC%" (
   exit /b 1
 )
 if not exist bin mkdir bin
-"%CSC%" -nologo -codepage:65001 -target:winexe -platform:anycpu -optimize+ ^
+rem Customer serial list (src\sn.txt) -> src\EdiLicensed.cs (hashes) before compiling
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0gen-sn.ps1"
+if errorlevel 1 exit /b 1
+"%CSC%" -nologo -codepage:65001 -target:winexe -platform:x86 -optimize+ ^
   -out:bin\BLScan.exe ^
   -r:System.dll -r:System.Core.dll -r:System.Data.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:System.Security.dll -r:System.Web.Extensions.dll -r:System.Xml.dll -r:System.Xml.Linq.dll ^
   src\*.cs

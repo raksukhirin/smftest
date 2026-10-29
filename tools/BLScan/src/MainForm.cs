@@ -11,8 +11,22 @@ namespace BLScan
     public class MenuCard : Panel
     {
         readonly string _badge;
-        bool _hot;
+        bool _hot, _locked;
+        Label _title, _sub, _list;
+        Button _btn;
         public event EventHandler Open;
+
+        /// <summary>การ์ดที่ยังไม่มีสิทธิ์ใช้งาน: สีเทา + กุญแจ + ปุ่มเปลี่ยนข้อความ (กดแล้วยังแจ้งเหตุผลได้ผ่าน Open)</summary>
+        public void SetLocked(bool locked, string buttonText)
+        {
+            _locked = locked;
+            _title.ForeColor = locked ? Color.FromArgb(120, 130, 125) : Theme.Dark;
+            _sub.ForeColor = locked ? Color.FromArgb(150, 158, 154) : Color.FromArgb(90, 110, 98);
+            _list.ForeColor = locked ? Color.FromArgb(150, 158, 154) : Theme.Text;
+            _btn.Text = buttonText;
+            Theme.Style(_btn, !locked);
+            Invalidate();
+        }
 
         public MenuCard(string badge, string title, string subtitle, string[] points, string buttonText)
         {
@@ -30,6 +44,7 @@ namespace BLScan
             };
             Theme.Style(btn, true);
             btn.Click += (s, e) => Fire();
+            _title = tTitle; _sub = tSub; _list = list; _btn = btn;
             Controls.AddRange(new Control[] { tTitle, tSub, list, btn });
             foreach (Control c in new Control[] { tTitle, tSub, list })
             {
@@ -65,16 +80,24 @@ namespace BLScan
             using (var sb = new SolidBrush(Color.FromArgb(_hot ? 30 : 16, 20, 70, 45))) g.FillPath(sb, shadow);
             using (var path = Round(r, 18))
             {
-                using (var b = new SolidBrush(_hot ? Color.FromArgb(250, 254, 251) : Color.White)) g.FillPath(b, path);
-                using (var pen = new Pen(_hot ? Theme.Primary : Theme.Line, _hot ? 2f : 1f)) g.DrawPath(pen, path);
+                using (var b = new SolidBrush(_locked ? Color.FromArgb(246, 247, 246) : _hot ? Color.FromArgb(250, 254, 251) : Color.White)) g.FillPath(b, path);
+                using (var pen = new Pen(_locked ? Color.FromArgb(214, 218, 215) : _hot ? Theme.Primary : Theme.Line, _hot && !_locked ? 2f : 1f)) g.DrawPath(pen, path);
             }
-            // ไอคอน: วงกลมเขียวอ่อน + ตัวย่อ
+            // ไอคอน: วงกลมเขียว (ล็อก = เทา) + ตัวย่อ
             var ic = new Rectangle(30, 28, 66, 66);
-            using (var b = new LinearGradientBrush(ic, Theme.Primary, Theme.Dark, 45f)) g.FillEllipse(b, ic);
+            using (var b = _locked ? new LinearGradientBrush(ic, Color.FromArgb(176, 184, 180), Color.FromArgb(128, 138, 133), 45f) : new LinearGradientBrush(ic, Theme.Primary, Theme.Dark, 45f)) g.FillEllipse(b, ic);
             using (var f = new Font("Segoe UI Semibold", 14f))
             {
                 var sz = g.MeasureString(_badge, f);
                 g.DrawString(_badge, f, Brushes.White, ic.X + (ic.Width - sz.Width) / 2f, ic.Y + (ic.Height - sz.Height) / 2f);
+            }
+            if (_locked)
+            {
+                // กุญแจเล็กที่มุมไอคอน
+                var lk = new Rectangle(ic.Right - 26, ic.Bottom - 22, 26, 22);
+                using (var bg = new SolidBrush(Color.White)) g.FillEllipse(bg, lk.X - 4, lk.Y - 8, lk.Width + 8, lk.Height + 8);
+                using (var pen = new Pen(Color.FromArgb(200, 140, 20), 2.4f)) g.DrawArc(pen, lk.X + 5, lk.Y - 4, 16, 16, 180, 180);
+                using (var body = new SolidBrush(Color.FromArgb(214, 150, 24))) g.FillRectangle(body, lk.X + 2, lk.Y + 5, 22, 15);
             }
         }
     }
@@ -115,7 +138,23 @@ namespace BLScan
             banner.Controls.Add(new Label { Text = "SMF", Font = new Font("Segoe UI Black", 30f), ForeColor = Color.FromArgb(190, 235, 210), AutoSize = true, Location = new Point(30, 22), BackColor = Color.Transparent });
             var lblSmf = (Label)banner.Controls[banner.Controls.Count - 1];
             banner.Controls.Add(new Label { Text = "DocLink", Font = new Font("Segoe UI Light", 30f), ForeColor = Color.White, AutoSize = true, Location = new Point(lblSmf.PreferredWidth + 28, 22), BackColor = Color.Transparent });
-            banner.Controls.Add(new Label { Text = "นำเอกสารจากภายนอกเข้าระบบ SMF — Scan House B/L และนำเข้า EDI", Font = new Font("Segoe UI", 11f), ForeColor = Color.FromArgb(214, 240, 224), AutoSize = true, Location = new Point(34, 86), BackColor = Color.Transparent });
+
+            // License To (อ่านจาก Smart.ini → APP.LIC ตอนเปิดโปรแกรม)
+            var lic = LicenseInfo.Current;
+            var lblLicCap = new Label { Text = "LICENSE TO", Font = new Font("Segoe UI", 8.5f), ForeColor = Color.FromArgb(170, 220, 195), AutoSize = true, BackColor = Color.Transparent };
+            var lblLic = new Label
+            {
+                Text = lic.Valid ? lic.Company : "ไม่พบลิขสิทธิ์ SMF บนเครื่องนี้",
+                Font = new Font("Segoe UI Semibold", 13f), ForeColor = lic.Valid ? Color.White : Color.FromArgb(255, 214, 120), AutoSize = true, BackColor = Color.Transparent
+            };
+            banner.Controls.Add(lblLicCap); banner.Controls.Add(lblLic);
+            Action placeLic = () =>
+            {
+                lblLic.Location = new Point(Math.Max(300, banner.Width - lblLic.PreferredWidth - 34), 76);
+                lblLicCap.Location = new Point(lblLic.Left + 1, 58);
+            };
+            banner.Resize += (s, e) => placeLic();
+            placeLic();
 
             var footer = new Panel { Dock = DockStyle.Bottom, Height = 52, BackColor = Color.White };
             footer.Paint += (s, e) => { using (var p = new Pen(Theme.Line)) e.Graphics.DrawLine(p, 0, 0, footer.Width, 0); };
@@ -141,6 +180,7 @@ namespace BLScan
                 new[] { "ระบุเลขงาน → เพิ่ม HB/L ต่อท้ายอัตโนมัติ", "ตู้ / น้ำหนัก / CBM / Container List ครบ", "ทดสอบ Dry run ก่อนนำเข้าจริงเสมอ" }, "เปิดหน้านำเข้า EDI  →")
             { Dock = DockStyle.Fill, Margin = new Padding(14, 0, 0, 0) };
             edi.Open += (s, e) => OpenEdi();
+            if (!lic.EdiAllowed) edi.SetLocked(true, "ต้องมีสิทธิ์ใช้งาน — ติดต่อผู้ขาย");
             cards.Controls.Add(ocr, 0, 0);
             cards.Controls.Add(edi, 1, 0);
 
@@ -157,6 +197,14 @@ namespace BLScan
 
         void OpenEdi()
         {
+            var lic = LicenseInfo.Current;
+            if (!lic.EdiAllowed)
+            {
+                string who = lic.Valid ? "License To : " + lic.Company + "\r\nSerial     : " + lic.Serial + "\r\n\r\n" : "";
+                MessageBox.Show(this, "การนำเข้า EDI เป็นโมดูลเสริม ใช้ได้เฉพาะลูกค้าที่ซื้อสิทธิ์\r\n\r\n" + who + lic.Problem + "\r\n\r\nกรุณาติดต่อผู้ขาย และแจ้ง Serial ข้างต้น",
+                                "ต้องมีสิทธิ์ใช้งาน EDI", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
             using (var f = new EdiForm(_ini)) f.ShowDialog(this);
         }
 
