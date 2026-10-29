@@ -1,0 +1,20 @@
+﻿{
+  "id": "cms-logistics",
+  "name": "CMS Logistics Group",
+  "description": "ไฟล์ EDI จาก CMS Logistics Group (สิงคโปร์) — รหัสท่า 3 ตัว (code), มี masterblno ในตู้",
+  "markers": ["sicutoffdate", "container/masterblno", "billoflading/handlingagent/code/code", "billoflading/destination/transittime"],
+  "portCodeOrder": ["code"],
+  "fields": {},
+  "required": {
+    "job": ["vessel", "voyage", "etddate", "loadingport/name", "dischargeport/name"],
+    "container": ["containerno", "size"],
+    "bl": ["blno", "shipper/details", "releasemode", "ofppcc", "loadingportname", "dischargeportname", "deliveryplace"],
+    "alloc": ["kgs", "cbm", "pkgs/pkgs", "pkgs/unit"]
+  },
+  "recommended": {
+    "job": ["etadate", "liner/name", "loadingport/code", "dischargeport/code"],
+    "container": ["sealno", "masterblno"],
+    "bl": ["consignee/details", "notifyparty/details", "marksandnos", "descofgoods", "servicemodefrom", "servicemodeto", "issueplace", "issuedate", "onboarddate", "destination/code"],
+    "alloc": []
+  }
+}

@@ -1,0 +1,5 @@
+bin/
+*.log
+tests/golden.txt
+src/sn.txt
+src/EdiLicensed.cs

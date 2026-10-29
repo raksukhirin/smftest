@@ -1,0 +1,54 @@
+[
+  {
+    "customerNo": "C-ALPHA",
+    "customerName": "Alpha Manufacturing Co., Ltd.",
+    "tier": "A",
+    "industry": "Electronics",
+    "creditTermDays": 45,
+    "preferredCurrency": "USD",
+    "commonIncoterms": "FOB,CIF",
+    "preferredCarriers": "HLC001,ONE001",
+    "specialRequirement": null,
+    "salesOwner": "SALES01",
+    "marginOverridePct": null
+  },
+  {
+    "customerNo": "C-BRAVO",
+    "customerName": "Bravo Foods Trading",
+    "tier": "B",
+    "industry": "Food & Beverage",
+    "creditTermDays": 30,
+    "preferredCurrency": "THB",
+    "commonIncoterms": "FOB",
+    "preferredCarriers": "WHL001",
+    "specialRequirement": "Reefer เท่านั้น",
+    "salesOwner": "SALES02",
+    "marginOverridePct": null
+  },
+  {
+    "customerNo": "C-NOVA",
+    "customerName": "Nova Startup Import",
+    "tier": "NEW",
+    "industry": "Consumer Goods",
+    "creditTermDays": 0,
+    "preferredCurrency": "THB",
+    "commonIncoterms": "EXW,FOB",
+    "preferredCarriers": null,
+    "specialRequirement": null,
+    "salesOwner": "SALES03",
+    "marginOverridePct": null
+  },
+  {
+    "customerNo": "C-STRAT",
+    "customerName": "Strategic Global Logistics",
+    "tier": "STRATEGIC",
+    "industry": "Automotive",
+    "creditTermDays": 60,
+    "preferredCurrency": "USD",
+    "commonIncoterms": "CIF,DAP",
+    "preferredCarriers": "HLC001",
+    "specialRequirement": "รายงาน KPI รายเดือน",
+    "salesOwner": "SALES01",
+    "marginOverridePct": 6.0
+  }
+]

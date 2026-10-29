@@ -1,0 +1,20 @@
+{
+  "id": "lucky-logistics",
+  "name": "Shenzhen Lucky Logistics (House B/L)",
+  "version": 1,
+  "note": "House B/L ฉบับร่าง (DRAFT) ของ Shenzhen Lucky Logistics Ltd. — หน้า 10-27 ของ 1_Agent Pre-AlertTS XIAMEN-2609S.pdf",
+  "identify": { "keywords": ["LUCKY LOGISTICS", "LLLcn"], "minScore": 1 },
+  "labels": {
+    "VESSEL": ["Ocean vessel/Voyage No."],
+    "PKGS": ["Quantity and Kind of packages"]
+  },
+  "zones": {},
+  "strip": ["(No claim shall attach for failure to notify)", "(if 'To Order' so indicate)", "NOT NEGOTIATBLE UNLESS CONSIGNED \"TO ORDER\""],
+  "terms": {
+    "CFS-CFS": "CFS/CFS"
+  },
+  "copy": {
+    "FINALPORTNAME": "DELPORTNAME"
+  },
+  "dateFormats": ["dd-MMM-yyyy"]
+}

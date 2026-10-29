@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SMF — Container Loading Planner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css?v=8">
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<header class="bg-emerald-700 text-white sticky top-0 z-30">
+  <div class="px-5 py-2.5 flex items-center gap-3">
+    <div class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center font-bold">📦</div>
+    <div>
+      <div class="text-[10px] uppercase tracking-wider text-emerald-200">Sea Freight · SMF</div>
+      <div class="font-semibold text-sm leading-none">Container Loading Planner <span class="text-emerald-300">[DEMO]</span></div>
+    </div>
+    <div class="ml-6 text-xs text-emerald-100/80 hidden md:block">วางแผนจัดเรียงสินค้าลงตู้ · shelf + stacking จริง · เงื่อนไข DG / NoWall / NearDoor</div>
+    <div class="ml-auto text-[11px] text-emerald-200">Engine: <span class="font-mono">packer.js</span> (skyline · DOM-free)</div>
+  </div>
+</header>
+
+<main class="max-w-[1400px] mx-auto p-4 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4">
+
+  <!-- ===== LEFT: inputs ===== -->
+  <section class="space-y-3">
+    <!-- data source -->
+    <div class="card">
+      <div class="card-hd">1 · แหล่งข้อมูล</div>
+      <div class="p-3 space-y-2">
+        <div class="flex gap-1.5 text-xs">
+          <label class="src-tab"><input type="radio" name="src" value="booking" checked> จาก Booking</label>
+          <label class="src-tab"><input type="radio" name="src" value="manual"> กรอกเอง</label>
+        </div>
+        <div id="bookingBox">
+          <select id="bookingSel" class="inp w-full"></select>
+          <div id="bookingInfo" class="text-[11px] text-slate-500 mt-1.5 leading-relaxed"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- container -->
+    <div class="card">
+      <div class="card-hd">2 · ตู้คอนเทนเนอร์</div>
+      <div class="p-3 space-y-2">
+        <select id="ctnSel" class="inp w-full"></select>
+        <div id="ctnDims" class="text-[11px] text-slate-500 font-mono"></div>
+      </div>
+    </div>
+
+    <!-- items -->
+    <div class="card">
+      <div class="card-hd flex items-center">3 · รายการสินค้า
+        <button id="addRow" class="ml-auto text-[11px] btn-ghost">+ เพิ่มแถว</button>
+      </div>
+      <div class="p-2">
+        <table class="w-full text-[11px]" id="itemsTbl">
+          <thead><tr class="text-slate-400 text-left">
+            <th class="pb-1">SKU</th><th class="pb-1 w-14 text-right">จำนวน</th>
+            <th class="pb-1 text-right">มิติ (mm)</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- settings -->
+    <div class="card">
+      <div class="card-hd">4 · การตั้งค่า</div>
+      <div class="p-3 grid grid-cols-2 gap-2 text-[11px]">
+        <label class="setrow">หมุน 2D ได้<input type="checkbox" id="setRotate" checked></label>
+        <label class="setrow">ซ้อนบนหัว (top-fill)<input type="checkbox" id="setTopFill" checked></label>
+        <label class="setrow col-span-2">ระยะห่างผนัง (mm)<input type="number" id="setWall" class="inp-sm" value="50"></label>
+        <label class="setrow col-span-2">เขตประตู (mm)<input type="number" id="setDoor" class="inp-sm" value="1200"></label>
+        <label class="setrow col-span-2">ประตูอยู่
+          <select id="setDoorAt" class="inp-sm"><option>FRONT</option><option>BACK</option></select>
+        </label>
+      </div>
+    </div>
+
+    <button id="runBtn" class="btn-primary w-full py-2.5">▶ คำนวณแผนจัดเรียง</button>
+    <div class="grid grid-cols-2 gap-2">
+      <button id="printBtn" class="btn-sec py-2">📄 Loading Instruction</button>
+      <button id="saveBtn" class="btn-sec py-2">💾 บันทึกแผน</button>
+    </div>
+    <div id="saveInfo" class="text-[10px] text-slate-400 text-center"></div>
+  </section>
+
+  <!-- ===== RIGHT: results ===== -->
+  <section class="space-y-3">
+    <!-- KPI -->
+    <div id="kpiRow" class="grid grid-cols-2 md:grid-cols-6 gap-2"></div>
+
+    <!-- warnings -->
+    <div id="warnBox" class="space-y-1.5"></div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_260px] gap-3">
+      <!-- plan + elevation -->
+      <div class="card">
+        <div class="card-hd flex items-center">ผังจัดเรียง
+          <span id="legend" class="ml-3 flex flex-wrap gap-2 items-center"></span>
+        </div>
+        <div class="p-3 space-y-3">
+          <div><div class="viewlbl">มุมมองจากบน (Top-down)</div><div id="planWrap"></div></div>
+          <div><div class="viewlbl">มุมมองด้านข้าง (Elevation)</div><div id="elevWrap"></div></div>
+        </div>
+      </div>
+
+      <!-- balance + unplaced + strategy -->
+      <div class="space-y-3">
+        <div class="card">
+          <div class="card-hd">สมดุลน้ำหนัก</div>
+          <div class="p-3 space-y-2.5 text-[11px]" id="balanceBox"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">วางไม่ลง</div>
+          <div class="p-3 text-[11px]" id="unplacedBox"></div>
+        </div>
+        <div class="card">
+          <div class="card-hd">กลยุทธ์ที่เลือก</div>
+          <div class="p-3 text-[11px]" id="strategyBox"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 3D ===== -->
+    <div class="card">
+      <div class="card-hd flex items-center gap-3">
+        <span>มุมมอง 3D</span>
+        <span class="normal-case font-normal text-slate-400 text-[10px]">ลากเพื่อหมุน · สกรอลล์เพื่อซูม · คลิกกล่องดูรายละเอียด</span>
+        <div class="ml-auto flex items-center gap-2">
+          <label class="normal-case font-normal text-[10px] text-slate-500 flex items-center gap-1.5">
+            ตัดชั้นที่ <input type="range" id="sliceZ" class="w-24" min="0" max="2695" value="2695" step="50">
+            <span id="sliceLbl" class="font-mono w-12">2695</span>mm
+          </label>
+          <button id="reset3d" class="btn-ghost text-[11px]">รีเซ็ตมุมมอง</button>
+        </div>
+      </div>
+      <div class="relative">
+        <!-- ถ้า 3D โหลดไม่ได้ ข้อความนี้จะค้างอยู่ = บอกสาเหตุ แทนที่จะเป็นพื้นเทาเงียบ ๆ -->
+        <div id="view3d" class="view3d"><div id="view3dMsg" class="view3d-msg">กำลังโหลด 3D (Three.js จาก unpkg.com)…</div></div>
+        <div id="pickInfo" class="pick-info hidden"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="tooltip" class="tooltip hidden"></div>
+<div id="printArea"></div>
+
+<!-- Three.js UMD (r147) + OrbitControls แบบ classic
+     ⚠ ห้ามเปลี่ยนเป็น ES module / importmap — จะทำให้ double-click เปิดจาก file:// ไม่ได้
+        (ES module โดน CORS บล็อกบน file:// เสมอ) ดูหมายเหตุใน src/view3d.js -->
+<script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+
+<script src="data.js?v=8"></script>
+<script src="src/packer.js?v=8"></script>
+<script src="src/view2d.js?v=8"></script>
+<script src="src/report.js?v=8"></script>
+<script src="src/view3d.js?v=8"></script>
+<script src="src/app.js?v=8"></script>
+
+<script>
+// ---- ตัวตรวจจับ 3D โหลดไม่สำเร็จ ----------------------------------------
+// 3D พึ่ง Three.js จาก CDN + importmap + WebGL — พังได้หลายทาง
+// ถ้าพังแล้วไม่บอก ผู้ใช้จะเห็นแค่พื้นเทาว่าง ๆ (เดาไม่ถูกว่าเกิดอะไร)
+// จึงต้องฟ้องสาเหตุเสมอ (หลักเดียวกับ no-silent-data-loss ของ engine)
+window.addEventListener('error', function (e) {
+  const src = (e.target && (e.target.src || e.target.href)) || '';
+  if (/three|view3d/i.test(src)) window.__ctn3dErr = 'โหลดไฟล์ไม่ได้: ' + src;
+  else if (e.message) window.__ctn3dErr = e.message;
+}, true);
+
+setTimeout(function () {
+  if (window.CTNView3D) return;                 // โหลดสำเร็จแล้ว ไม่ต้องทำอะไร
+  const m = document.getElementById('view3dMsg');
+  if (!m) return;
+  const why = window.__ctn3dErr
+    || (window.WebGLRenderingContext ? 'Three.js โหลดจาก unpkg.com ไม่สำเร็จ (เน็ต/ไฟร์วอลล์บล็อก CDN?)'
+                                     : 'เบราว์เซอร์นี้ไม่รองรับ WebGL');
+  m.className = 'view3d-msg err';
+  m.innerHTML = '⚠ แสดงผล 3D ไม่ได้<br><span class="sub">' + why + '</span>'
+    + '<span class="sub">ผังจัดเรียง 2D ด้านบนยังใช้งานได้ตามปกติ · ดูรายละเอียดที่ DevTools › Console</span>';
+}, 8000);
+</script>
+</body>
+</html>

@@ -1,0 +1,3461 @@
+﻿
+################################################################
+##  REPORT: MAIN :: D:\DEV.AI\SMP.AI\tools\SFDPFJOB01_CONSOL.rpt
+################################################################
+
+=== TABLES ===
+  alias=SFJOB   location=SFJOB
+  alias=SFHBL   location=SFHBL
+  alias=SFHBL_M   location=SFHBL
+  alias=OPTRANSDETAIL   location=OPTRANSDETAIL
+  alias=ARINVDETAIL   location=ARINVDETAIL
+  alias=CSJOB   location=CSJOB
+  alias=ARINVHEAD   location=ARINVHEAD
+
+=== LINKS: count=6 ===
+  SFJOB -> SFHBL
+      on {SFJOB.JOBNO}  =  {SFHBL.JOBNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  SFJOB -> SFHBL_M
+      on {SFJOB.JOBNO}  =  {SFHBL_M.DOCNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  SFJOB -> CSJOB
+      on {SFJOB.JOBNO}  =  {CSJOB.JOBNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  SFHBL -> OPTRANSDETAIL
+      on {SFHBL.DOCNO}  =  {OPTRANSDETAIL.HBLREF}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  OPTRANSDETAIL -> ARINVDETAIL
+      on {OPTRANSDETAIL.REFINVDETID}  =  {ARINVDETAIL.DETID}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  ARINVDETAIL -> ARINVHEAD
+      on {ARINVDETAIL.INVNO}  =  {ARINVHEAD.INVNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+
+=== RECORD SELECTION ===
+  
+
+=== GROUP SELECTION ===
+  
+
+=== SQL EXPRESSIONS ===
+
+=== FORMULA FIELDS: count=213 ===
+----- {@n_billadv_thb} -----
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" and {OPTRANSDETAIL.ITEMTYPE} = "ADV" then
+    formula = {@nDetTotal}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_billrev_thb} -----
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" And {OPTRANSDETAIL.ITEMTYPE} <> "ADV"  And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+----- {@n_vchradv_thb} -----
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" and {OPTRANSDETAIL.ITEMTYPE} = "ADV" then
+    formula = {@nDetTotal}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchr_thb} -----
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.ITEMTYPE} <> "ADV" And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+'
+'การณี Saleperson : {SFHBL.DOCTYPE}="Allocated"
+'   จำนวนใน Allocated HB/L ต้องไม่นำไปเป็น Direct Amount
+'   เพราะถ้ามี Allocated แต่ไม่มี HB/L  จะำทำให้จำนวน Double
+'   Ex.AE0812/00006 ของ PAC
+If {?chgGroup1}="Saleperson" Then
+    If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+        If {OPTRANSDETAIL.DOCTYPE}="N/A" then
+            formula = {@n_cost_com_cs}
+        Else
+            formula = formula
+        End If
+    Else
+        If {?chgGroup2}="House B/L" Then
+            If Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+                formula = 0
+            ElseIf {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+                formula = 0
+            ElseIf {SFJOB.TOTBL}<=1 Then
+                If {@n_cost_com}<>0 then 
+                    formula = {@n_cost_com}
+                Else
+                    formula = formula
+                End If
+            Else
+                If {@n_cost_com}<>0 then 
+                    formula = {@n_cost_com}
+                Else
+                    formula = formula
+                End If
+            End If
+        Else
+            formula = formula
+        End If
+    End If
+Else
+    formula = formula
+End If
+
+
+----- {@n_diffadv_thb} -----
+{@n_billadv_thb}-{@n_vchradv_thb}
+
+
+----- {@n_diffrev_thb} -----
+{@n_billrev_thb_net}-{@n_vchr_thb}-{@n_vchr_kb}
+
+----- {@n_mar_thb} -----
+{@n_diffadv_thb}+{@n_diffrev_thb}
+
+----- {@t_prndate} -----
+"Printed: "+totext(PrintDate) +" "+ totext(PrintTime)  
+
+----- {@parm_sale} -----
+if {?selsale} = 1 then
+"["+{?startsale}+"]" + " To "+"["+{?endsale}+"]"
+else
+    "[All selected]"
+
+----- {@n_tues} -----
+if {SFJOB.LOADTYPE} = "DIRECT-FCL" then
+        Formula = {SFJOB.CTN20} + ({SFJOB.CTN40}+{SFJOB.CTN40HC}+{SFJOB.CTN45})*2 
+else
+    If {?chgGroup2}="House B/L" Then
+        if ({SFHBL.LOADTYPE} = "FCL" Or {SFHBL.LOADTYPE} = "DIRECT-FCL") And {SFHBL.DOCTYPE} = "Direct" Then
+            Formula = {SFHBL.CTN20} + ({SFHBL.CTN40}+{SFHBL.CTN40HC}+{SFHBL.CTN45})*2 
+        else    
+            Formula = 0
+        End if
+    Else
+        if {SFJOB.LOADTYPE} = "FCL" Or {SFJOB.LOADTYPE} = "DIRECT-FCL" Then
+            Formula = {SFJOB.CTN20} + ({SFJOB.CTN40}+{SFJOB.CTN40HC}+{SFJOB.CTN45})*2 
+        else    
+            Formula = 0
+        End if
+    End If
+End if
+
+----- {@t_location} -----
+"Location: " +Lowercase(Filename)
+
+----- {@n_cbm} -----
+If {?chgGroup2}="House B/L" Then
+    If IsNull({SFHBL.REVTON}) Then
+        If {@isHideHBL} Then
+            Formula = 0
+        Else
+            Formula = {SFHBL.CBM}
+        End if
+    Else
+        If {@isHideHBL} Then
+            Formula = 0
+        Else    
+            If {?AvgType}="REV/TONs" Then
+                Formula = {SFHBL.REVTON}
+            Else
+                Formula = {SFHBL.CBM}
+            End If
+        End if
+    End If
+Else
+    If IsNull({SFJOB.REVTON}) Then
+        Formula = {SFJOB.CBM}
+    Else
+        If {?AvgType}="REV/TONs" Then
+            Formula = {SFJOB.REVTON}
+        Else
+            Formula = {SFJOB.CBM}
+        End If
+    End If
+End If
+
+
+----- {@_GMain} -----
+'Elseif {?chgGroup1} = "Saleperson"  then
+'     Formula = {@t_SaleNo}
+'
+if {?chgGroup1} = "Job Reference" then
+'    If {?chgGroup2} = "House B/L" then
+'        Formula = {@_OPT6}+{SFHBL.DOCNO}
+'    Else
+'        Formula = {@_OPT6}
+'    End If
+    Formula = {@_OPT6}
+Elseif {?chgGroup1} = "Carrier" then
+    formula = {SFJOB.LINERNAME}+{SFJOB.LINERNO}
+elseif {?chgGroup1} = "Agent" then 
+    Formula ={SFJOB.AGENTNAME}+{SFJOB.AGENTNO}
+Elseif {?chgGroup1} = "Port" then
+    Formula = {@cJobPort}
+Elseif {?chgGroup1} = "Actual Im-Exporter" then
+     Formula = {SFHBL.EXPORTERNAME}+{SFHBL.EXPORTER}
+Elseif {?chgGroup1} = "Saleperson"  then
+     Formula = {@t_HBLRef}
+Elseif {?chgGroup1} = "Load Type" Then     
+     Formula =  {SFJOB.LOADTYPE}
+Elseif {?chgGroup1} = "User ID" Then     
+     Formula =  {SFJOB.USERID}
+End if
+
+----- {@n_percent} -----
+if {#rtBillRevThb2} <> 0 then
+    ({@prnMarThb2}/{#rtBillRevThb2} * 100) 
+else 
+    0
+
+----- {@n_percent_report} -----
+if {#rtBillRevThb3} <> 0 then
+    ({@prnMarThb3}/{#rtBillRevThb3} * 100) 
+else 
+    0
+
+----- {@t_groupname_footer} -----
+if {?chgGroup2} = "None" then
+    Formula = "" +{@t_groupname_head}
+Else
+    Formula = "Total: " +{@_GMain}
+end if
+
+----- {@t_groupname_head} -----
+'Elseif {?chgGroup1} = "Saleperson"  Then
+'    Formula = {@t_SaleName}
+if {?chgGroup1} = "Job Reference" then
+    Formula = {SFJOB.JOBNO}
+Elseif {?chgGroup1} = "Carrier" then
+    formula = {SFJOB.LINERNAME}+ " (" + {SFJOB.LINERNO}+")"
+elseif {?chgGroup1} = "Agent" then 
+    Formula ={SFJOB.AGENTNAME}+" ("+{SFJOB.AGENTNO}+")"
+Elseif {?chgGroup1} = "Port" then
+    Formula = {@cJobPort}
+Elseif {?chgGroup1} = "Actual Im-Exporter" then    
+    Formula = {SFHBL.EXPORTERNAME}+" ("+{SFHBL.EXPORTER}+")"
+Elseif {?chgGroup1} = "Saleperson"  Then
+    Formula = {SFHBL.DOCNO}
+Elseif {?chgGroup1} = "Load Type" Then     
+    Formula =  {SFJOB.LOADTYPE}    
+Elseif {?chgGroup1} = "User ID" Then     
+     Formula =  {SFJOB.USERID}
+End if
+
+----- {@parm_port} -----
+if {?selport} = 1 then
+"["+{?startport}+"]" + " To "+"["+{?endport}+"]"
+else
+    "[All selected]"
+
+----- {@n_percent_job} -----
+if {#rtBillRevThb} <> 0 then
+    ({@prnMarThb}/{#rtBillRevThb} * 100) 
+else 
+    0
+
+----- {@_GSub02} -----
+if {?chgGroup2} = "None" then
+    Formula = {@_GMain}
+Elseif {?chgGroup2} = "Job Reference" then
+    Formula = {SFJOB.JOBNO}
+Elseif {?chgGroup2} = "House B/L" then
+    Formula = {SFJOB.JOBNO}+{SFHBL.DOCTYPE}+{SFHBL.DOCNO}
+Else
+    Formula = {@_GMain}
+End if
+
+----- {@t_jobport} -----
+iF {SFJOB.JOBCLASS}="IM" THEN
+    {SFJOB.RECPORT}
+Else
+    {SFJOB.DELPORT}
+
+
+----- {@n_gw} -----
+If {?chgGroup2}="House B/L" Then
+    If {@isHideHBL} Then
+        Formula = 0
+    Else
+        Formula = {SFHBL.GW}
+    End if
+Else
+    Formula = {SFJOB.GW}
+End if
+
+
+----- {@t_cbmgw_rep} -----
+Dim cbm_r as string
+Dim gw_r as string  
+cbm_r = Totext({#r_cbm_rep},3,",")
+gw_r = totext({#r_gw_rep},2,",")
+if {#r_cbm_rep}+{#r_gw_rep} = 0 then
+    formula = "-"
+Else
+    Formula = cbm_r+ " / "+  gw_r
+End if
+
+----- {@t_cbmgw_sum_job} -----
+if {#r_sum_cbm_job} +  {#r_sum_gw_job} = 0 then
+    formula = "-"
+else
+    Formula = Totext({#r_sum_cbm_job} , 3 , ",") + "/" + totext({#r_sum_gw_job},2,",")
+End if
+
+----- {@t_cbmgw_sum1} -----
+if {#r_sum_cbm_job1} +  {#r_sum_gw_job1} = 0 then
+    formula = "-"
+else
+    Formula = Totext({#r_sum_cbm_job1},3,",") + "/" + totext({#r_sum_gw_job1},2,",")
+End if
+
+----- {@t_totalgrp} -----
+"[Total number printed " +lowercase({?chgGroup1}) + "s: " +Totext(DistinctCount ({@_GMain}),0,"") + "]"
+
+----- {@t_totaljob} -----
+Shared NumberVar nHBLCountByGroup;
+if {?chgGroup2} <> "House B/L" then
+    "[ Total jobs: "+ totext(DistinctCount ({SFJOB.JOBNO},{@_GMain} ),0,"") +" ]"
+Else
+    "[ Total House B/Ls: "+ totext(nHBLCountByGroup,0,"") +" ]"
+    //Formula = "[Total House B/Ls: "+ totext(DistinctCount ({SFHBL.DOCNO},{@_GMain})-1,0,"") +"]"
+
+
+----- {@t_loadtype1} -----
+Dim s1 as string
+Dim s2 as string
+if Left({SFJOB.LOADTYPE},6) = "DIRECT" then
+    s2 = "D" & Right({SFJOB.LOADTYPE},len({SFJOB.LOADTYPE})-6)
+else
+    s2 = {SFJOB.LOADTYPE}
+end if
+if {SFJOB.JOBOWNER} = "NORMINATE" then
+    s1=  "N"
+Else
+    s1 = "F" 
+End if
+
+Formula = s2+"/"+s1
+
+----- {@t_loadtype} -----
+Dim s1 as string
+Dim s2 as string
+if Left({SFJOB.LOADTYPE},6) = "DIRECT" then
+    s2 = "DIR" & Right({SFJOB.LOADTYPE},Len({SFJOB.LOADTYPE})-6)
+else
+    s2 = {SFJOB.LOADTYPE}
+end if
+if {SFJOB.JOBOWNER} = "NORMINATE" then
+    s1=  "N"
+Else
+    s1 = "F" 
+End if
+
+Formula = s2+"/"+s1
+
+----- {@t_ShipperName} -----
+//If {SFHBL_M.EXPORTERNAME}<>"" Then
+//    {SFHBL_M.EXPORTERNAME}
+//Else
+//    (
+//    if Left({SFJOB.LOADTYPE},6) = "DIRECT" Then
+//        {SFHBL_M.EXPORTERNAME}
+//    Else If {SFJOB.LOADTYPE}="CONSOLE" then
+//        {SFHBL_M.EXPORTERNAME}
+//    Else
+//        {SFHBL.EXPORTERNAME}
+//    )
+If {SFHBL.JOBCLASS}="EX" Then
+    {SFHBL.SHIPPERNAME}
+Else
+    {SFHBL.CONSIGNEENAME}
+
+
+----- {@t_cbmgw_sum_hbl} -----
+if {#r_sum_cbm_hbl} +  {#r_sum_gw_hbl} = 0 then
+    formula = "-"
+else
+    Formula = Totext({#r_sum_cbm_hbl},3,",") + "/" + totext({#r_sum_gw_hbl},2,",")
+End if
+
+----- {@n_percent_hbl} -----
+if Sum ({@n_billrev_thb}, {@_GSub02}) <> 0 then
+    (Sum ({@n_mar_thb}, {@_GSub02})/Sum ({@n_billrev_thb},{@_GSub02}) * 100) 
+else 
+    0
+
+----- {@n_tuessize} -----
+if {SFJOB.LOADTYPE} = "DIRECT-FCL" Then
+    Formula = iif({SFJOB.CTN20} > 0, Totext({SFJOB.CTN20},0,"") + "X" + "20'","")
+    Formula = Formula  + iif(Formula <>"" and{SFJOB.CTN40} > 0  , ", ","") + iif({SFJOB.CTN40} > 0, Totext({SFJOB.CTN40},0,"") + "X" + "40'","")
+    Formula = Formula  + iif(Formula <>"" and {SFJOB.CTN40HC} > 0, ", ","") + iif({SFJOB.CTN40HC} > 0, Totext({SFJOB.CTN40HC},0,"") + "X" + "40'HQ","")
+    Formula = Formula  + iif(Formula <>"" and {SFJOB.CTN45} > 0, ", ","") + iif({SFJOB.CTN45} > 0, Totext({SFJOB.CTN45},0,"") + "X" + "45'","")
+else 
+    If {?chgGroup2}="House B/L" Then
+        if {SFHBL.LOADTYPE} = "FCL" And {SFHBL.DOCTYPE} = "Direct" Then
+            Formula = iif({SFHBL.CTN20} > 0, Totext({SFHBL.CTN20},0,"") + "X" + "20'","")
+            Formula = Formula  + iif(Formula <>"" and{SFHBL.CTN40} > 0  , ", ","") + iif({SFHBL.CTN40} > 0, Totext({SFHBL.CTN40},0,"") + "X" + "40'","")
+            Formula = Formula  + iif(Formula <>"" and {SFHBL.CTN40HC} > 0, ", ","") + iif({SFHBL.CTN40HC} > 0, Totext({SFHBL.CTN40HC},0,"") + "X" + "40'HQ","")
+            Formula = Formula  + iif(Formula <>"" and {SFHBL.CTN45} > 0, ", ","") + iif({SFHBL.CTN45} > 0, Totext({SFHBL.CTN45},0,"") + "X" + "45'","")
+        else    
+            Formula = ""
+        End if
+    else
+        if {SFJOB.LOADTYPE} = "FCL" Then
+            Formula = iif({SFJOB.CTN20} > 0, Totext({SFJOB.CTN20},0,"") + "X" + "20'","")
+            Formula = Formula  + iif(Formula <>"" and{SFJOB.CTN40} > 0  , ", ","") + iif({SFJOB.CTN40} > 0, Totext({SFJOB.CTN40},0,"") + "X" + "40'","")
+            Formula = Formula  + iif(Formula <>"" and {SFJOB.CTN40HC} > 0, ", ","") + iif({SFJOB.CTN40HC} > 0, Totext({SFJOB.CTN40HC},0,"") + "X" + "40'HQ","")
+            Formula = Formula  + iif(Formula <>"" and {SFJOB.CTN45} > 0, ", ","") + iif({SFJOB.CTN45} > 0, Totext({SFJOB.CTN45},0,"") + "X" + "45'","")
+        else    
+            Formula = ""
+        End if
+    end if
+end if
+
+
+'If {?chgGroup2}="House B/L" Then
+'    if {SFHBL.LOADTYPE} = "FCL" Or {SFHBL.LOADTYPE} = "DIRECT-FCL" Then
+'        Formula = iif({SFHBL.CTN20} > 0, Totext({SFHBL.CTN20},0,"") + "X" + "20'","")
+'        Formula = Formula  + iif(Formula <>"" and{SFHBL.CTN40} > 0  , ", ","") + iif({SFHBL.CTN40} > 0, Totext({SFHBL.CTN40},0,"") + "X" + "40'","")
+'        Formula = Formula  + iif(Formula <>"" and {SFHBL.CTN40HC} > 0, ", ","") + iif({SFHBL.CTN40HC} > 0, Totext({SFHBL.CTN40HC},0,"") + "X" + "40'HQ","")
+'        Formula = Formula  + iif(Formula <>"" and {SFHBL.CTN45} > 0, ", ","") + iif({SFHBL.CTN45} > 0, Totext({SFHBL.CTN45},0,"") + "X" + "45'","")
+'    else    
+'        Formula = ""
+'    End if
+'Else
+'    if {SFJOB.LOADTYPE} = "FCL" Or {SFJOB.LOADTYPE} = "DIRECT-FCL" Then
+'        Formula = iif({SFJOB.CTN20} > 0, Totext({SFJOB.CTN20},0,"") + "X" + "20'","")
+'        Formula = Formula  + iif(Formula <>"" and{SFJOB.CTN40} > 0  , ", ","") + iif({SFJOB.CTN40} > 0, Totext({SFJOB.CTN40},0,"") + "X" + "40'","")
+'        Formula = Formula  + iif(Formula <>"" and {SFJOB.CTN40HC} > 0, ", ","") + iif({SFJOB.CTN40HC} > 0, Totext({SFJOB.CTN40HC},0,"") + "X" + "40'HQ","")
+'        Formula = Formula  + iif(Formula <>"" and {SFJOB.CTN45} > 0, ", ","") + iif({SFJOB.CTN45} > 0, Totext({SFJOB.CTN45},0,"") + "X" + "45'","")
+'    else    
+'        Formula = ""
+'    End if
+'End If
+
+----- {@n_vchr_kb} -----
+'Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" and {OPTRANSDETAIL.ITEMTYPE} <> "ADV" And {OPTRANSDETAIL.EXPCODE}="KB" then
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.ITEMTYPE} <> "ADV" And {OPTRANSDETAIL.EXPCODE}="KB" then
+    formula = {@nDetGross}*{@nDocBal}*iif({OPTRANSDETAIL.DOCTYPE}="DN",1,-1)
+Else
+    formula = 0
+End if
+'
+'การณี Saleperson : {SFHBL.DOCTYPE}="Allocated"
+'   จำนวนใน Allocated HB/L ต้องไม่นำไปเป็น Direct Amount
+'   เพราะถ้ามี Allocated แต่ไม่มี HB/L  จะำทำให้จำนวน Double
+'   Ex.AE0812/00006 ของ PAC
+If {?chgGroup1}="Saleperson" Then
+    If {SFJOB.SUB_SYSNAME}="CS" Or {SFJOB.SUB_SYSNAME}="TS" Then
+        If {OPTRANSDETAIL.DOCTYPE}="N/A" then
+            formula = {@n_cost_com_na_cs}
+        Else
+            formula = formula
+        End If
+    Else
+        If {?chgGroup2}="House B/L" Then
+            If Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+                formula = 0
+            ElseIf {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+                formula = 0
+            ElseIf {SFJOB.TOTBL}<=1 Then
+                If {@n_cost_com_na}<>0 then 
+                    formula = {@n_cost_com_na}
+                Else
+                    formula = formula
+                End If
+            Else
+                If {@n_cost_com_na}<>0 then 
+                    formula = {@n_cost_com_na}
+                Else
+                    formula = formula
+                End If
+            End If
+        Else
+            formula = formula
+        End If
+    End If
+Else
+    formula = formula
+End If
+
+----- {@PrintBy} -----
+"PRINT BY : "+
+ReadIniValue ("C:\SMARTPRO\SUPPORT\Smart.ini", "Configurations", "UserName")
+//CRProjMDLAccIniFileRead("Configurations", "UserName", "C:\SmartPro\Support\Smart.ini")
+
+
+----- {@nJobExcRate} -----
+{SFJOB.JOBRATE}
+
+----- {@cJobPort} -----
+If {?chgGroup2}="House B/L" Then
+(
+    If {SFJOB.JOBCLASS}="IM" Then
+        {SFHBL.RECPORT} +"   " +{SFHBL.RECPORTNAME}
+    Else
+        {SFHBL.DELPORT} +"   " +{SFHBL.DELPORTNAME}
+)   
+Else
+    If {?EvalOnChange}="House" Then
+        (
+            If {SFJOB.JOBCLASS}="IM" Then
+                {SFHBL.RECPORT} +"   " +{SFHBL.RECPORTNAME}
+            Else
+                {SFHBL.DELPORT} +"   " +{SFHBL.DELPORTNAME}
+        )
+    Else
+        (
+            If {SFJOB.JOBCLASS}="IM" Then
+                {SFHBL_M.RECPORT} +"   " +{SFHBL_M.RECPORTNAME}
+            Else
+                {SFHBL_M.DELPORT} +"   " +{SFHBL_M.DELPORTNAME}
+        )
+
+
+----- {@n_billref_thb} -----
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" and {OPTRANSDETAIL.ITEMTYPE} <> "ADV" And {OPTRANSDETAIL.EXPCODE}="R/F" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@ShowH2} -----
+Not
+(
+    ({?chgGroup1} = "Job Reference" And {?chgGroup2} = "House B/L" )
+    Or
+    ({?chgGroup1} <> "Job Reference" And {?chgGroup2} = "House B/L" )
+)
+
+----- {@ShowH1} -----
+Not
+(
+    ({?chgGroup1} = "Job Reference" And {?chgGroup2} = "None" )
+    Or
+    ({?chgGroup1} <> "Job Reference" And {?chgGroup2} = "Job Reference")
+)
+
+----- {@d_JobPeriod} -----
+If IsNull({SFJOB.FISYEAR}) or {SFJOB.FISYEAR}="" Then
+    Date(2000,1,1)
+Else
+    Date(Val({SFJOB.FISYEAR}),Val({SFJOB.FISPERD}),1)
+
+
+----- {@prnMarThb} -----
+////{#rtDiffAdv}+{#rtDiffRev}
+//{#rtDiffRev}
+{#rtBillRevThb}-{#rtVchrKB}-{@prnVchrThbOth}
+
+----- {@prnMarThb2} -----
+//{#rtDiffAdv2}+({@xBillRevThb2}-{@xVchrThb2})
+Shared CurrencyVar nSumHouse_Mar_ByGroup;
+nSumHouse_Mar_ByGroup
+
+----- {@prnMarThb3} -----
+////{#rtDiffAdv3}+{#rtDiffRev3}
+//{#rtDiffAdv3}+{#rtDiffRev3}-{#rtDiffAdv3}
+{#rtBillRevThb3}-{#rtVchrKB3}-{@prnVchrThbOth_Net}
+
+----- {@t_SaleNo} -----
+//If {SFJOB.SUB_SYSNAME}="CS" Then
+//    {SFJOB.SALENO}
+//Else
+//    {SFHBL_M.SALENO}
+//
+//
+if {?chgGroup2} = "House B/L" Then
+    (
+    If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+        {SFJOB.SALENO}
+    Else
+        {SFHBL.SALENO}
+    )
+Else
+    (
+    If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS"Then
+        {SFJOB.SALENO}
+    Else
+        {SFHBL_M.SALENO}
+    )
+
+----- {@t_SaleName} -----
+If {?chgGroup2} = "House B/L" Then
+    (
+    If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+        {SFJOB.SALENO}+"  " +{SFJOB.SALENAME}
+    Else
+        {SFHBL.SALENO}+"  " +{SFHBL.SALENAME}
+    )
+Else
+    (
+    If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+        {SFJOB.SALENO}+"  " +{SFJOB.SALENAME}
+    Else
+        {SFHBL_M.SALENO}+"  " +{SFHBL_M.SALENAME}
+    )
+
+
+----- {@t_cbmgw_sum2} -----
+if {#r_sum_cbm_job2} +  {#r_sum_gw_job2} = 0 then
+    formula = "-"
+else
+    Formula = Totext({#r_sum_cbm_job2},3,",") + "/" + totext({#r_sum_gw_job2},2,",")
+End if
+
+----- {@isHideHBL} -----
+if Left({SFJOB.LOADTYPE},6) = "DIRECT" then
+    False
+else
+    {SFHBL.JOBNO}={SFHBL.DOCNO}
+
+
+----- {@nDocBal} -----
+If {OPTRANSDETAIL.TRANSTYPE} = "Bill" Then
+    IIF({ARINVHEAD.SRCTYPE}="AR" ,1,-1)
+Else
+    IIF({ARINVHEAD.SRCTYPE}="AP" ,1,-1)
+
+
+----- {@_nBL} -----
+''DistinctCount({SFHBL.DOCNO},{@_GMJob}) - 1;
+'If {SFJOB.JOBCLASS}="EX" Then
+'    Formula=ToText( DistinctCount({SFHBL.DOCNO},{@_GMJob}) - DistinctCount({SFJOB.JOBNO},{@_GMJob}) , 0,"")+" B/Ls"
+'Else
+'    Formula=ToText({SFJOB.TOTDO},0,"")+" D/Os"
+'End If
+If {SFJOB.JOBCLASS}="EX" Then
+    Formula=ToText({SFJOB.TOTBL},0,"")+" BLs"
+Else
+    Formula=ToText({SFJOB.TOTDO},0,"")+" DOs"
+End If
+
+----- {@_GMJob} -----
+{SFJOB.JOBNO}
+
+
+----- {@n_T20} -----
+
+
+----- {@t_sumcbm_job} -----
+
+
+----- {@_nBL_G1} -----
+//DistinctCount({SFHBL.DOCNO},{@_GMain}) - DistinctCount({SFJOB.JOBNO},{@_GMain})
+Sum({SFJOB.TOTBL},{@_GMain})
+
+
+----- {@cVESSEL} -----
+If {SFJOB.Feeder}<>"" Then
+    {SFJOB.Feeder} + iif({SFJOB.F_VOY}="",""," V."+{SFJOB.F_VOY})
+Else
+    {SFJOB.VESSEL} + iif({SFJOB.V_VOY}="",""," V."+{SFJOB.V_VOY})
+
+----- {@t_Shipper} -----
+//If {SFJOB.JOBCLASS}="EX" Then
+//    (
+//    If Left({SFJOB.LOADTYPE},6) = "DIRECT" Then
+//        {SFHBL_M.SHIPPERNAME}
+//    Else If {SFJOB.LOADTYPE}="CONSOLE" then
+//        {SFHBL_M.SHIPPERNAME}
+//    Else
+//        {SFHBL.SHIPPERNAME}
+//    )
+//Else
+//    {SFJOB.AGENTNAME}
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    {SFHBL_M.SHIPPERNAME}
+Else
+    (
+    If {SFJOB.EXPORTERNAME}="" Then
+        {SFJOB.SHIPPERNAME}
+    Else
+        {SFJOB.EXPORTERNAME}
+    )
+
+
+----- {@t_totaljob2} -----
+    Formula = DistinctCount ({SFJOB.JOBNO},{@_GMain} )
+
+----- {@t_totaljob3} -----
+Formula = "Total jobs:   "+ totext(DistinctCount ({SFJOB.JOBNO}),0,"") 
+
+
+----- {@nDetGross} -----
+'03/02/09 : แก้ให้ Promarine 
+'If {?prnCurr}<>1 Then
+'    formula = CDbl( {ARINVDETAIL.THBAMT} )
+'Else
+'    formula = Cdbl({ARINVDETAIL.SRCAMT}) * iif({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),1)
+'    formula = Round(formula,2)
+'End If
+'MACPRO Use FRGN_Amount_By_JobExchg=YES
+
+If {?prnCurr}<>1 Then
+    formula = IIF({@isVATIO},CDbl( {ARINVDETAIL.THBTOT} ),CDbl( {ARINVDETAIL.THBAMT} ))
+Else
+    If {?Cal_FR_Amount_By_JobExchg}="YES" Then
+        formula = Cdbl({ARINVDETAIL.SRCAMT}) * iif({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),1)
+        formula = Round(formula,2)
+    Else
+        If {OPTRANSDETAIL.PCTYPE}="N/A" Then
+            formula = 0
+        ElseIf {ARINVDETAIL.CALCURR}="THB" Then
+            formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({@isVATIO},CDbl({ARINVDETAIL.SRCTOT}),CDbl({ARINVDETAIL.SRCAMT}))) 
+            formula = formula * IIF({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),{ARINVDETAIL.CALRATE})
+        ElseIf {ARINVDETAIL.CALCURR}="USD" Then
+            formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({@isVATIO},CDbl({ARINVDETAIL.SRCTOT}),CDbl({ARINVDETAIL.SRCAMT})))
+            formula = formula * (1/{ARINVDETAIL.CALRATE})
+        Else
+            formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({@isVATIO},CDbl({ARINVDETAIL.THBTOT}),CDbl({ARINVDETAIL.THBAMT})))
+            formula = formula * (1/{SFJOB.JOBRATE})
+        End If
+    End If
+End If
+formula = Round(formula,2)
+
+
+----- {@nDetTotal} -----
+If {?prnCurr}<>1 Then
+    formula = CDbl( {ARINVDETAIL.THBTOT} )
+Else
+    formula = Cdbl({ARINVDETAIL.SRCTOT}) * iif({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),1)
+End If
+
+----- {@t_AmtBy} -----
+If {?prnCurr}<>1 Then
+    formula = "THB"
+Else
+    formula = "FOREIGN"
+End If
+
+
+
+----- {@_OPT6} -----
+If Instr(RecordSelection,"SFJOB.OPTION6")>0 Then
+    {SFJOB.OPTION6}+{SFJOB.JOBNO}
+Else
+    {SFJOB.JOBNO}
+
+----- {@n_billrev_thb_net} -----
+'From Direct HB/L
+formula = {@n_billref_thb}+{@n_billrev_thb}+{@n_billadv_thb}
+'
+'การณี Saleperson : {SFHBL.DOCTYPE}="Allocated"
+'   จำนวนใน Allocated HB/L ต้องไม่นำไปเป็น Direct Amount
+'   เพราะถ้ามี Allocated แต่ไม่มี HB/L  จะำทำให้จำนวน Double
+'   Ex.AE0812/00006 ของ PAC
+If {?chgGroup1}="Saleperson" Then
+    If {SFJOB.SUB_SYSNAME}="CS" Or {SFJOB.SUB_SYSNAME}="TS" Then
+        If {OPTRANSDETAIL.DOCTYPE}="N/A" then
+            formula = {@n_bill_com_cs}
+        Else
+            formula = formula
+        End If
+    Else
+        If {?chgGroup2}="House B/L" Then
+            If Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+                formula = 0
+            ElseIf {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+                formula = 0
+            ElseIf {SFJOB.TOTBL}<=1 Then
+                If {@n_bill_com}<>0 then 
+                    formula = {@n_bill_com}
+                Else
+                    formula = formula
+                End If
+            Else
+                If {@n_bill_com}<>0 then 
+                    formula = {@n_bill_com}
+                Else
+                    formula = formula
+                End If
+            End If
+        Else
+            formula = formula
+        End If
+    End If
+Else
+    formula = formula
+End If
+
+----- {@n_vchrAvg_cbm} -----
+Shared CurrencyVar nCostAvgCbm;
+Round( nCostAvgCbm * {@n_cbm_ratio} , 2)
+
+
+----- {@n_vchrAvg_kgs} -----
+Shared CurrencyVar nCostAvgKgs;
+//nCostAvgKgs;
+If {SFJOB.GW}=0 Then
+    nCostAvgKgs
+Else
+    Round( nCostAvgKgs * {SFHBL.GW}/{SFJOB.GW} , 2)
+
+----- {@n_vchrAvg_shp} -----
+Shared CurrencyVar nCostAvgShp;
+if isnull({SFJOB.TOTBL}) Then
+    Round( nCostAvgShp ,2) 
+else if {SFJOB.TOTBL}=0 Then
+    Round( nCostAvgShp ,2) 
+Else
+    Round( nCostAvgShp * 1/{SFJOB.TOTBL},2)    
+
+
+----- {@VarSetGroup} -----
+Shared CurrencyVar nSumADV_ByGroup:=0;
+//Shared CurrencyVar nDiffAdv:=0;
+//
+Shared CurrencyVar nBillAvgCbm:=0;
+Shared CurrencyVar nBillAvgKgs:=0;
+Shared CurrencyVar nBillAvgShp:=0;
+Shared CurrencyVar nBillAvgDO:=0;
+
+Shared CurrencyVar nBillAvgComCbm:=0;
+Shared CurrencyVar nBillAvgComKgs:=0;
+Shared CurrencyVar nBillAvgComShp:=0;
+Shared CurrencyVar nBillAvgComDO:=0;
+//Shared CurrencyVar nBillAvgComCbm_na:=0;
+//Shared CurrencyVar nBillAvgComKgs_na:=0;
+//Shared CurrencyVar nBillAvgComShp_na:=0;
+
+Shared CurrencyVar nCostAvgCbm:=0;
+Shared CurrencyVar nCostAvgKgs:=0;
+Shared CurrencyVar nCostAvgShp:=0;
+Shared CurrencyVar nCostAvgDO:=0;
+
+Shared CurrencyVar nCostAvgCbmKB:=0;
+Shared CurrencyVar nCostAvgKgsKB:=0;
+Shared CurrencyVar nCostAvgShpKB:=0;
+Shared CurrencyVar nCostAvgDoKB:=0;
+
+Shared CurrencyVar nCostAvgComCbm:=0;
+Shared CurrencyVar nCostAvgComKgs:=0;
+Shared CurrencyVar nCostAvgComShp:=0;
+Shared CurrencyVar nCostAvgComDO:=0;
+Shared CurrencyVar nCostAvgComCbm_na:=0;
+Shared CurrencyVar nCostAvgComKgs_na:=0;
+Shared CurrencyVar nCostAvgComShp_na:=0;
+Shared CurrencyVar nCostAvgComDo_KB:=0;
+
+Shared NumberVar nHBLByGroup:=0;
+Shared NumberVar nDOByGroup:=0;
+Shared NumberVar nHBLCountByGroup:=0;
+
+Shared CurrencyVar xBillRevThb2:=0;
+Shared CurrencyVar xVchrThb2:=0;
+Shared CurrencyVar xVchrKB2:=0;
+Shared CurrencyVar xVchrKB2A:=0;
+
+Shared CurrencyVar nSumHouse_KB_ByGroup:=0;
+Shared CurrencyVar nSumHouse_Mar_ByGroup:=0;
+
+----- {@n_BillAvg_shp} -----
+Shared CurrencyVar nBillAvgShp;
+if isnull({SFJOB.TOTBL}) Then
+    Round( nBillAvgShp ,2)
+else if {SFJOB.TOTBL}=0 Then
+    Round( nBillAvgShp ,2)
+Else
+    Round( nBillAvgShp * 1/{SFJOB.TOTBL},2)    
+
+
+----- {@n_BillAvg_kgs} -----
+Shared CurrencyVar nBillAvgKgs;
+If {SFJOB.GW}=0 Then
+    nBillAvgKgs
+Else
+    Round( nBillAvgKgs*{SFHBL.GW}/{SFJOB.GW}, 2)
+
+----- {@n_BillAvg_cbm} -----
+Shared CurrencyVar nBillAvgCbm;
+Round( nBillAvgCbm * {@n_cbm_ratio} , 2)
+//If IsNull({SFJOB.REVTON}) Then
+//    (
+//    If {SFJOB.CBM}=0 Then
+//        nBillAvgCbm
+//    Else
+//        Round( nBillAvgCbm * {SFHBL.CBM}/{SFJOB.CBM} , 2)
+//    )
+//Else
+//    (
+//    If {SFJOB.REVTON}=0 Then
+//        nBillAvgCbm
+//    Else
+//        (
+//        If {?AvgType}="REV/TONs" Then
+//            Round( nBillAvgCbm * {SFHBL.REVTON}/{SFJOB.REVTON} , 2)
+//        Else
+//            Round( nBillAvgCbm * {SFHBL.CBM}/{SFJOB.CBM} , 2)
+//        )
+//    )
+
+----- {@VarSetRep} -----
+Shared NumberVar nHBLByJob:=0;
+Shared NumberVar nHBLByHouse:=0;
+Shared CurrencyVar nHouse_KB:=0;
+Shared CurrencyVar nSumHouse_KB:=0;
+Shared CurrencyVar nSumHouse_KB_ByGroup:=0;
+Shared CurrencyVar nSumHouse_Mar_ByGroup:=0;
+Shared NumberVar nDOByJob:=0;
+Shared NumberVar nDOByHouse:=0;
+
+
+----- {@VarCalRepByJob} -----
+Shared NumberVar nHBLByJob;
+Shared NumberVar nDOByJob;
+If {SFJOB.JOBCLASS}="EX" Then
+    (
+    If LEFT({SFJOB.LOADTYPE},6)="DIRECT" Then
+        (
+        nHBLByJob := nHBLByJob + 1;
+        nDOByJob := nDOByJob+{SFJOB.TOTDO}
+        )
+    Else
+        (
+        nHBLByJob := nHBLByJob + DistinctCount({SFHBL.DOCNO},{@_GMJob}) - DistinctCount({SFJOB.JOBNO},{@_GMJob});
+        nDOByJob := nDOByJob+{SFJOB.TOTDO}
+        )
+    )
+Else
+    (
+    nHBLByJob := nHBLByJob + DistinctCount({SFHBL.DOCNO},{@_GMJob}) - DistinctCount({SFJOB.JOBNO},{@_GMJob});
+    nDOByJob := nDOByJob+{SFJOB.TOTDO}
+    )
+
+----- {@VarPrnHblRep} -----
+Shared NumberVar nHBLByJob;
+Shared NumberVar nHBLByHouse;
+//If ({?chgGroup1} <> "Job Reference" And {?chgGroup2}="House B/L") then 
+If {?chgGroup2}="House B/L" then 
+    nHBLByHouse
+else 
+    nHBLByJob
+
+
+----- {@_nBL2} -----
+'If {SFHBL.DOCNO}={SFHBL.JOBNO} Then
+'    If Left({SFJOB.LOADTYPE},6)="DIRECT" Then
+'        Formula=1
+'    Else
+'        Formula=0
+'    End If
+'Else
+'    Formula=1
+'End If
+If {SFHBL.DOCNO}={SFHBL.JOBNO} Then
+    Formula=0
+Else
+    Formula=1
+End If
+
+
+----- {@VarPrnHblGroup} -----
+//DistinctCount({SFHBL.DOCNO},{@_GMain})
+Shared NumberVar nHBLByGroup;
+nHBLByGroup
+
+
+----- {@VarCalRepByHBL} -----
+Shared NumberVar nHBLByHouse;
+Shared NumberVar nHBLByGroup;
+Shared NumberVar nDOByHouse;
+Shared NumberVar nDOByGroup;
+Shared NumberVar nHBLCountByGroup;
+//Shared CurrencyVar xBillRevThb2;
+//Shared CurrencyVar xVchrThb2;
+//Shared CurrencyVar xVchrKB2;
+Shared CurrencyVar nHouse_KB;
+Shared CurrencyVar nSumHouse_KB;
+//Shared CurrencyVar nSumHouse_KB_ByGroup;
+nHBLByHouse:=nHBLByHouse+{@_nBL2};
+nHBLByGroup:=nHBLByGroup+{@_nBL2};
+nDOByHouse:=nDOByHouse+{@_nDO2};
+nDOByGroup:=nDOByGroup+{@_nDO2};
+(
+If Not {@isSuppressHBL} Then
+    (
+//    xBillRevThb2:=xBillRevThb2+{@xBillRevThb};
+//    xVchrThb2:=xVchrThb2+{@xVchrThb};
+//    xVchrKB2:=xVchrKB2+{@xVchrKB};
+    nHBLCountByGroup:=nHBLCountByGroup+1;
+    nSumHouse_KB:=nSumHouse_KB+nHouse_KB;
+//    nSumHouse_KB_ByGroup:=nSumHouse_KB_ByGroup+nHouse_KB;
+    )
+Else
+    (
+//    xBillRevThb2:=xBillRevThb2;
+//    xVchrThb2:=xVchrThb2;
+//    xVchrKB2:=xVchrKB2;
+    nHBLCountByGroup:=nHBLCountByGroup+0;
+    )
+)
+
+
+----- {@prnAvgBillKgs} -----
+Shared CurrencyVar nBillAvgKgs;
+nBillAvgKgs;
+
+
+----- {@prnAvgBillCbm} -----
+Shared CurrencyVar nBillAvgCbm;
+nBillAvgCbm;
+
+----- {@prnAvgBillShp} -----
+Shared CurrencyVar nBillAvgShp;
+nBillAvgShp;
+
+----- {@prnAvgCostKgs} -----
+Shared CurrencyVar nCostAvgKgs;
+nCostAvgKgs;
+
+----- {@prnAvgCostCbm} -----
+Shared CurrencyVar nCostAvgCbm;
+nCostAvgCbm;
+
+----- {@prnAvgCostShp} -----
+Shared CurrencyVar nCostAvgShp;
+nCostAvgShp
+
+----- {@xBillRevThb} -----
+Dim nDirectAmt As Number
+'จาก Direct HB/L
+If IsNull({#rtBillRevThb}) Then
+    nDirectAmt=0
+Else
+    nDirectAmt={#rtBillRevThb}
+End If
+
+'จาก Alloctae HB/L
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    Formula=nDirectAmt
+ElseIf {SFJOB.TOTBL}<=1 Then
+    Formula=nDirectAmt
+ElseIf {?AvgBy}="REVENUE" Or {?AvgBy}="ALL" Then
+    'จาก Alloctae HB/L
+    If {?chgGroup1}="Saleperson" Then
+        Formula=ToNumber({@n_BillAvgCom_cbm})+ToNumber({@n_BillAvgCom_shp})+ToNumber({@n_BillAvgCom_kgs})+ToNumber({@n_BillAvgCom_do})
+        'บวก Direct 
+        Formula=Formula + nDirectAmt 
+     Else
+        'เอา Direct+Allocate
+        Formula=nDirectAmt
+        Formula=Formula+ToNumber({@n_BillAvg_cbm})+ToNumber({@n_BillAvg_kgs})+ToNumber({@n_BillAvg_shp})+ToNumber({@n_BillAvg_do})
+    End If
+Else
+    'จาก Direct HB/L
+    Formula=nDirectAmt
+End if
+
+
+----- {@xBillRevThb2} -----
+Shared CurrencyVar xBillRevThb2;
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    {#rtBillRevThb2}
+Else If {SFJOB.TOTBL}<=1 Then
+    {#rtBillRevThb2}
+Else If {?AvgBy}="REVENUE" Or {?AvgBy}="ALL" Then
+    xBillRevThb2
+Else
+    {#rtBillRevThb2}
+
+----- {@xVchrThb} -----
+Dim nDirectAmt As Number
+'จาก Direct HB/L
+If IsNull({#rtVchrThb}) Then
+    nDirectAmt=0
+Else
+    nDirectAmt={#rtVchrThb}
+End If
+
+'จาก Alloctae HB/L
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    Formula=nDirectAmt
+ElseIf {SFJOB.TOTBL}<=1 Then
+    Formula=nDirectAmt
+ElseIf {?AvgBy}="COST" Or {?AvgBy}="ALL" Then
+    'จาก Alloctae HB/L
+    If {?chgGroup1}="Saleperson" Then
+        'จาก Allocate
+        If {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+            formula = 0  'HBL Sale = MBL Sale
+        Else
+            Formula=ToNumber({@n_vchrAvgCom_cbm})+ToNumber({@n_vchrAvgCom_kgs})+ToNumber({@n_vchrAvgCom_shp})+ToNumber({@n_vchrAvgCom_do})
+        End If
+        'บวก Direct 
+        Formula=Formula + nDirectAmt 
+    Else
+        'เอา Direct+Allocate
+        Formula=ToNumber({@n_vchrAvg_cbm})+ToNumber({@n_vchrAvg_kgs})+ToNumber({@n_vchrAvg_shp})+ToNumber({@n_vchrAvg_do})
+        Formula=Formula + nDirectAmt
+    End If
+Else
+    'จาก Direct HB/L
+    Formula=nDirectAmt
+End if
+
+----- {@xVchrThb2} -----
+Shared CurrencyVar xVchrThb2;
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    {#rtVchrThb2}
+Else If {SFJOB.TOTBL}<=1 Then
+    {#rtVchrThb2}
+Else If {?AvgBy}="COST" Or {?AvgBy}="ALL" Then
+    xVchrThb2
+Else
+    {#rtVchrThb2}
+
+
+----- {@isSuppressHBL} -----
+If 
+    Not 
+    (
+        ({?chgGroup1} = "Job Reference" And {?chgGroup2}="House B/L")
+        Or
+        ({?chgGroup1} <> "Job Reference" And {?chgGroup2}="House B/L")
+    )
+Then 
+    True
+Else If {SFJOB.TOTBL}=0 Then
+    False
+Else 
+    {@isHideHBL}
+
+----- {@prnMarThbHbl} -----
+//{#rtDiffAdv}+({@xBillRevThb}-{@xVchrThb}) 
+//{#rtDiffAdv}+( {@prnBillRevThb}-{@prnxVchrThb}-{@prnxVchrKB} )
+//nDiffAdv+( {@prnBillRevThb}-{@prnxVchrThb}-{@prnxVchrKB} )
+Shared CurrencyVar nDiffAdv;
+0+( {@prnBillRevThb}-{@prnxVchrThb}-{@prnxVchrKB} )
+
+
+----- {@xVchrKB} -----
+Dim nDirectAmt As Number
+'จาก Direct HB/L
+If IsNull({#rtVchrKB}) Then
+    nDirectAmt=0
+Else
+    nDirectAmt={#rtVchrKB}
+End If
+
+'จาก Alloctae HB/L
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    Formula=nDirectAmt
+ElseIf {SFJOB.TOTBL}<=1 Then
+    Formula=nDirectAmt
+ElseIf {?AvgBy}="COST" Or {?AvgBy}="ALL" Then
+    'จาก Alloctae HB/L
+    If {?chgGroup1}="Saleperson" Then
+        'จาก Allocate
+        If {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+            formula = 0  'HBL Sale = MBL Sale
+        Else
+            Formula=ToNumber({@n_vchrAvgComKB_cbm})+ToNumber({@n_vchrAvgComKB_kgs})+ToNumber({@n_vchrAvgComKB_shp})+ToNumber({@n_vchrAvgComKB_do})
+        End If
+        'บวก Direct 
+        Formula=Formula + nDirectAmt 
+    Else
+        'เอา Direct+Allocate
+        Formula=ToNumber({@n_vchrAvgkb_cbm})+ToNumber({@n_vchrAvgkb_kgs})+ToNumber({@n_vchrAvgkb_shp})+ToNumber({@n_vchrAvgkb_do})
+        Formula=Formula + nDirectAmt
+    End If
+Else
+    'จาก Direct HB/L
+    Formula=nDirectAmt
+End if
+
+
+----- {@n_vchrAvgkb_cbm} -----
+Shared CurrencyVar nCostAvgCbmKB;
+Round( nCostAvgCbmKB * {@n_cbm_ratio} , 2)
+
+
+----- {@n_vchrAvgkb_kgs} -----
+Shared CurrencyVar nCostAvgKgsKB;
+//nCostAvgKgs;
+If {SFJOB.GW}=0 Then
+    nCostAvgKgsKB
+Else
+    Round( nCostAvgKgsKB * {SFHBL.GW}/{SFJOB.GW} , 2)
+
+----- {@n_vchrAvgkb_shp} -----
+Shared CurrencyVar nCostAvgShpKB;
+if isnull({SFJOB.TOTBL}) Then
+    Round( nCostAvgShpKB ,2)
+else if {SFJOB.TOTBL}=0 Then
+    Round( nCostAvgShpKB ,2)
+Else
+    Round( nCostAvgShpKB * 1/{SFJOB.TOTBL},2)    
+
+
+----- {@prnAvgCostKgs_KB} -----
+Shared CurrencyVar nCostAvgKgsKB;
+nCostAvgKgsKB;
+
+----- {@prnAvgCostCbm_KB} -----
+Shared CurrencyVar nCostAvgCbmKB;
+nCostAvgCbmKB;
+
+----- {@prnAvgCostShp_KB} -----
+Shared CurrencyVar nCostAvgShpKB;
+nCostAvgShpKB
+
+----- {@xVchrKB2} -----
+Shared CurrencyVar xVchrKB2;
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    {#rtVchrKB}
+Else If {SFJOB.TOTBL}<=1 Then
+    {#rtVchrKB}
+Else If {?AvgBy}="COST" Or {?AvgBy}="ALL" Then
+    xVchrKB2
+Else
+    {#rtVchrKB}
+
+----- {@cFilterCap01} -----
+Dim strVar() as String 
+strVar = Split ({?FilterCap},"|")
+if ubound(strvar) > 0 then
+    formula=strVar(1)
+Else    
+    formula=""
+End if
+
+
+----- {@cFilter01} -----
+Dim strVar() as String 
+strVar = Split ({?FilterBy},"|")
+if ubound(strvar) > 0 then
+    formula=strVar(1)
+Else    
+    formula = ""
+End if
+
+
+----- {@cFilterCap02} -----
+Dim strVar() as String 
+strVar = Split ({?FilterCap},"|")
+if ubound(strvar) > 1 then
+    formula=strVar(2)
+Else    
+    formula=""
+End if
+
+
+----- {@cFilter02} -----
+Dim strVar() as String 
+strVar = Split ({?FilterBy},"|")
+if ubound(strvar) > 1 then
+    formula=strVar(2)
+Else    
+    formula = ""
+End if
+
+
+----- {@cFilterCap03} -----
+Dim strVar() as String 
+strVar = Split ({?FilterCap},"|")
+if ubound(strvar) > 2 then
+    formula=strVar(3)
+Else    
+    formula=""
+End if
+
+
+----- {@cFilter03} -----
+Dim strVar() as String 
+strVar = Split ({?FilterBy},"|")
+if ubound(strvar) > 2 then
+    formula=strVar(3)
+Else    
+    formula = ""
+End if
+
+
+----- {@cFilterCap04} -----
+Dim strVar() as String 
+strVar = Split ({?FilterCap},"|")
+if ubound(strvar) > 3 then
+    formula=strVar(4)
+Else    
+    formula=""
+End if
+
+
+----- {@cFilter04} -----
+Dim strVar() as String 
+strVar = Split ({?FilterBy},"|")
+if ubound(strvar) > 3 then
+    formula=strVar(4)
+Else    
+    formula = ""
+End if
+
+
+----- {@nHouse_KB} -----
+Shared CurrencyVar nHouse_KB;
+nHouse_KB;
+
+----- {@VarPrnHouseKB2} -----
+Shared CurrencyVar nSumHouse_KB_ByGroup;
+If {?chgGroup2}="House B/L" Then
+    nSumHouse_KB_ByGroup
+Else
+    {#rtDiffAdv2}
+
+----- {@VarPrnHouseKB3} -----
+Shared CurrencyVar nSumHouse_KB;
+If {?chgGroup2}="House B/L" Then
+    nSumHouse_KB
+Else
+    {#rtDiffAdv3}
+
+----- {@n_cost_com} -----
+'กรณี ไม่ใช่ N/A =>  {OPTRANSDETAIL.SALETEXTRATE}=0 คือไม่ให้ , ว่าง  คือให้ตาม Price , มี ComPrice  คือให้ตาม Com Price
+If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+    If {?prnCurr}<>1 Then
+        Formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})
+        If {OPTRANSDETAIL.VATINOUT}=1 Then
+            If {OPTRANSDETAIL.ITEMTYPE}="ADV" then
+                formula = {@nDetTotal}*{@nDocBal}
+            Else
+                formula = {@nDetGross}*{@nDocBal}
+            End If
+        Else
+            Formula = Formula
+        End If
+    Else
+        formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)
+    End If
+Else
+    formula = 0
+End if
+
+
+----- {@n_bill_com} -----
+'Com ตาม Direct House B/L
+If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+    If {?prnCurr}<>1 Then
+        Formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})
+        If {OPTRANSDETAIL.VATINOUT}=1 Then
+            If {OPTRANSDETAIL.ITEMTYPE}="ADV" then
+                formula = {@nDetTotal}*{@nDocBal}
+            Else
+                formula = {@nDetGross}*{@nDocBal}
+            End If
+        Else
+            formula = formula
+        End If
+    Else
+        formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)
+    End If
+Else
+    formula = 0
+End if
+
+
+----- {@n_BillAvgCom_cbm} -----
+Shared CurrencyVar nBillAvgComCbm;
+Round( nBillAvgComCbm * {@n_cbm_ratio} , 2)
+
+
+----- {@n_BillAvgCom_kgs} -----
+Shared CurrencyVar nBillAvgComKgs;
+If {SFJOB.GW}=0 Then
+    nBillAvgComKgs
+Else
+    Round( nBillAvgComKgs*{SFHBL.GW}/{SFJOB.GW}, 2)
+
+
+----- {@n_BillAvgCom_shp} -----
+Shared CurrencyVar nBillAvgComShp;
+if isnull({SFJOB.TOTBL}) Then
+    Round( nBillAvgComShp ,2)
+else if {SFJOB.TOTBL}=0 Then
+    Round( nBillAvgComShp ,2)
+Else
+    Round( nBillAvgComShp * 1/{SFJOB.TOTBL},2)    
+
+
+----- {@n_cbm_ratio} -----
+If {?chgGroup2}="House B/L" Then
+    If IsNull({SFJOB.REVTON}) Then
+        If {@isHideHBL} Then
+            Formula = 0
+        ElseIf {SFJOB.CBM}=0 Then
+            Formula = 0
+        Else
+            Formula = {@n_cbm}/{SFJOB.CBM}
+        End If
+    Else
+        If {@isHideHBL} Then
+            Formula = 0
+        Else    
+            If {?AvgType}="REV/TONs" Then
+                If {SFJOB.REVTON}=0 Then
+                    Formula = 0
+                Else
+                    Formula = {@n_cbm}/{SFJOB.REVTON}
+                End If
+            Else
+                If {SFJOB.CBM}=0 Then
+                    Formula = 0
+                Else
+                    Formula = {@n_cbm}/{SFJOB.CBM}
+                End If
+            End If
+        End If
+    End If
+Else
+    Formula = 1
+End If
+
+Formula=Round(Formula,10)
+
+----- {@n_cost_com_na} -----
+'กรณี ไม่ใช่ N/A =>  {OPTRANSDETAIL.SALETEXTRATE}=0 คือไม่ให้ , ว่าง  คือให้ตาม Price , มี ComPrice  คือให้ตาม Com Price
+If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}="KB" then
+    If {?prnCurr}<>1 Then
+        Formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})
+    Else
+        formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)
+    End If
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchrAvgCom_cbm} -----
+Shared CurrencyVar nCostAvgComCbm;
+Round( nCostAvgComCbm * {@n_cbm_ratio} , 2)
+
+
+----- {@n_vchrAvgCom_kgs} -----
+Shared CurrencyVar nCostAvgComKgs;
+If {SFJOB.GW}=0 Then
+    nCostAvgComKgs
+Else
+    Round( nCostAvgComKgs*{SFHBL.GW}/{SFJOB.GW}, 2)
+
+----- {@n_vchrAvgCom_shp} -----
+Shared CurrencyVar nCostAvgComShp;
+if isnull({SFJOB.TOTBL}) Then
+    Round( nCostAvgComShp ,2)
+else if {SFJOB.TOTBL}=0 Then
+    Round( nCostAvgComShp ,2)
+Else
+    Round( nCostAvgComShp * 1/{SFJOB.TOTBL},2)    
+
+
+----- {@n_vchrAvgComKB_cbm} -----
+Shared CurrencyVar nCostAvgComCbm_na;
+Round( nCostAvgComCbm_na * {@n_cbm_ratio} , 2)
+
+
+----- {@n_vchrAvgComKB_kgs} -----
+Shared CurrencyVar nCostAvgComKgs_na;
+If {SFJOB.GW}=0 Then
+    nCostAvgComKgs_na
+Else
+    Round( nCostAvgComKgs_na * {SFHBL.GW}/{SFJOB.GW}, 2)
+
+
+----- {@n_vchrAvgComKB_shp} -----
+Shared CurrencyVar nCostAvgComShp_na;
+if isnull({SFJOB.TOTBL}) Then
+    Round( nCostAvgComShp_na ,2)
+else if {SFJOB.TOTBL}=0 Then
+    Round( nCostAvgComShp_na ,2)
+Else
+    Round( nCostAvgComShp_na * 1/{SFJOB.TOTBL},2)    
+
+
+----- {@n_BillAvg_do} -----
+Shared CurrencyVar nBillAvgDO;
+if IsNull({SFJOB.TOTDO}) Then
+    0
+Else if {SFJOB.TOTDO}>0 Then
+    Round( nBillAvgDO * {SFHBL.TOTDO}/{SFJOB.TOTDO},2)    
+Else
+    Round( nBillAvgDO ,2)
+
+
+----- {@n_BillAvgCom_do} -----
+Shared CurrencyVar nBillAvgComDO;
+if isNull({SFJOB.TOTDO}) Then
+    0
+Else if {SFJOB.TOTDO}>0 Then
+    Round( nBillAvgComDO * {SFHBL.TOTDO}/{SFJOB.TOTDO},2)    
+Else
+    Round( nBillAvgComDO ,2)
+
+
+----- {@n_vchrAvg_do} -----
+Shared CurrencyVar nCostAvgDO;
+if isnull({SFJOB.TOTDO}) Then
+    0
+Else if {SFJOB.TOTDO}>0 Then
+    Round( nCostAvgDO * {SFHBL.TOTDO}/{SFJOB.TOTDO},2)    
+Else
+    Round( nCostAvgDO ,2)
+
+
+----- {@n_vchrAvgCom_do} -----
+Shared CurrencyVar nCostAvgComDO;
+if isnull({SFJOB.TOTDO}) Then
+    0
+Else if {SFJOB.TOTDO}>0 Then
+    Round( nCostAvgComDO * {SFHBL.TOTDO}/{SFJOB.TOTDO},2)    
+Else
+    Round( nCostAvgComDO ,2)
+
+----- {@n_vchrAvgComKB_do} -----
+Shared CurrencyVar nCostAvgComDO_KB;
+if isnull({SFJOB.TOTDO}) Then
+    0
+Else if {SFJOB.TOTDO}>0 Then
+    Round( nCostAvgComDO_KB * {SFHBL.TOTDO}/{SFJOB.TOTDO},2)    
+Else
+    Round( nCostAvgComDO_KB ,2)
+
+----- {@n_vchrAvgkb_do} -----
+Shared CurrencyVar nCostAvgDoKB;
+if isnull({SFJOB.TOTDO}) Then
+    0
+Else if {SFJOB.TOTDO}>0 Then
+    Round( nCostAvgDoKB * 1/{SFJOB.TOTDO},2)    
+Else
+    Round( nCostAvgDoKB ,2)
+
+----- {@cFilterCap05} -----
+Dim strVar() as String 
+strVar = Split ({?FilterCap},"|")
+if ubound(strvar) > 4 then
+    formula=strVar(5)
+Else    
+    formula=""
+End if
+
+
+----- {@cFilterCap06} -----
+Dim strVar() as String 
+strVar = Split ({?FilterCap},"|")
+if ubound(strvar) > 5 then
+    formula=strVar(6)
+Else    
+    formula=""
+End if
+
+
+----- {@cFilter05} -----
+Dim strVar() as String 
+strVar = Split ({?FilterBy},"|")
+if ubound(strvar) > 4 then
+    formula=strVar(5)
+Else    
+    formula = ""
+End if
+
+
+----- {@cFilter06} -----
+Dim strVar() as String 
+strVar = Split ({?FilterBy},"|")
+if ubound(strvar) > 5 then
+    formula=strVar(6)
+Else    
+    formula = ""
+End if
+
+
+----- {@_nDO2} -----
+If {SFHBL.DOCNO}={SFHBL.JOBNO} Then
+    Formula=0
+Else
+    Formula={SFHBL.TOTDO}
+End If
+
+
+----- {@VarPrnDORep} -----
+Shared NumberVar nDOByJob;
+Shared NumberVar nDOByHouse;
+//If ({?chgGroup1} <> "Job Reference" And {?chgGroup2}="House B/L") then 
+If {?chgGroup2}="House B/L" then 
+    nDOByHouse
+else 
+    nDOByJob
+
+
+----- {@VarPrnDoGroup} -----
+Shared NumberVar nDOByGroup;
+nDOByGroup
+
+
+----- {@VarCalMar} -----
+Shared CurrencyVar nSumHouse_Mar_ByGroup;
+Shared CurrencyVar xBillRevThb2;
+Shared CurrencyVar xVchrThb2;
+Shared CurrencyVar xVchrKB2;
+Shared CurrencyVar nSumHouse_KB_ByGroup;
+If Not {@isSuppressHBL} Then
+    (
+    nSumHouse_Mar_ByGroup:=nSumHouse_Mar_ByGroup+{@prnMarThbHbl} ;
+    xBillRevThb2:=xBillRevThb2+{@prnBillRevThb} ;
+    xVchrThb2:=xVchrThb2+{@prnxVchrThb};
+    xVchrKB2:=xVchrKB2+{@prnxVchrKB};
+    nSumHouse_KB_ByGroup:=nSumHouse_KB_ByGroup+{@nHouse_KB};
+    )
+Else
+    (
+    nSumHouse_Mar_ByGroup:=nSumHouse_Mar_ByGroup+0 ;
+    xBillRevThb2:=xBillRevThb2+0;
+    xVchrThb2:=xVchrThb2+0;
+    xVchrKB2:=xVchrKB2+0;
+    nSumHouse_KB_ByGroup:=nSumHouse_KB_ByGroup+0;
+    )
+
+----- {@nT20} -----
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS"  Then
+    {CSJOB.CTN20}
+Else
+    (
+    If Right({SFJOB.LOADTYPE},3)<>"LCL" Then
+        {SFJOB.CTN20}
+    Else
+        0
+    )
+
+----- {@nT40} -----
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    {CSJOB.CTN40}
+Else
+    (
+    If Right({SFJOB.LOADTYPE},3)<>"LCL" Then
+        {SFJOB.CTN40}
+    Else
+        0
+    )
+
+----- {@nT40HQ} -----
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    {CSJOB.CTN40HQ}
+Else
+    (
+    If Right({SFJOB.LOADTYPE},3)<>"LCL" Then
+        {SFJOB.CTN40HC}
+    Else
+        0
+    )
+
+----- {@nT45} -----
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    {CSJOB.CTN45}
+Else
+    (
+    If Right({SFJOB.LOADTYPE},3)<>"LCL" Then
+        {SFJOB.CTN45}
+    Else
+        0
+    )
+
+----- {@prnBillRevThb} -----
+{@xBillRevThb}
+
+----- {@prnxVchrKB} -----
+{@xVchrKB}
+
+----- {@prnxVchrThb} -----
+{@xVchrThb}
+
+----- {@VarCalSaleByJob} -----
+Shared NumberVar nSaleRev;
+Shared NumberVar nSaleCostKB;
+Shared NumberVar nSaleCost;
+Shared NumberVar nSaleAdv;
+Shared NumberVar nSaleGW;
+Shared NumberVar nSaleCBM;
+Shared NumberVar nSaleBL;
+Shared NumberVar nSaleDO;
+If {@isSuppressHBL} Then
+    (
+    nSaleRev:=nSaleRev ;
+    nSaleCostKB:=nSaleCostKB ;
+    nSaleCost:=nSaleCost ;
+    nSaleAdv:=nSaleAdv ;
+    nSaleGW:=nSaleGW ;
+    nSaleCBM:=nSaleCBM ;
+    nSaleBL:=nSaleBL ;
+    nSaleDO:=nSaleDO ;
+    )
+Else
+    (
+    nSaleRev:=nSaleRev+{@prnBillRevThb};
+    nSaleCostKB:=nSaleCostKB+{@prnxVchrKB};
+    nSaleCost:=nSaleCost+{@prnxVchrThb};
+    nSaleAdv:=nSaleAdv+Cdbl({@prnxDiffAdv});
+    nSaleGW:=nSaleGW+{#r_sum_gw_hbl};
+    nSaleCBM:=nSaleCBM+{#r_sum_cbm_hbl};
+    nSaleBL:=nSaleBL+{@_nBL2};
+    nSaleDO:=nSaleDO+{@_nDO2};
+    )
+
+----- {@prnSaleRev} -----
+Shared NumberVar nSaleRev;
+nSaleRev;
+
+
+----- {@VarSetSale} -----
+Shared NumberVar nSaleRev:=0;
+Shared NumberVar nSaleCostKB:=0;
+Shared NumberVar nSaleCost:=0;
+Shared NumberVar nSaleAdv:=0;
+Shared NumberVar nSaleGW:=0;
+Shared NumberVar nSaleCBM:=0;
+Shared NumberVar nSaleBL:=0;
+Shared NumberVar nSaleDO:=0;
+
+Shared CurrencyVar nDiffAdv:=0;
+
+
+----- {@prnSaleCostKB} -----
+Shared NumberVar nSaleCostKB;
+nSaleCostKB;
+
+
+----- {@prnSaleCost} -----
+Shared NumberVar nSaleCost;
+nSaleCost;
+
+
+----- {@prnSaleAdv} -----
+Shared NumberVar nSaleAdv;
+nSaleAdv;
+
+
+----- {@prnSaleMar} -----
+Shared NumberVar nSaleRev;
+Shared NumberVar nSaleCostKB;
+Shared NumberVar nSaleCost;
+{#rtDiffAdv}+(nSaleRev-nSaleCostKB-nSaleCost)
+
+----- {@prnSaleGW} -----
+Shared NumberVar nSaleGW;
+nSaleGW;
+
+
+----- {@prnSaleCBM} -----
+Shared NumberVar nSaleCBM;
+nSaleCBM;
+
+----- {@prnSaleBL} -----
+Shared NumberVar nSaleBL;
+nSaleBL;
+
+----- {@prnSaleDO} -----
+Shared NumberVar nSaleDO;
+nSaleDO;
+
+----- {@prnxDiffAdv} -----
+Shared CurrencyVar nDiffAdv;
+nDiffAdv
+
+----- {@VarCalAdvByJob} -----
+Shared CurrencyVar nDiffAdv;
+Shared CurrencyVar nSumADV_ByGroup;
+nSumADV_ByGroup := nSumADV_ByGroup+nDiffAdv;
+
+
+----- {@prnVarAdv_ByGroup} -----
+Shared CurrencyVar nSumADV_ByGroup;
+nSumADV_ByGroup
+
+----- {@nDocBalOP} -----
+If {OPTRANSDETAIL.DOCTYPE}="CN" Then
+    -1
+Else
+    1
+
+----- {@isOversea} -----
+If {OPTRANSDETAIL.PCTYPE}="CC" Then
+    {OPTRANSDETAIL.JOBCLASS}="EX"
+Else If {OPTRANSDETAIL.PCTYPE}="PP" Then
+    {OPTRANSDETAIL.JOBCLASS}="IM"
+Else
+    False    
+
+----- {@n_vchr_Agent} -----
+'Elseif {OPTRANSDETAIL.PCTYPE}="CC" and {OPTRANSDETAIL.JOBCLASS}="EX" then
+'    formula = {@nDetGrossAgent}*{@nDocBal}*{@nDocBalAgent}
+'Elseif {OPTRANSDETAIL.PCTYPE}="PP" and {OPTRANSDETAIL.JOBCLASS}="IM" then
+'    formula = {@nDetGrossAgent}*{@nDocBal}*{@nDocBalAgent}
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {ARINVHEAD.LOCOVER}=2 then
+    formula = {@nDetGrossAgent}*{@nDocBal}*{@nDocBalAgent}
+Else
+    formula = 0
+End if
+'
+'การณี Saleperson : {SFHBL.DOCTYPE}="Allocated"
+'   จำนวนใน Allocated HB/L ต้องไม่นำไปเป็น Direct Amount
+'   เพราะถ้ามี Allocated แต่ไม่มี HB/L  จะำทำให้จำนวน Double
+'   Ex.AE0812/00006 ของ PAC
+'If {?chgGroup1}="Saleperson" And {?chgGroup2}="House B/L" Then
+'    If {SFHBL.DOCTYPE}="Allocated" Then
+'        If {SFJOB.SUB_SYSNAME}="CS" Then
+'            formula = formula
+'        Else
+'            formula = 0
+'        End If
+'    ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+'        formula = 0
+'    Else
+'        If {@n_cost_com_na}<>0 then 
+'            formula = {@n_cost_com_na}
+'        Else
+'            formula = formula
+'        End If
+'    End If
+'Else
+'    formula = formula
+'End If
+
+----- {@nDetGrossAgent} -----
+If {OPTRANSDETAIL.PCTYPE}="N/A" Then
+    formula = 0
+ElseIf {ARINVDETAIL.CALCURR}<>"THB" Then
+    formula = IIF({@isVATIO},CDbl({ARINVDETAIL.SRCTOT}),CDbl({ARINVDETAIL.SRCAMT}))
+Else
+    formula = IIF({@isVATIO},CDbl({ARINVDETAIL.THBTOT}),CDbl({ARINVDETAIL.THBAMT}))
+    formula = formula * (1/{SFJOB.JOBRATE})
+End If
+formula = Round(formula,2)
+
+
+----- {@nDetGrossAgentThb} -----
+If {OPTRANSDETAIL.PCTYPE}="N/A" Then
+    formula = 0
+Else
+    formula = IIF({@isVATIO},CDbl({ARINVDETAIL.THBTOT}),CDbl({ARINVDETAIL.THBAMT}))
+End If
+formula = Round(formula,2)
+
+
+----- {@n_vchr_Agent_Thb} -----
+'Elseif {OPTRANSDETAIL.PCTYPE}="CC" and {OPTRANSDETAIL.JOBCLASS}="EX" then
+'    formula = {@nDetGrossAgentThb}*{@nDocBal}*{@nDocBalAgent}
+'Elseif {OPTRANSDETAIL.PCTYPE}="PP" and {OPTRANSDETAIL.JOBCLASS}="IM" then
+'    formula = {@nDetGrossAgentThb}*{@nDocBal}*{@nDocBalAgent}
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {ARINVHEAD.LOCOVER}=2 then
+    formula = {@nDetGrossAgentThb}*{@nDocBal}*{@nDocBalAgent}
+Else
+    formula = 0
+End if
+'
+'การณี Saleperson : {SFHBL.DOCTYPE}="Allocated"
+'   จำนวนใน Allocated HB/L ต้องไม่นำไปเป็น Direct Amount
+'   เพราะถ้ามี Allocated แต่ไม่มี HB/L  จะำทำให้จำนวน Double
+'   Ex.AE0812/00006 ของ PAC
+'If {?chgGroup1}="Saleperson" And {?chgGroup2}="House B/L" Then
+'    If {SFHBL.DOCTYPE}="Allocated" Then
+'        If {SFJOB.SUB_SYSNAME}="CS" Then
+'            formula = formula
+'        Else
+'            formula = 0
+'        End If
+'    ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+'        formula = 0
+'    Else
+'        If {@n_cost_com_na}<>0 then 
+'            formula = {@n_cost_com_na}
+'        Else
+'            formula = formula
+'        End If
+'    End If
+'Else
+'    formula = formula
+'End If
+
+----- {@nDocBalAgent} -----
+If {OPTRANSDETAIL.TRANSTYPE} = "Bill" Then
+    IIF({OPTRANSDETAIL.DOCTYPE}="CN" ,-1,1)
+Else
+    IIF({OPTRANSDETAIL.DOCTYPE}="CN" ,1,-1)
+
+
+----- {@n_cost_com_cs} -----
+'กรณี ไม่ใช่ N/A =>  {OPTRANSDETAIL.SALETEXTRATE}=0 คือไม่ให้ , ว่าง  คือให้ตาม Price , มี ComPrice  คือให้ตาม Com Price
+If IsNull({OPTRANSDETAIL.ITEMTEXTRATE}) Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.ITEMTEXTRATE})="" Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.ITEMTEXTRATE})="0" Then
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+    If {?prnCurr}<>1 Then
+        'Formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.UNITPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.ITEMRATE})
+        If {OPTRANSDETAIL.ITEMTYPE}="ADV" then
+            formula = {@nDetTotal}*{@nDocBal}
+        Else
+            formula = {@nDetGross}*{@nDocBal}
+        End If
+    Else
+        formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.UNITPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.ITEMRATE},1)
+    End If
+Else
+    formula = 0
+End if
+
+
+----- {@n_cost_com_na_cs} -----
+'กรณี ไม่ใช่ N/A =>  {OPTRANSDETAIL.SALETEXTRATE}=0 คือไม่ให้ , ว่าง  คือให้ตาม Price , มี ComPrice  คือให้ตาม Com Price
+If IsNull({OPTRANSDETAIL.ITEMTEXTRATE}) Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.ITEMTEXTRATE})="" Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.ITEMTEXTRATE})="0" Then
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}="KB" then
+    If {?prnCurr}<>1 Then
+        Formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.UNITPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.ITEMRATE})
+    Else
+        formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.UNITPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.ITEMRATE},1)
+    End If
+Else
+    formula = 0
+End if
+
+
+----- {@n_bill_com_cs} -----
+'Com ตาม Direct House B/L
+If IsNull({OPTRANSDETAIL.ITEMTEXTRATE}) Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.ITEMTEXTRATE})="" Then
+    Formula = 0
+ElseIf Trim({OPTRANSDETAIL.ITEMTEXTRATE})="0" Then
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+    If {?prnCurr}<>1 Then
+        'Formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.UNITPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.ITEMRATE})
+        If {OPTRANSDETAIL.ITEMTYPE}="ADV" then
+            formula = {@nDetTotal}*{@nDocBal}
+        Else
+            formula = {@nDetGross}*{@nDocBal}
+        End If
+    Else
+        formula = {@nDocBalOP}*{OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.UNITPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.ITEMRATE},1)
+    End If
+Else
+    formula = 0
+End if
+
+
+----- {@isGroupByJob} -----
+({?chgGroup1} = "Job Reference" and {?chgGroup2}="None")   
+OR   
+({?chgGroup1} <> "Job Reference" and {?chgGroup2}="Job Reference")   
+
+
+----- {@VarCalMar2} -----
+Shared CurrencyVar nSumHouse_Mar_ByGroup;
+Shared CurrencyVar xBillRevThb2;
+Shared CurrencyVar xVchrThb2;
+Shared CurrencyVar xVchrKB2;
+Shared CurrencyVar nSumHouse_KB_ByGroup;
+If Not {@isSuppressHBL} Then
+    (
+    nSumHouse_Mar_ByGroup:=nSumHouse_Mar_ByGroup+{@prnMarThbHbl} ;
+    xBillRevThb2:=xBillRevThb2+{@prnBillRevThb} ;
+    xVchrThb2:=xVchrThb2+{@prnxVchrThb};
+    xVchrKB2:=xVchrKB2+{@prnxVchrKB};
+    nSumHouse_KB_ByGroup:=nSumHouse_KB_ByGroup+{@nHouse_KB};
+    )
+Else
+    (
+    nSumHouse_Mar_ByGroup:=nSumHouse_Mar_ByGroup+0 ;
+    xBillRevThb2:=xBillRevThb2+0;
+    xVchrThb2:=xVchrThb2+0;
+    xVchrKB2:=xVchrKB2+0;
+    nSumHouse_KB_ByGroup:=nSumHouse_KB_ByGroup+0;
+    )
+
+----- {@t_HBLPort} -----
+iF {SFJOB.JOBCLASS}="IM" THEN
+    (If {SFHBL.RECPORT}<>{SFJOB.RECPORT} Then
+        {SFHBL.RECPORT}+"/"+{SFJOB.RECPORT}
+    Else
+        {SFJOB.RECPORT})
+Else
+    {SFJOB.DELPORT}
+
+----- {@t_ShipperH} -----
+If {SFJOB.SUB_SYSNAME}="SF" Then
+    (
+    If {SFJOB.JOBCLASS}="EX" Then
+        {SFHBL.SHIPPERNAME}
+    Else
+        (
+        If {SFJOB.TOTDO}<=0 Then
+            {SFJOB.EXPORTERNAME}
+        Else
+            {SFHBL.CONSIGNEENAME}
+        )
+    )
+ELSE If {SFJOB.SUB_SYSNAME}="CS" Then
+    (
+    If {SFJOB.JOBCLASS}="EX" Then
+        {SFHBL.SHIPPERNAME}
+    Else
+        {SFHBL.CONSIGNEENAME}
+    )
+Else
+    {SFJOB.EXPORTERNAME}
+
+----- {@prnVchrThbOth} -----
+{#rtVchrThb}-{#rtDiffAdv}
+
+----- {@prnVchrThbOth_Net} -----
+{#rtVchrThb3}-{#rtDiffAdv3}
+
+----- {@new1} -----
+Shared CurrencyVar new1;
+new1
+
+----- {@new2} -----
+Shared CurrencyVar new2;
+new2
+
+----- {@new3} -----
+Shared CurrencyVar new2;
+Shared CurrencyVar new3;
+new2+new3
+
+----- {@VarCal_New} -----
+Shared CurrencyVar new1;
+Shared CurrencyVar new2;
+Shared CurrencyVar new3;
+Shared CurrencyVar new4;
+Shared CurrencyVar new5;
+Shared CurrencyVar new6;
+Shared CurrencyVar new7;
+Shared NumberVar new8;
+Shared NumberVar new11;
+Shared NumberVar new12;
+Shared NumberVar new13;
+Shared NumberVar new14;
+new1:=new1+{@xBillRevThb};
+new2:=new2+{@prnxVchrThb};
+new3:=new3+{@prnxVchrKB};
+new4:=new4+{#rtVchrAgent2};
+new5:=new5+{#rtVchrAgentThb2};
+new6:=new6+{#rtDiffAdv2};
+new7:=new7+{@prnMarThbHbl};
+new8:=new8+{@t_totaljob2};
+new11:=new11+{#r_20_job1};
+new12:=new12+{#r_40_job1};
+new13:=new13+{#r_40HQ_job1};
+new14:=new14+{#r_45_job1};
+
+
+----- {@new4} -----
+Shared CurrencyVar new4;
+new4
+
+----- {@new5} -----
+Shared CurrencyVar new5;
+new5
+
+----- {@new6} -----
+Shared CurrencyVar new6;
+new6
+
+----- {@new7} -----
+Shared CurrencyVar new7;
+new7
+//Shared CurrencyVar new1;
+//Shared CurrencyVar new2;
+//Shared CurrencyVar new3;
+//new1-new2-new3;
+
+----- {@new8} -----
+//Shared NumberVar new8;
+//new8
+{SFJOB.TOTBL}
+
+----- {@new9} -----
+Shared NumberVar new9;
+new9
+
+----- {@new10} -----
+Shared NumberVar new10;
+new10
+
+----- {@new11} -----
+Shared NumberVar new11;
+new11
+
+----- {@new12} -----
+Shared NumberVar new12;
+new12
+
+----- {@new13} -----
+Shared NumberVar new13;
+new13
+
+----- {@new14} -----
+Shared NumberVar new14;
+new14
+
+----- {@xVchrKB2A} -----
+Shared CurrencyVar xVchrKB2A;
+//If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+//    {#rtVchrKB}
+//Else If {?AvgBy}="COST" Or {?AvgBy}="ALL" Then
+//    xVchrKB2A
+//Else
+//    {#rtVchrKB}
+xVchrKB2A
+
+----- {@VarCalSaleByJob2A} -----
+Shared CurrencyVar xVchrKB2A;
+xVchrKB2A:=xVchrKB2A+{#rtVchrKB};
+//
+//If {@isSuppressHBL} Then
+//    (
+//    xVchrKB2A:=xVchrKB2A ;
+//    )
+//Else
+//    (
+//    xVchrKB2A:=xVchrKB2A+{#rtVchrKB};
+//    )
+
+----- {@prnSaleKB} -----
+If {?chgGroup1}="Saleperson" Then
+{@xVchrKB2A}
+Else If {?chgGroup1}="Job Reference" Then
+{@xVchrKB2}
+Else
+{#rtVchrKb2}
+
+----- {@prnMarThb4} -----
+{#rtDiffAdv3}+{#rtDiffRev3}-{#rtDiffAdv3}
+
+----- {@prnxVchrThb2} -----
+{@xVchrThb2}-{#rtDiffAdv2}
+
+----- {@prnMarThb5} -----
+{@xBillRevThb2}-{@prnSaleKB}-{@prnxVchrThb2}
+
+----- {@VarCal_New2} -----
+Shared NumberVar new9;
+Shared NumberVar new10;
+If {@isHideGF1B} Then
+    (
+    new9:=new9+{#r_sum_gw_job1};
+    new10:=new10+{#r_sum_cbm_job1};
+    )
+Else
+    (
+    new9:=new9+{#r_sum_gw_job2};
+    new10:=new10+{#r_sum_cbm_job2};
+    )
+
+----- {@isHideGF1B} -----
+Not (   {?chgGroup1}<>"Job Reference" And Not ({?chgGroup2}="None" Or {?chgGroup2}="Job Reference")  )
+
+
+----- {@xConsolRev} -----
+If IsNull({#rtBillRevThb_Consol}) Then
+    Formula=0
+Else
+    Formula={#rtBillRevThb_Consol}
+End If
+
+
+----- {@n_billrev_thb_consol} -----
+If isnull({ARINVDETAIL.DETID}) then
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then
+    Formula = 0
+ElseIf {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+    if {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+        If {OPTRANSDETAIL.ITEMTYPE}="ADV" then
+            formula = {@nDetTotal}*{@nDocBal}
+        Else
+            formula = {@nDetGross}*{@nDocBal}
+        End If
+    Else
+         formula = 0
+    End if
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    if {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+        If {OPTRANSDETAIL.ITEMTYPE}="ADV" then
+            formula = {@nDetTotal}*{@nDocBal}
+        Else
+            formula = {@nDetGross}*{@nDocBal}
+        End If
+    Else
+         formula = 0
+    End if
+Else
+    Formula = 0
+End if
+'
+If {@n_vchr_n_a_consol}>0 Then
+    Formula = Formula+0
+Else
+    Formula = Formula+Abs({@n_vchr_n_a_consol})
+End If
+
+
+----- {@n_vchr_thb_consol} -----
+If isnull({ARINVDETAIL.DETID}) then
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then
+    Formula = 0
+ElseIf {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+    if {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+        If {OPTRANSDETAIL.ITEMTYPE} = "ADV" then
+            formula = {@nDetTotal}*{@nDocBal}
+        Else
+            formula = {@nDetGross}*{@nDocBal}
+        End If
+    Else
+         formula = 0
+    End if
+ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    if {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+        If {OPTRANSDETAIL.ITEMTYPE} = "ADV" Then
+            formula = {@nDetTotal}*{@nDocBal}
+        Else
+            formula = {@nDetGross}*{@nDocBal}
+        End If
+    Else
+         formula = 0
+    End if
+Else
+    Formula = 0
+End if
+'
+If {@n_vchr_n_a_consol}>0 Then
+    Formula = Formula+{@n_vchr_n_a_consol}
+Else
+    Formula = Formula+0
+End If
+
+
+----- {@xConsolCost} -----
+If IsNull({#rtVchrThb_consol}) Then
+    Formula=0
+Else
+    Formula={#rtVchrThb_consol}
+End If
+If {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+    formula = Formula+{@xVchrThb_Alloc}
+Else
+    formula = Formula+0
+End If
+
+
+
+----- {@t_HBLREF} -----
+//If {SFJOB.TOTBL}<=1 Then
+//    {SFJOB.JOBNO}
+//Else
+//    (
+    If {SFHBL.DOCNO}={SFHBL.JOBNO} Then
+    "@Alloc"
+    Else
+    {SFHBL.DOCNO}
+//    )
+
+
+----- {@n_vchr_n_a_consol} -----
+If {OPTRANSDETAIL.DOCTYPE}="N/A" Then
+    (If {OPTRANSDETAIL.TRANSTYPE}="Bill" Then
+        {@n_billrev_thb_net}
+    Else
+        -1*({@n_vchr_kb}+{@n_vchr_thb}+{@n_vchradv_thb})
+    )
+Else
+    0
+
+----- {@VarCal_New_Consol} -----
+Shared NumberVar newRevConsol;
+Shared NumberVar newCosConsol;
+If {@isHideGF1B} Then
+    (
+    newRevConsol:=newRevConsol+{@xConsolRev};
+    newCosConsol:=newCosConsol+{@xConsolCost};
+    )
+Else
+    (
+    newRevConsol:=newRevConsol+{@xConsolRev};
+    newCosConsol:=newCosConsol+{@xConsolCost};
+    )
+
+----- {@newConRev} -----
+//Shared NumberVar newCosConsol;
+Shared NumberVar newRevConsol;
+newRevConsol;
+
+----- {@newConCos} -----
+//Shared NumberVar newRevConsol;
+Shared NumberVar newCosConsol;
+newCosConsol;
+
+----- {@xConsolMargin} -----
+{@xConsolRev}-{@xConsolCost}
+
+----- {@newConMargin} -----
+Shared NumberVar newRevConsol;
+Shared NumberVar newCosConsol;
+newRevConsol-newCosConsol;
+
+----- {@nNetProfit} -----
+{@newConMargin}+{@new7}
+
+----- {@n_Bill_thb_int} -----
+if {OPTRANSDETAIL.DOCTYPE}="N/A" then
+    If {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+        If {@n_billrev_thb_consol}>0 Then
+            Formula = {@n_billrev_thb_consol}
+        Else
+            Formula = 0
+        End If
+    Else
+        If {@n_billrev_thb_consol}>0 Then
+            Formula = -1 * Abs({@n_vchr_thb_consol})
+        Else
+            Formula = 0
+        End If
+    End If
+Else
+    If isnull({ARINVDETAIL.DETID}) then
+        Formula = 0
+    ElseIf {ARINVHEAD.POSTENTRY}=3 then
+        Formula = 0
+    Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" And {ARINVHEAD.DOCTYPE}="NN" then
+        Formula = {@n_billrev_thb_net}
+    Else
+        Formula = 0
+    End if
+End if
+
+
+----- {@n_vchr_thb_int} -----
+if {OPTRANSDETAIL.DOCTYPE}="N/A" then
+
+    If {SFHBL.SALENO}={SFHBL_M.SALENO} Then
+        If {@n_vchr_thb_consol}>0 Then
+            Formula = {@n_vchr_thb_consol}
+        Else
+            Formula = 0
+        End If
+    Else
+        If {@n_billrev_thb_consol}>0 Then
+            Formula = -1*Abs({@n_billrev_thb_consol})
+        Else
+            Formula = 0
+        End If
+    End If
+
+Else
+    If isnull({ARINVDETAIL.DETID}) then
+        Formula = 0
+    ElseIf {ARINVHEAD.POSTENTRY}=3 then
+        Formula = 0
+    Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {ARINVHEAD.DOCTYPE}="NN" then
+        Formula = {@n_vchr_thb}+{@n_vchr_kb}
+    Else
+        Formula = 0
+    End if
+End if
+
+
+----- {@isVATIO} -----
+//If {OPTRANSDETAIL.VATINOUT}=1 Then
+//    True
+//Else
+//    False
+//
+False
+
+----- {@xBillRevThb_Alloc} -----
+'จาก Alloctae HB/L
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    Formula=0
+ElseIf {SFJOB.TOTBL}<=1 Then
+    Formula=0
+ElseIf {?AvgBy}="REVENUE" Or {?AvgBy}="ALL" Then
+    'จาก Alloctae HB/L
+    If {?chgGroup1}="Saleperson" Then
+        Formula=ToNumber({@n_BillAvgCom_cbm})+ToNumber({@n_BillAvgCom_shp})+ToNumber({@n_BillAvgCom_kgs})+ToNumber({@n_BillAvgCom_do})
+     Else
+        'เอา Direct+Allocate
+        Formula=ToNumber({@n_BillAvg_cbm})+ToNumber({@n_BillAvg_kgs})+ToNumber({@n_BillAvg_shp})+ToNumber({@n_BillAvg_do})
+    End If
+Else
+    'จาก Direct HB/L
+    Formula=0
+End if
+
+
+----- {@xVchrThb_Alloc} -----
+'จาก Alloctae HB/L
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    Formula=0
+ElseIf {SFJOB.TOTBL}<=1 Then
+    Formula=0
+ElseIf {?AvgBy}="COST" Or {?AvgBy}="ALL" Then
+    'จาก Alloctae HB/L
+    If {?chgGroup1}="Saleperson" Then
+        'จาก Allocate
+        Formula=ToNumber({@n_vchrAvgComKB_cbm})+ToNumber({@n_vchrAvgComKB_kgs})+ToNumber({@n_vchrAvgComKB_shp})+ToNumber({@n_vchrAvgComKB_do})
+    Else
+        'เอา Direct+Allocate
+        Formula=ToNumber({@n_vchrAvgkb_cbm})+ToNumber({@n_vchrAvgkb_kgs})+ToNumber({@n_vchrAvgkb_shp})+ToNumber({@n_vchrAvgkb_do})
+    End If
+Else
+    'จาก Direct HB/L
+    Formula=0
+End if
+
+If {SFJOB.SUB_SYSNAME}="CS" OR {SFJOB.SUB_SYSNAME}="TS" Then
+    Formula=Formula + 0
+ElseIf {SFJOB.TOTBL}<=1 Then
+    Formula=Formula + 0
+ElseIf {?AvgBy}="COST" Or {?AvgBy}="ALL" Then
+    'จาก Alloctae HB/L
+    If {?chgGroup1}="Saleperson" Then
+        'จาก Allocate
+        Formula=Formula + ToNumber({@n_vchrAvgCom_cbm})+ToNumber({@n_vchrAvgCom_kgs})+ToNumber({@n_vchrAvgCom_shp})+ToNumber({@n_vchrAvgCom_do})
+    Else
+        'เอา Direct+Allocate
+        Formula=Formula + ToNumber({@n_vchrAvg_cbm})+ToNumber({@n_vchrAvg_kgs})+ToNumber({@n_vchrAvg_shp})+ToNumber({@n_vchrAvg_do})
+    End If
+Else
+    'จาก Direct HB/L
+    Formula=Formula + 0
+End if
+
+----- {@prnxVchrThbTot} -----
+{@xVchrThb}+{@xVchrKB}
+
+----- {@n_vchr_thb_tot} -----
+{@n_vchr_kb}+{@n_vchr_thb}
+
+=== RUNNING TOTALS ===
+  {#r_cbm_rep} : field= op= evalCond= resetCond=
+  {#r_tues_rep} : field= op= evalCond= resetCond=
+  {#r_sum_cbm_job} : field= op= evalCond= resetCond=
+  {#r_sum_tues_job1} : field= op= evalCond= resetCond=
+  {#r_sum_gw_job} : field= op= evalCond= resetCond=
+  {#r_gw_rep} : field= op= evalCond= resetCond=
+  {#r_sum_cbm_hbl} : field= op= evalCond= resetCond=
+  {#r_sum_gw_hbl} : field= op= evalCond= resetCond=
+  {#r_sum_cbm_job1} : field= op= evalCond= resetCond=
+  {#r_sum_gw_job1} : field= op= evalCond= resetCond=
+  {#rtBillRevThb} : field= op= evalCond= resetCond=
+  {#rtBillRevThb2} : field= op= evalCond= resetCond=
+  {#rtBillRevThb3} : field= op= evalCond= resetCond=
+  {#rtBillRefThb} : field= op= evalCond= resetCond=
+  {#rtBillRefThb2} : field= op= evalCond= resetCond=
+  {#rtBillRefThb3} : field= op= evalCond= resetCond=
+  {#rtVchrThb} : field= op= evalCond= resetCond=
+  {#rtVchrThb2} : field= op= evalCond= resetCond=
+  {#rtVchrThb3} : field= op= evalCond= resetCond=
+  {#rtVchrKb2} : field= op= evalCond= resetCond=
+  {#rtVchrKb3} : field= op= evalCond= resetCond=
+  {#rtDiffAdv} : field= op= evalCond= resetCond=
+  {#rtDiffAdv2} : field= op= evalCond= resetCond=
+  {#rtDiffAdv3} : field= op= evalCond= resetCond=
+  {#rtDiffRev} : field= op= evalCond= resetCond=
+  {#rtDiffRev2} : field= op= evalCond= resetCond=
+  {#rtDiffRev3} : field= op= evalCond= resetCond=
+  {#r_sum_cbm_job2} : field= op= evalCond= resetCond=
+  {#r_sum_gw_job2} : field= op= evalCond= resetCond=
+  {#r_sum_tues_job2} : field= op= evalCond= resetCond=
+  {#r_20_job1} : field= op= evalCond= resetCond=
+  {#r_40_job1} : field= op= evalCond= resetCond=
+  {#r_40HQ_job1} : field= op= evalCond= resetCond=
+  {#r_45_job1} : field= op= evalCond= resetCond=
+  {#r_20_job2} : field= op= evalCond= resetCond=
+  {#r_40_job2} : field= op= evalCond= resetCond=
+  {#r_40HQ_job2} : field= op= evalCond= resetCond=
+  {#r_45_ob2} : field= op= evalCond= resetCond=
+  {#r_20_rep} : field= op= evalCond= resetCond=
+  {#r_40_rep} : field= op= evalCond= resetCond=
+  {#r_40HQ_rep} : field= op= evalCond= resetCond=
+  {#r_45_rep} : field= op= evalCond= resetCond=
+  {#r_sum_cbm_job3} : field= op= evalCond= resetCond=
+  {#r_sum_gw_job3} : field= op= evalCond= resetCond=
+  {#rtVchrKB} : field= op= evalCond= resetCond=
+  {#rtVchrKB3} : field= op= evalCond= resetCond=
+  {#r_sum_do_GMain} : field= op= evalCond= resetCond=
+  {#r_sum_do_rep} : field= op= evalCond= resetCond=
+  {#rtVchrAgent} : field= op= evalCond= resetCond=
+  {#rtVchrAgentThb} : field= op= evalCond= resetCond=
+  {#rtVchrAgent3} : field= op= evalCond= resetCond=
+  {#nVchrAgentThb3} : field= op= evalCond= resetCond=
+  {#rtVchrAgent2} : field= op= evalCond= resetCond=
+  {#rtVchrAgentThb2} : field= op= evalCond= resetCond=
+  {#rtBillRevThb_Consol} : field= op= evalCond= resetCond=
+  {#rtVchrThb_consol} : field= op= evalCond= resetCond=
+
+=== SUBREPORTS FOUND: 2 ===
+  ALLOC.rpt
+  ALLHBL.rpt - 01
+
+################################################################
+##  REPORT: SUBREPORT :: ALLOC.rpt
+################################################################
+
+=== TABLES ===
+  alias=SFJOB   location=SFJOB
+  alias=OPTRANSDETAIL   location=OPTRANSDETAIL
+  alias=CSJOB   location=CSJOB
+  alias=SFHBL_M   location=SFHBL
+  alias=ARINVDETAIL   location=ARINVDETAIL
+  alias=ARINVHEAD   location=ARINVHEAD
+
+=== LINKS: count=5 ===
+  SFJOB -> CSJOB
+      on {SFJOB.JOBNO}  =  {CSJOB.JOBNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  SFJOB -> SFHBL_M
+      on {SFJOB.JOBNO}  =  {SFHBL_M.DOCNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  SFHBL_M -> OPTRANSDETAIL
+      on {SFHBL_M.DOCNO}  =  {OPTRANSDETAIL.HBLREF}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  OPTRANSDETAIL -> ARINVDETAIL
+      on {OPTRANSDETAIL.REFINVDETID}  =  {ARINVDETAIL.DETID}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  ARINVDETAIL -> ARINVHEAD
+      on {ARINVDETAIL.INVNO}  =  {ARINVHEAD.INVNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+
+=== RECORD SELECTION ===
+  {SFJOB.JOBNO} = {?Pm-SFJOB.JOBNO}
+
+=== GROUP SELECTION ===
+  
+
+=== SQL EXPRESSIONS ===
+
+=== FORMULA FIELDS: count=30 ===
+----- {@nDetGross} -----
+'formula = Cdbl({ARINVDETAIL.SRCAMT}) * iif({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),1)
+If {?prnCurr}<>1 Then
+    formula = CDbl( {ARINVDETAIL.THBAMT} )
+Else
+    If {ARINVDETAIL.CALCURR}="THB" Then
+        formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({ARINVDETAIL.VATINOUT}=1,CDbl({ARINVDETAIL.SRCTOT}),CDbl({ARINVDETAIL.SRCAMT})))
+        formula = formula * IIF({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),{ARINVDETAIL.CALRATE})
+    ElseIf {ARINVDETAIL.CALCURR}="USD" Then
+        formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({ARINVDETAIL.VATINOUT}=1,CDbl({ARINVDETAIL.SRCTOT}),CDbl({ARINVDETAIL.SRCAMT})))
+        formula = formula * (1/{ARINVDETAIL.CALRATE})
+    Else
+        formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({ARINVDETAIL.VATINOUT}=1,CDbl({ARINVDETAIL.THBTOT}),CDbl({ARINVDETAIL.THBAMT})))
+        formula = formula * (1/{SFJOB.JOBRATE})
+    End If
+End If
+formula = Round(formula,2)
+
+
+----- {@nDocBal} -----
+If {OPTRANSDETAIL.TRANSTYPE} = "Bill" Then
+    IIF({ARINVHEAD.SRCTYPE}="AR" ,1,-1)
+Else
+    IIF({ARINVHEAD.SRCTYPE}="AP" ,1,-1)
+
+
+----- {@n_BillAvg_cbm} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"CBM" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@VarCal} -----
+Shared CurrencyVar nBillAvgCbm;
+Shared CurrencyVar nBillAvgKgs;
+Shared CurrencyVar nBillAvgShp;
+Shared CurrencyVar nBillAvgDO;
+
+Shared CurrencyVar nBillAvgComCbm;
+Shared CurrencyVar nBillAvgComKgs;
+Shared CurrencyVar nBillAvgComShp;
+Shared CurrencyVar nBillAvgComDO;
+
+Shared CurrencyVar nCostAvgCbm;
+Shared CurrencyVar nCostAvgKgs;
+Shared CurrencyVar nCostAvgShp;
+Shared CurrencyVar nCostAvgDO;
+
+Shared CurrencyVar nCostAvgCbmKB;
+Shared CurrencyVar nCostAvgKgsKB;
+Shared CurrencyVar nCostAvgShpKB;
+Shared CurrencyVar nCostAvgDoKB;
+
+Shared CurrencyVar nCostAvgComCbm;
+Shared CurrencyVar nCostAvgComKgs;
+Shared CurrencyVar nCostAvgComShp;
+Shared CurrencyVar nCostAvgComDO;
+Shared CurrencyVar nCostAvgComCbm_na;
+Shared CurrencyVar nCostAvgComKgs_na;
+Shared CurrencyVar nCostAvgComShp_na;
+Shared CurrencyVar nCostAvgComDO_KB;
+
+//if Left({SFJOB.LOADTYPE},6) <> "DIRECT" then
+//    (    
+    nBillAvgCbm:={#rtBillCbm};
+    nBillAvgKgs:={#rtBillKgs};
+    nBillAvgShp:={#rtBillShp};
+    nBillAvgDo:={#rtBillDo};
+
+    nBillAvgComCbm:={#rtBillComCbm};
+    nBillAvgComKgs:={#rtBillComKgs};
+    nBillAvgComShp:={#rtBillComShp};
+    nBillAvgComDo:={#rtBillComDo};
+
+    nCostAvgCbm:={#rtCostCbm};
+    nCostAvgKgs:={#rtCostKgs};
+    nCostAvgShp:={#rtCostShp};
+    nCostAvgDo:={#rtCostDo};
+
+    nCostAvgCbmKB:={#rtCostCbmKB};
+    nCostAvgKgsKB:={#rtCostKgsKB};
+    nCostAvgShpKB:={#rtCostShpKB};
+    nCostAvgDoKB:={#rtCostDoKB};
+
+    nCostAvgComCbm:={#rtCostComCbm};
+    nCostAvgComKgs:={#rtCostComKgs};
+    nCostAvgComShp:={#rtCostComShp};
+    nCostAvgComDo:={#rtCostComDo};
+
+    nCostAvgComCbm_na:={#rtCostComCbm_KB};
+    nCostAvgComKgs_na:={#rtCostComKgs_KB};
+    nCostAvgComShp_na:={#rtCostComShp_KB};
+    nCostAvgComDo_KB:={#rtCostComDo_KB};
+//    )
+
+
+----- {@VarSet} -----
+Shared CurrencyVar nBillAvgCbm:=0;
+Shared CurrencyVar nBillAvgKgs:=0;
+Shared CurrencyVar nBillAvgShp:=0;
+Shared CurrencyVar nBillAvgDO:=0;
+
+Shared CurrencyVar nBillAvgComCbm:=0;
+Shared CurrencyVar nBillAvgComKgs:=0;
+Shared CurrencyVar nBillAvgComShp:=0;
+Shared CurrencyVar nBillAvgComDO:=0;
+
+Shared CurrencyVar nCostAvgCbm:=0;
+Shared CurrencyVar nCostAvgKgs:=0;
+Shared CurrencyVar nCostAvgShp:=0;
+Shared CurrencyVar nCostAvgDO:=0;
+
+Shared CurrencyVar nCostAvgCbmKB:=0;
+Shared CurrencyVar nCostAvgKgsKB:=0;
+Shared CurrencyVar nCostAvgShpKB:=0;
+Shared CurrencyVar nCostAvgDoKB:=0;
+
+Shared CurrencyVar nCostAvgComCbm:=0;
+Shared CurrencyVar nCostAvgComKgs:=0;
+Shared CurrencyVar nCostAvgComShp:=0;
+Shared CurrencyVar nCostAvgComDO:=0;
+
+Shared CurrencyVar nCostAvgComCbm_na:=0;
+Shared CurrencyVar nCostAvgComKgs_na:=0;
+Shared CurrencyVar nCostAvgComShp_na:=0;
+Shared CurrencyVar nCostAvgComDO_KB:=0;
+
+
+----- {@n_BillAvg_kgs} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"KGS" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_BillAvg_shp} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"SHP" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchr_cbm} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"CBM" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}="KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchr_kgs} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"KGS" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}="KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchr_shp} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"SHP" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}="KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+----- {@n_vchr_cbm_kb} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"CBM" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}<>"KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchr_kgs_kb} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"KGS" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}<>"KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchr_shp_kb} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"SHP" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}<>"KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_BillCom_cbm} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="CBM" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_BillAvg_cbm}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_BillAvg_cbm}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+----- {@n_BillCom_kgs} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="KGS" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_BillAvg_kgs}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_BillAvg_kgs}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+----- {@n_BillCom_Shp} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="SHP" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_BillAvg_Shp}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_BillAvg_Shp}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+----- {@cAllocBy} -----
+If IsNull({OPTRANSDETAIL.ALLOCBY}) Then
+    If Left({OPTRANSDETAIL.UOM},2)="KG" Then
+        Formula="KGS"
+    ElseIf Left({OPTRANSDETAIL.UOM},3)="CBM" Then
+        Formula="CBM"
+    ElseIf Left({OPTRANSDETAIL.UOM},2)="M3" Then
+        Formula="CBM"
+    Else
+        Formula="SHP"
+    End If
+ElseIf Trim({OPTRANSDETAIL.ALLOCBY})="" Then
+    If Left({OPTRANSDETAIL.UOM},2)="KG" Then
+        Formula="KGS"
+    ElseIf Left({OPTRANSDETAIL.UOM},3)="CBM" Then
+        Formula="CBM"
+    ElseIf Left({OPTRANSDETAIL.UOM},2)="M3" Then
+        Formula="CBM"
+    Else
+        Formula="SHP"
+    End If
+Else
+    Formula={OPTRANSDETAIL.ALLOCBY}
+End if
+
+----- {@n_CostCom_cbm} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="CBM" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_cbm}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_cbm}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+
+----- {@n_CostCom_kgs} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="KGS" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_kgs}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_kgs}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+
+----- {@n_CostCom_Shp} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="SHP" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_shp}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_shp}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+----- {@n_CostComKB_cbm} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="CBM" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_cbm_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_cbm_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}="KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+
+----- {@n_CostComKB_kgs} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="KGS" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_kgs_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_kgs_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}="KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+
+----- {@n_CostComKB_shp} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="SHP" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_shp_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_shp_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}="KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+
+----- {@n_BillCom_Do} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="D/O" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_BillAvg_do}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_BillAvg_do}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+----- {@n_CostCom_Do} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="D/O" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_do}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_do}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}<>"KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+
+----- {@n_CostComKB_do} -----
+'ใน ALLOCATED + กรณี Saleperson : ให้เอาจำนวนไปกระจายตามหลักการทำ Commision
+If {@cAllocBy}="D/O" then
+    If {?chgGroup1}="Saleperson" Then
+        If IsNull({OPTRANSDETAIL.SALETEXTRATE}) Then
+            Formula = {@n_vchr_do_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="" Then
+            Formula = {@n_vchr_do_kb}
+        ElseIf Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} then
+            Formula = 0
+        Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" And {OPTRANSDETAIL.EXPCODE}="KB" then
+            If {?prnCurr}<>1 Then
+                Formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1,{OPTRANSDETAIL.SALERATE})*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            Else
+                formula = {OPTRANSDETAIL.QTY}*{OPTRANSDETAIL.SALEPRICE}*IIF({OPTRANSDETAIL.ITEMCURR}="THB",1/{OPTRANSDETAIL.SALERATE},1)*iif({OPTRANSDETAIL.DOCTYPE}="CN",-1,1)
+            End If
+        Else
+            formula = 0
+        End if
+    Else
+        formula = 0
+    End if
+Else
+    formula = 0
+End if
+
+
+----- {@n_BillAvg_do} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"D/O" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+----- {@n_vchr_do} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"D/O" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}="KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_vchr_do_kb} -----
+'Real Allocate
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+ElseIf {@cAllocBy}<>"D/O" Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.HBLREF}<>{OPTRANSDETAIL.JOBNO} Then
+    Formula = 0
+ElseIf {OPTRANSDETAIL.EXPCODE}<>"KB" Then
+    Formula = 0
+ElseIf {?chgGroup1}="Saleperson" And Trim({OPTRANSDETAIL.SALETEXTRATE})="0" Then
+    Formula = 0 'ไม่ให้มี Real Allocate
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_diffadv_thb} -----
+{@n_billadv_thb}
+//-{@n_vchradv_thb}
+
+
+=== RUNNING TOTALS ===
+  {#rtBillCbm} : field= op= evalCond= resetCond=
+  {#rtBillKgs} : field= op= evalCond= resetCond=
+  {#rtBillShp} : field= op= evalCond= resetCond=
+  {#rtCostCbm} : field= op= evalCond= resetCond=
+  {#rtCostKgs} : field= op= evalCond= resetCond=
+  {#rtCostShp} : field= op= evalCond= resetCond=
+  {#rtCostCbmKB} : field= op= evalCond= resetCond=
+  {#rtCostKgsKB} : field= op= evalCond= resetCond=
+  {#rtCostShpKB} : field= op= evalCond= resetCond=
+  {#rtBillComCbm} : field= op= evalCond= resetCond=
+  {#rtBillComKgs} : field= op= evalCond= resetCond=
+  {#rtBillComShp} : field= op= evalCond= resetCond=
+  {#rtCostComCbm} : field= op= evalCond= resetCond=
+  {#rtCostComCbm_KB} : field= op= evalCond= resetCond=
+  {#rtCostComKgs} : field= op= evalCond= resetCond=
+  {#rtCostComKgs_KB} : field= op= evalCond= resetCond=
+  {#rtCostComShp} : field= op= evalCond= resetCond=
+  {#rtCostComShp_KB} : field= op= evalCond= resetCond=
+  {#rtBillDo} : field= op= evalCond= resetCond=
+  {#rtBillComDo} : field= op= evalCond= resetCond=
+  {#rtCostDo} : field= op= evalCond= resetCond=
+  {#rtCostDoKB} : field= op= evalCond= resetCond=
+  {#rtCostComDo} : field= op= evalCond= resetCond=
+  {#rtCostComDo_KB} : field= op= evalCond= resetCond=
+
+################################################################
+##  REPORT: SUBREPORT :: ALLHBL.rpt - 01
+################################################################
+
+=== TABLES ===
+  alias=SFJOB   location=SFJOB
+  alias=OPTRANSDETAIL   location=OPTRANSDETAIL
+  alias=ARINVDETAIL   location=ARINVDETAIL
+  alias=ARINVHEAD   location=ARINVHEAD
+
+=== LINKS: count=3 ===
+  SFJOB -> OPTRANSDETAIL
+      on {SFJOB.JOBNO}  =  {OPTRANSDETAIL.JOBNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  OPTRANSDETAIL -> ARINVDETAIL
+      on {OPTRANSDETAIL.REFINVDETID}  =  {ARINVDETAIL.DETID}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+  ARINVDETAIL -> ARINVHEAD
+      on {ARINVDETAIL.INVNO}  =  {ARINVHEAD.INVNO}
+      join=Left Outer (5)  lookup=Product (2)  partialMatch=False
+
+=== RECORD SELECTION ===
+  {SFJOB.JOBNO} = {?Pm-SFJOB.JOBNO}
+
+=== GROUP SELECTION ===
+  
+
+=== SQL EXPRESSIONS ===
+
+=== FORMULA FIELDS: count=7 ===
+----- {@nDetGross} -----
+'formula = Cdbl({ARINVDETAIL.SRCAMT}) * iif({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),1)
+If {?prnCurr}<>1 Then
+    formula = CDbl( {ARINVDETAIL.THBAMT} )
+Else
+    If {ARINVDETAIL.CALCURR}="THB" Then
+        formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({ARINVDETAIL.VATINOUT}=1,CDbl({ARINVDETAIL.SRCTOT}),CDbl({ARINVDETAIL.SRCAMT})))
+        formula = formula * IIF({ARINVHEAD.SRCCURR}="THB",(1/{SFJOB.JOBRATE}),{ARINVDETAIL.CALRATE})
+    ElseIf {ARINVDETAIL.CALCURR}="USD" Then
+        formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({ARINVDETAIL.VATINOUT}=1,CDbl({ARINVDETAIL.SRCTOT}),CDbl({ARINVDETAIL.SRCAMT})))
+        formula = formula * (1/{ARINVDETAIL.CALRATE})
+    Else
+        formula = iif({?แสดงจำนวนเงินUSD_ด้วยยอดก่อนVAT}="YES",CDbl({ARINVDETAIL.SRCAMT}),IIF({ARINVDETAIL.VATINOUT}=1,CDbl({ARINVDETAIL.THBTOT}),CDbl({ARINVDETAIL.THBAMT})))
+        formula = formula * (1/{SFJOB.JOBRATE})
+    End If
+End If
+formula = Round(formula,2)
+
+
+----- {@nDocBal} -----
+If {OPTRANSDETAIL.TRANSTYPE} = "Bill" Then
+    IIF({ARINVHEAD.SRCTYPE}="AR" ,1,-1)
+Else
+    IIF({ARINVHEAD.SRCTYPE}="AP" ,1,-1)
+
+
+----- {@VarCal} -----
+Shared CurrencyVar nDiffAdv;
+nDiffAdv := {#rtDiffAdv}
+
+----- {@VarSet} -----
+Shared CurrencyVar nDiffAdv:=0;
+
+----- {@n_diffadv_thb} -----
+{@n_billadv_thb}
+-
+{@n_vchradv_thb}
+
+
+----- {@n_vchradv_thb} -----
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Cost" and {OPTRANSDETAIL.ITEMTYPE} = "ADV" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+----- {@n_billadv_thb} -----
+If isnull({ARINVDETAIL.DETID}) then 
+    Formula = 0
+ElseIf {ARINVHEAD.POSTENTRY}=3 then 
+    Formula = 0
+Elseif {OPTRANSDETAIL.TRANSTYPE} = "Bill" and {OPTRANSDETAIL.ITEMTYPE} = "ADV" then
+    formula = {@nDetGross}*{@nDocBal}
+Else
+    formula = 0
+End if
+
+
+=== RUNNING TOTALS ===
+  {#rtDiffAdv} : field= op= evalCond= resetCond=

@@ -17,6 +17,13 @@ UI mockups + data-mapping specs สำหรับการ port ฟอร์ม
 |---|---|---|---|
 | [`frmSFJob_IM/`](./frmSFJob_IM/) | ✅ Complete | Inbound Master Reference (SF Job — Import) | 🟢 Emerald |
 | [`frmSFQuotation/`](./frmSFQuotation/) | ✅ Complete | Sea Freight Quotation (Import + Export) — มี validation, lookup, print preview | 🟣 Violet |
+| [`frmARInvoice/`](./frmARInvoice/) | ✅ Complete | Outbound Billing Entry (A/R · SF · EX) — line-item grid, VAT/THB calc, status workflow, ทุก DocType | 🌹 Rose |
+| [`FPI/frmFPIRateMgmt/`](./FPI/frmFPIRateMgmt/) | ✅ Complete | **Freight Pricing Intelligence** — Rate Management: Search/Compare/Confirm, Expiry Alert (vFPI_RateAlert), Superseded chain | 🩵 Cyan |
+| [`FPI/frmFPIQuoteGen/`](./FPI/frmFPIQuoteGen/) | ✅ Complete | **Freight Pricing Intelligence** — Quotation Generator: multi-lane Good/Better/Best, PricingMode engine, Air take-lower, estimated margin | 🩵 Teal |
+| [`FPI/frmFPIBookingGate/`](./FPI/frmFPIBookingGate/) | ✅ Complete | **FPI** — Booking Margin Gate: vFPI_BookProfit + evaluate (PASS/NEED_APPROVE/BLOCKED), Cost Auto-fill + Superseded Chain + Delta Alert, approval workflow | 🟠 Amber |
+| [`FPI/frmFPIApprovalInbox/`](./FPI/frmFPIApprovalInbox/) | ✅ Complete | **FPI** — Approval Inbox: คิว NEED_APPROVE ฝั่ง Manager, จัดกลุ่มสาเหตุ + Approve/Reject/Batch (reuse engine ของ Booking Gate, แชร์ localStorage) | 🔵 Indigo |
+| [`FPI/frmFPIKBDashboard/`](./FPI/frmFPIKBDashboard/) | ✅ Complete | **FPI** — KB Dashboard: Rate health, Quote-at-risk (D2 + Δ ทุน), Margin/Win-rate/Top-lane (reuse ทุก engine, read-only) | ⬛ Slate |
+| [`FPI/frmFPIKnowledgeSearch/`](./FPI/frmFPIKnowledgeSearch/) | ✅ Complete | **FPI** — AI Knowledge Search: ถามภาษาธรรมชาติ ตอบพร้อม citation เสมอ (Tier 1/Tier 2), rule-based + hook ต่อ LLM/MCP | 🟣 Purple |
 | [`_template/`](./_template/) | 📋 Starter | Skeleton สำหรับ copy ไปสร้าง module ใหม่ | 🔵 Indigo |
 
 > เพิ่ม module ใหม่ → ดู [**CONTRIBUTING.md**](./CONTRIBUTING.md)
@@ -82,8 +89,14 @@ Optional (เพิ่มเมื่อจำเป็น):
 | Outbound (EX) | Indigo | `bg-indigo-600` / `text-indigo-700` |
 | Inbound (IM) | Emerald | `bg-emerald-600` / `text-emerald-700` |
 | Quotation | Violet | `bg-violet-600` / `text-violet-700` |
-| HBL (TBD) | Sky | `bg-sky-600` |
-| Booking (TBD) | Amber | `bg-amber-600` |
+| A/R Billing | Rose | `bg-rose-600` / `text-rose-700` |
+| Sea Rate Control | Sky | `bg-sky-700` |
+| FPI Rate Management | Cyan | `bg-cyan-700` / `text-cyan-700` |
+| FPI Quotation Generator | Teal | `bg-teal-700` / `text-teal-700` |
+| FPI Booking Margin Gate | Amber | `bg-amber-600` / `text-amber-700` |
+| FPI Approval Inbox | Indigo | `bg-indigo-600` / `text-indigo-700` |
+| FPI KB Dashboard | Slate | `bg-slate-800` |
+| FPI AI Knowledge Search | Purple | `bg-purple-700` / `text-purple-700` |
 
 ### localStorage keys
 

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMF Approval Workflow — Mockup</title>
+    <script src="../vendor/tailwind.js"></script>
+    <link rel="stylesheet" href="../vendor/inter.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="alerts.css">
+    <script>if (/[?&]embed=1/.test(location.search)) document.documentElement.classList.add('embed');</script>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+<!-- ===== Top bar ===== -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="px-4 py-2.5 flex items-center gap-3">
+        <button id="btnMenu" class="lg:hidden p-1.5 rounded hover:bg-slate-100" aria-label="Menu">☰</button>
+        <div class="w-8 h-8 rounded-lg bg-indigo-700 text-white flex items-center justify-center font-bold">✓</div>
+        <div class="leading-tight">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500">SMF</div>
+            <div class="font-semibold text-sm">Approval Workflow <span id="srcTag" class="text-slate-400">[DEMO]</span></div>
+        </div>
+        <div class="ml-auto flex items-center gap-2 text-sm">
+            <span id="meName" class="hidden sm:inline text-slate-600"></span>
+            <button id="btnReset" class="btn-ghost" title="Re-seed demo data">↺ Reset</button>
+        </div>
+    </div>
+</header>
+
+<div class="flex">
+    <!-- ===== Sidebar (modules) ===== -->
+    <aside id="side" class="side">
+        <div class="side-h">Approval</div>
+        <nav id="modNav" class="px-2 space-y-0.5"></nav>
+        <div class="side-h mt-4">Monitoring</div>
+        <div class="px-2"><button id="navAlerts" class="nav-i"><span>🔔</span>Alerts<span id="alertN" class="n">0</span></button></div>
+        <div id="otherNav">
+            <div class="side-h mt-4">Other</div>
+            <div class="px-4 py-1.5 text-sm text-slate-400">Billing System</div>
+            <div class="px-4 py-1.5 text-sm text-slate-400">Payment System</div>
+        </div>
+    </aside>
+    <div id="scrim" class="scrim hidden"></div>
+
+    <!-- ===== Main ===== -->
+    <main class="flex-1 min-w-0 flex">
+        <section id="alertsPage" class="flex-1 min-w-0 p-4 lg:p-5 hidden"></section>
+        <section id="apprPage" class="flex-1 min-w-0 p-4 lg:p-5">
+            <div class="flex items-end justify-between gap-3 flex-wrap mb-3">
+                <div>
+                    <h1 id="listTitle" class="text-xl font-semibold">Approval Requests</h1>
+                    <p id="listSub" class="text-xs text-slate-500"></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div id="viewSw" class="seg">
+                        <button data-view="inbox">Inbox</button><button data-view="timeline">Timeline Mgt</button>
+                    </div>
+                    <button id="btnRefresh" class="btn-secondary">↻ Refresh</button>
+                </div>
+            </div>
+
+            <!-- tabs -->
+            <div id="tabs" class="flex gap-1 border-b border-slate-200 mb-3 overflow-x-auto"></div>
+
+            <!-- filters -->
+            <div id="fRow" class="flex flex-wrap items-center gap-2 mb-3">
+                <input id="q" class="field w-56" placeholder="Search Docno / customer …">
+                <span id="inboxF" class="contents">
+                    <select id="fDoc" class="field hidden" title="Document type"></select>
+                    <select id="fStep" class="field"></select>
+                    <select id="fMine" class="field">
+                        <option value="mine">Waiting for me</option>
+                        <option value="all">Everyone</option>
+                    </select>
+                    <label class="text-xs text-slate-500 flex items-center gap-1 ml-1"><input id="fLate" type="checkbox"> Overdue only</label>
+                </span>
+                <span id="tlF" class="contents hidden">
+                    <select id="tDoc" class="field hidden" title="Document type"></select>
+                    <select id="tStatus" class="field">
+                        <option value="active">In progress</option><option value="risk">At risk / stalled</option>
+                        <option value="rej">Rejected</option><option value="done">Completed</option><option value="all">All</option>
+                    </select>
+                    <select id="tOwner" class="field"></select>
+                    <select id="tGroup" class="field">
+                        <option value="risk">Group by: Risk</option><option value="job">Group by: Job type</option><option value="none">No grouping</option>
+                    </select>
+                    <button id="tExport" class="btn-secondary">⬇ CSV</button>
+                </span>
+            </div>
+
+            <!-- bulk bar -->
+            <div id="bulk" class="bulk hidden">
+                <span><b id="bulkN">0</b> selected</span>
+                <button id="bulkApprove" class="btn-ok">✓ Approve selected</button>
+                <button id="bulkClear" class="btn-ghost">Clear</button>
+            </div>
+
+            <div id="list"></div>
+        </section>
+
+        <!-- ===== Detail panel ===== -->
+        <aside id="detail" class="detail hidden"></aside>
+    </main>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="data.js"></script>
+<script src="alerts-data.js"></script>
+<script src="alerts.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

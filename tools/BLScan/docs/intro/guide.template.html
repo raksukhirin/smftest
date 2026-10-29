@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BLScan 3 ขั้นตอน</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1f2933; --muted: #5b6770; --line: #dfe3e8;
+    --brand: #1b6ec2; --brand-ink: #ffffff; --soft: #e8f1fb; --warn: #fff6e0; --warn-line: #f0d9a0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14181c; --card: #1d2329; --ink: #e6e9ec; --muted: #9aa5ae; --line: #323b43;
+      --brand: #5aa2ec; --brand-ink: #0c1620; --soft: #1f2e3d; --warn: #2b2616; --warn-line: #5b4a1c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14181c; --card: #1d2329; --ink: #e6e9ec; --muted: #9aa5ae; --line: #323b43;
+    --brand: #5aa2ec; --brand-ink: #0c1620; --soft: #1f2e3d; --warn: #2b2616; --warn-line: #5b4a1c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Segoe UI", Tahoma, "Leelawadee UI", sans-serif; line-height: 1.6; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 24px 16px 56px; }
+  header h1 { font-size: 1.7rem; margin: 0 0 6px; }
+  header p { margin: 0; color: var(--muted); font-size: 1.05rem; }
+  .flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 22px 0 8px; padding: 0; list-style: none; }
+  .flow li { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .95rem; }
+  .flow b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--brand); color: var(--brand-ink); margin-right: 6px; font-size: .85rem; }
+  section.step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 8px; margin-top: 22px; }
+  section.step > h2 { display: flex; align-items: center; gap: 10px; font-size: 1.3rem; margin: 0 0 6px; }
+  section.step > h2 .n { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--brand); color: var(--brand-ink); font-size: 1.05rem; flex: none; }
+  .lead { margin: 0 0 14px; color: var(--muted); }
+  figure { margin: 0 0 18px; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 8px; }
+  figcaption { margin-top: 6px; font-size: .95rem; }
+  figcaption b { color: var(--brand); }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .small-img { max-width: 520px; }
+  .note { background: var(--warn); border: 1px solid var(--warn-line); border-radius: 10px; padding: 10px 14px; margin: 6px 0 14px; font-size: .95rem; }
+  .ok { background: var(--soft); border-radius: 10px; padding: 10px 14px; margin: 22px 0 0; }
+  footer { margin-top: 26px; color: var(--muted); font-size: .85rem; }
+  @media (max-width: 720px) { .flow, .pair { grid-template-columns: 1fr; } header h1 { font-size: 1.35rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ส่งข้อมูลจากใบ House B/L เข้า SMF ด้วย BLScan</h1>
+    <p>สแกนใบ B/L (PDF หรือรูป) แล้วส่งข้อมูลเข้า House B/L ใน SMF โดยไม่ต้องพิมพ์ซ้ำ — 3 ขั้นตอน</p>
+  </header>
+
+  <ol class="flow">
+    <li><b>1</b>SMF: เพิ่ม House B/L ว่าง ได้เลข <strong>HB/L Ref</strong></li>
+    <li><b>2</b>BLScan: เลือกไฟล์ แล้ว <strong>Scan</strong></li>
+    <li><b>3</b>ใส่เลข HB/L Ref แล้ว <strong>Update</strong> เข้า SMF</li>
+  </ol>
+
+  <section class="step">
+    <h2><span class="n">1</span>SMF — เพิ่ม House B/L ว่าง เพื่อให้ได้เลข HB/L Ref</h2>
+    <p class="lead">เปิดงาน (Job) ใน SMF ที่แท็บ <strong>Booking and HB/L</strong> แล้วเพิ่ม House B/L ใหม่ ยังไม่ต้องกรอกรายละเอียด ระบบจะออกเลข HB/L Ref ให้ (ในตัวอย่างคือ <strong>BLE26100006</strong>) จดเลขนี้ไว้ใช้ในขั้นตอนที่ 3</p>
+    <figure class="small-img">
+      <img src="{{img28}}" alt="หน้าจอ SMF แสดง House B/L ที่เพิ่มใหม่ เลข HB/L Ref BLE26100006">
+      <figcaption>แถวที่ไฮไลต์คือ House B/L ที่เพิ่มใหม่ พร้อมเลข <b>HB/L Ref</b></figcaption>
+    </figure>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">2</span>เข้า BLScan แล้ว Scan ใบ B/L</h2>
+    <p class="lead">เปิดโปรแกรม BLScan เลือกไฟล์ใบ B/L แล้วกด Scan โปรแกรมอ่านข้อความจากใบและแสดงเป็นแบบฟอร์ม House B/L ให้ตรวจก่อนส่งเข้า SMF</p>
+
+    <div class="pair">
+      <figure>
+        <img src="{{img24}}" alt="หน้าแรกของ BLScan">
+        <figcaption><b>2.1</b> เปิดโปรแกรม แล้วกด <b>เลือกไฟล์…</b></figcaption>
+      </figure>
+      <figure>
+        <img src="{{img25}}" alt="เลือกไฟล์ใบ B/L">
+        <figcaption><b>2.2</b> เลือกไฟล์ใบ B/L (PDF, JPG, PNG, TIF) แล้วกด <b>Open</b></figcaption>
+      </figure>
+    </div>
+
+    <figure>
+      <img src="{{img26}}" alt="ภาพต้นฉบับของใบ B/L ที่เลือก">
+      <figcaption><b>2.3</b> โปรแกรมแสดง <b>ภาพต้นฉบับ</b> ทันที ตรวจว่าเป็นใบที่ต้องการ เลือก <b>Template</b> ให้ตรงกับผู้ออก B/L แล้วกด <b>▶ Scan</b></figcaption>
+    </figure>
+
+    <figure>
+      <img src="{{img27}}" alt="ผลการ Scan แสดงเป็นฟอร์ม House B/L">
+      <figcaption><b>2.4</b> ผลอ่านแสดงเป็นฟอร์ม <b>House B/L</b> ช่องที่มีเครื่องหมายสีแดงคือยังไม่มีค่า สามารถคลิกแก้ในช่องด้านขวาได้ — ขั้นต่อไปใส่เลข <b>HB/L Ref</b> ในช่องที่ไฮไลต์</figcaption>
+    </figure>
+  </section>
+
+  <section class="step">
+    <h2><span class="n">3</span>ใส่เลข HB/L Ref แล้ว Update เข้า SMF</h2>
+    <p class="lead">พิมพ์เลข HB/L Ref ที่ได้จากขั้นตอนที่ 1 โปรแกรมตรวจว่ามีในระบบ (ขึ้น ✓ พบ record) แล้วตรวจรายการในแท็บ <strong>สิ่งที่จะเปลี่ยนใน DB</strong> ก่อนกด <strong>Update DB</strong></p>
+    <figure>
+      <img src="{{img29}}" alt="ยืนยันการ Update เข้า SMF">
+      <figcaption><b>3.1</b> ใส่ <b>HB/L Ref</b> → ตรวจข้อมูล → กด <b>Update DB</b> → ข้อความยืนยันแสดงเลข HB/L Ref และข้อผิดปกติที่พบ (ถ้ามี) → กด <b>Yes</b></figcaption>
+    </figure>
+    <div class="note">ช่องที่ Scan ไม่ได้ค่า จะไม่ทับค่าเดิมใน SMF และโปรแกรมไม่มีการลบข้อมูล หากมีข้อความ Error ในหน้ายืนยัน ให้กด No แล้วแก้ค่าในช่องด้านขวาก่อน</div>
+  </section>
+
+  <div class="ok"><strong>จากนั้น</strong> เปิด House B/L เลขเดิมใน SMF ข้อมูลที่ Scan จะอยู่ในรายการแล้ว ตรวจและทำงานต่อได้ตามปกติ</div>
+
+  <footer>ภาพตัวอย่างเบลอชื่อและที่อยู่ของคู่ค้าแล้ว • ข้อมูลในภาพมาจากระบบทดสอบ (DEMO)</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+@echo off
+rem Build BLScan.exe with the csc.exe of .NET Framework 4.x that ships with Windows (no Visual Studio / .NET SDK needed)
+rem (ASCII only on purpose: Thai text in a .bat breaks cmd line parsing)
+setlocal
+cd /d "%~dp0"
+set CSC=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319\csc.exe
+if not exist "%CSC%" set CSC=%WINDIR%\Microsoft.NET\Framework\v4.0.30319\csc.exe
+if not exist "%CSC%" (
+  echo csc.exe of .NET Framework 4 not found
+  exit /b 1
+)
+if not exist bin mkdir bin
+rem Customer serial list (src\sn.txt) -> src\EdiLicensed.cs (hashes) before compiling
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0gen-sn.ps1"
+if errorlevel 1 exit /b 1
+"%CSC%" -nologo -codepage:65001 -target:winexe -platform:x86 -optimize+ ^
+  -out:bin\BLScan.exe ^
+  -r:System.dll -r:System.Core.dll -r:System.Data.dll -r:System.Drawing.dll -r:System.Windows.Forms.dll -r:System.Security.dll -r:System.Web.Extensions.dll -r:System.Xml.dll -r:System.Xml.Linq.dll ^
+  src\*.cs
+if errorlevel 1 exit /b 1
+if not exist bin\BLScan.ini copy BLScan.ini bin\BLScan.ini >nul
+rem Default templates go beside the exe (not used when ini [Templates] Path points to a shared folder)
+if not exist bin\templates mkdir bin\templates
+xcopy /y /q templates\*.json bin\templates\ >nul
+if not exist bin\templates\edi mkdir bin\templates\edi
+xcopy /y /q templates\edi\*.json bin\templates\edi\ >nul
+echo OK: bin\BLScan.exe

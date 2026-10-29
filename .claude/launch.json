@@ -1,0 +1,89 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sf-sched-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8753", "--directory", "mockup/frmSFSched"],
+      "port": 8753
+    },
+    {
+      "name": "vsl-sched-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8754", "--directory", "mockup/frmSFVSLSched"],
+      "port": 8754
+    },
+    {
+      "name": "ar-invoice-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8755", "--directory", "mockup/frmARInvoice"],
+      "port": 8755
+    },
+    {
+      "name": "sfjob-ex-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8756", "--directory", "mockup/frmSFJob_EX"],
+      "port": 8756
+    },
+    {
+      "name": "sfquotation-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8757", "--directory", "mockup/frmSFQuotation"],
+      "port": 8757
+    },
+    {
+      "name": "fpi-quotegen-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8758", "--directory", "mockup/FPI"],
+      "port": 8758
+    },
+    {
+      "name": "fpi-bookinggate-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8759", "--directory", "mockup/FPI"],
+      "port": 8759
+    },
+    {
+      "name": "fpi-approvalinbox-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8760", "--directory", "mockup/FPI"],
+      "port": 8760
+    },
+    {
+      "name": "fpi-ratemgmt-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8761", "--directory", "mockup/FPI"],
+      "port": 8761
+    },
+    {
+      "name": "fpi-kbdashboard-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8762", "--directory", "mockup/FPI"],
+      "port": 8762
+    },
+    {
+      "name": "fpi-knowledgesearch-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8763", "--directory", "mockup/FPI"],
+      "port": 8763
+    },
+    {
+      "name": "sfcontainerplan-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8770", "--directory", "mockup/frmSFContainerPlan"],
+      "port": 8770
+    },
+    {
+      "name": "smf-dashboard-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8771", "--directory", "mockup"],
+      "port": 8771
+    },
+    {
+      "name": "approvalflow-mockup",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8772", "--directory", "mockup"],
+      "port": 8772
+    }
+  ]
+}
