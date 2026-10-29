@@ -148,13 +148,9 @@ namespace BLScan
                 Font = new Font("Segoe UI Semibold", 13f), ForeColor = lic.Valid ? Color.White : Color.FromArgb(255, 214, 120), AutoSize = true, BackColor = Color.Transparent
             };
             banner.Controls.Add(lblLicCap); banner.Controls.Add(lblLic);
-            Action placeLic = () =>
-            {
-                lblLic.Location = new Point(Math.Max(300, banner.Width - lblLic.PreferredWidth - 34), 76);
-                lblLicCap.Location = new Point(lblLic.Left + 1, 58);
-            };
-            banner.Resize += (s, e) => placeLic();
-            placeLic();
+            // ใต้โลโก้ SMF DocLink ชิดซ้าย
+            lblLicCap.Location = new Point(35, 74);
+            lblLic.Location = new Point(34, 88);
 
             var footer = new Panel { Dock = DockStyle.Bottom, Height = 52, BackColor = Color.White };
             footer.Paint += (s, e) => { using (var p = new Pen(Theme.Line)) e.Graphics.DrawLine(p, 0, 0, footer.Width, 0); };
